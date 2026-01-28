@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Post, Group, Profile } from '@/types/database';
 import { formatDistanceToNow } from 'date-fns';
 import { CreatePostDialog } from '@/components/community/CreatePostDialog';
+import { PostDetailDialog } from '@/components/community/PostDetailDialog';
 
 interface PostWithProfile extends Post {
   profiles: Profile;
@@ -25,6 +26,7 @@ export default function Community() {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<PostWithProfile | null>(null);
 
   useEffect(() => {
     fetchGroups();
@@ -162,6 +164,7 @@ export default function Community() {
                       post={post}
                       index={index}
                       onReaction={() => handleReaction(post.id, post.user_reacted)}
+                      onClick={() => setSelectedPost(post)}
                       getInitials={getInitials}
                     />
                   ))}
@@ -175,6 +178,7 @@ export default function Community() {
                   post={post}
                   index={index + pinnedPosts.length}
                   onReaction={() => handleReaction(post.id, post.user_reacted)}
+                  onClick={() => setSelectedPost(post)}
                   getInitials={getInitials}
                 />
               ))}
@@ -203,6 +207,13 @@ export default function Community() {
           groupId={selectedGroup || ''}
           onSuccess={() => selectedGroup && fetchPosts(selectedGroup)}
         />
+
+        <PostDetailDialog
+          post={selectedPost}
+          open={!!selectedPost}
+          onOpenChange={(open) => !open && setSelectedPost(null)}
+          onPostUpdated={() => selectedGroup && fetchPosts(selectedGroup)}
+        />
       </div>
     </AppLayout>
   );
@@ -212,17 +223,21 @@ interface PostCardProps {
   post: PostWithProfile;
   index: number;
   onReaction: () => void;
+  onClick: () => void;
   getInitials: (name: string | null) => string;
 }
 
-function PostCard({ post, index, onReaction, getInitials }: PostCardProps) {
+function PostCard({ post, index, onReaction, onClick, getInitials }: PostCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
     >
-      <Card className="p-4 bg-card/50 border-border/50 hover:bg-card/70 transition-colors">
+      <Card 
+        className="p-4 bg-card/50 border-border/50 hover:bg-card/70 transition-colors cursor-pointer"
+        onClick={onClick}
+      >
         <div className="flex gap-3">
           <Avatar className="w-10 h-10">
             <AvatarImage src={post.profiles?.avatar_url || undefined} />
@@ -257,7 +272,10 @@ function PostCard({ post, index, onReaction, getInitials }: PostCardProps) {
 
         <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/50">
           <button
-            onClick={onReaction}
+            onClick={(e) => {
+              e.stopPropagation();
+              onReaction();
+            }}
             className={`flex items-center gap-1.5 text-sm transition-colors ${
               post.user_reacted ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}
@@ -265,7 +283,10 @@ function PostCard({ post, index, onReaction, getInitials }: PostCardProps) {
             <Heart className={`w-4 h-4 ${post.user_reacted ? 'fill-current' : ''}`} />
             {post.reaction_count > 0 && <span>{post.reaction_count}</span>}
           </button>
-          <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <button 
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
             <MessageCircle className="w-4 h-4" />
             {post.comment_count > 0 && <span>{post.comment_count}</span>}
           </button>
