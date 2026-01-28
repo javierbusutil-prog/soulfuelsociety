@@ -82,6 +82,8 @@ export interface Event {
   checkoff_enabled: boolean;
   created_by: string | null;
   created_at: string;
+  user_id: string | null;
+  is_global: boolean;
 }
 
 export interface EventCompletion {
