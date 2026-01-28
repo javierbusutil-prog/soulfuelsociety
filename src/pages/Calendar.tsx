@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Event, EventCompletion, EventType } from '@/types/database';
 import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
+import { EditEventDialog } from '@/components/calendar/EditEventDialog';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 
 const eventTypeColors: Record<EventType, string> = {
@@ -20,12 +21,13 @@ const eventTypeColors: Record<EventType, string> = {
 };
 
 export default function Calendar() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<Event[]>([]);
   const [completions, setCompletions] = useState<EventCompletion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const fetchEvents = async () => {
     const start = startOfMonth(currentDate);
@@ -174,6 +176,7 @@ export default function Calendar() {
           ) : (
             selectedDayEvents.map((event, index) => {
               const isCompleted = completions.some(c => c.event_id === event.id);
+              const canEdit = user && (event.user_id === user.id || isAdmin);
 
               return (
                 <motion.div
@@ -189,6 +192,9 @@ export default function Calendar() {
                           <Badge variant="outline" className={eventTypeColors[event.event_type]}>
                             {event.event_type.replace('_', ' ')}
                           </Badge>
+                          {event.is_global && (
+                            <Badge variant="secondary" className="text-xs">Global</Badge>
+                          )}
                         </div>
                         <h4 className="font-semibold">{event.title}</h4>
                         {event.description && (
@@ -200,16 +206,28 @@ export default function Calendar() {
                         </p>
                       </div>
                       
-                      {event.checkoff_enabled && (
-                        <Button
-                          variant={isCompleted ? 'success' : 'outline'}
-                          size="icon"
-                          onClick={() => handleComplete(event.id)}
-                          className={isCompleted ? 'bg-success hover:bg-success/90' : ''}
-                        >
-                          <Check className={`w-5 h-5 ${isCompleted ? 'text-success-foreground' : ''}`} />
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingEvent(event)}
+                            className="h-8 w-8"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {event.checkoff_enabled && (
+                          <Button
+                            variant={isCompleted ? 'success' : 'outline'}
+                            size="icon"
+                            onClick={() => handleComplete(event.id)}
+                            className={isCompleted ? 'bg-success hover:bg-success/90' : ''}
+                          >
+                            <Check className={`w-5 h-5 ${isCompleted ? 'text-success-foreground' : ''}`} />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </Card>
                 </motion.div>
@@ -218,6 +236,15 @@ export default function Calendar() {
           )}
         </div>
       </div>
+
+      {editingEvent && (
+        <EditEventDialog
+          event={editingEvent}
+          open={!!editingEvent}
+          onOpenChange={(open) => !open && setEditingEvent(null)}
+          onEventUpdated={fetchEvents}
+        />
+      )}
     </AppLayout>
   );
 }
