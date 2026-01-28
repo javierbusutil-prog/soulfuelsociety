@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Check, Pencil } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Pencil, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +10,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Event, EventCompletion, EventType } from '@/types/database';
 import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { EditEventDialog } from '@/components/calendar/EditEventDialog';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays, addWeeks, getDay, isAfter, isBefore, startOfDay } from 'date-fns';
+import { useEventReminders, requestNotificationPermission } from '@/hooks/useEventReminders';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays, addWeeks, getDay, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
+import { toast } from '@/hooks/use-toast';
 
-interface ExpandedEvent extends Event {
+export interface ExpandedEvent extends Event {
   occurrenceDate: Date;
 }
 
@@ -88,6 +90,12 @@ export default function Calendar() {
   const [completions, setCompletions] = useState<EventCompletion[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      return Notification.permission === 'granted';
+    }
+    return false;
+  });
 
   const fetchEvents = async () => {
     const start = startOfMonth(currentDate);
@@ -148,11 +156,47 @@ export default function Calendar() {
     return events.flatMap(event => expandRecurringEvent(event, start, end));
   }, [events, currentDate]);
 
+  // Get today's events for reminders (expand for today only)
+  const todayEvents = useMemo(() => {
+    const today = new Date();
+    const todayStart = startOfDay(today);
+    const todayEnd = endOfDay(today);
+    return events.flatMap(event => expandRecurringEvent(event, todayStart, todayEnd));
+  }, [events]);
+
+  // Enable event reminders
+  useEventReminders(todayEvents);
+
   const getEventsForDay = (day: Date) => {
     return expandedEvents.filter(event => isSameDay(event.occurrenceDate, day));
   };
 
   const selectedDayEvents = getEventsForDay(selectedDate);
+
+  const handleToggleNotifications = async () => {
+    if (notificationsEnabled) {
+      toast({
+        title: 'Notifications disabled',
+        description: 'You will no longer receive event reminders.',
+      });
+      setNotificationsEnabled(false);
+    } else {
+      const granted = await requestNotificationPermission();
+      if (granted) {
+        setNotificationsEnabled(true);
+        toast({
+          title: 'Notifications enabled',
+          description: 'You will receive reminders 15 minutes before events.',
+        });
+      } else {
+        toast({
+          title: 'Permission denied',
+          description: 'Please enable notifications in your browser settings.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
 
   return (
     <AppLayout title="Calendar">
@@ -166,6 +210,18 @@ export default function Calendar() {
             {format(currentDate, 'MMMM yyyy')}
           </h2>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleToggleNotifications}
+              title={notificationsEnabled ? 'Disable reminders' : 'Enable reminders'}
+            >
+              {notificationsEnabled ? (
+                <Bell className="w-5 h-5 text-primary" />
+              ) : (
+                <BellOff className="w-5 h-5 text-muted-foreground" />
+              )}
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
               <ChevronRight className="w-5 h-5" />
             </Button>
