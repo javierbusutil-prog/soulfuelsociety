@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Check, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Event, EventCompletion, EventType } from '@/types/database';
+import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 
 const eventTypeColors: Record<EventType, string> = {
@@ -25,16 +26,6 @@ export default function Calendar() {
   const [events, setEvents] = useState<Event[]>([]);
   const [completions, setCompletions] = useState<EventCompletion[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchEvents();
-  }, [currentDate]);
-
-  useEffect(() => {
-    if (user) {
-      fetchCompletions();
-    }
-  }, [user, currentDate]);
 
   const fetchEvents = async () => {
     const start = startOfMonth(currentDate);
@@ -105,9 +96,12 @@ export default function Calendar() {
           <h2 className="text-lg font-semibold">
             {format(currentDate, 'MMMM yyyy')}
           </h2>
-          <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
-            <ChevronRight className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+            <CreateEventDialog onEventCreated={fetchEvents} selectedDate={selectedDate} />
+          </div>
         </div>
 
         {/* Calendar grid */}

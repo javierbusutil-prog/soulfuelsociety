@@ -84,9 +84,11 @@ export type Database = {
           end_datetime: string | null
           event_type: Database["public"]["Enums"]["event_type"] | null
           id: string
+          is_global: boolean | null
           recurrence_rule: string | null
           start_datetime: string
           title: string
+          user_id: string | null
         }
         Insert: {
           checkoff_enabled?: boolean | null
@@ -96,9 +98,11 @@ export type Database = {
           end_datetime?: string | null
           event_type?: Database["public"]["Enums"]["event_type"] | null
           id?: string
+          is_global?: boolean | null
           recurrence_rule?: string | null
           start_datetime: string
           title: string
+          user_id?: string | null
         }
         Update: {
           checkoff_enabled?: boolean | null
@@ -108,9 +112,11 @@ export type Database = {
           end_datetime?: string | null
           event_type?: Database["public"]["Enums"]["event_type"] | null
           id?: string
+          is_global?: boolean | null
           recurrence_rule?: string | null
           start_datetime?: string
           title?: string
+          user_id?: string | null
         }
         Relationships: []
       }
