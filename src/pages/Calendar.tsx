@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Check, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,67 @@ import { supabase } from '@/integrations/supabase/client';
 import { Event, EventCompletion, EventType } from '@/types/database';
 import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { EditEventDialog } from '@/components/calendar/EditEventDialog';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays, addWeeks, getDay, isAfter, isBefore, startOfDay } from 'date-fns';
+
+interface ExpandedEvent extends Event {
+  occurrenceDate: Date;
+}
+
+// Generate all occurrences of a recurring event within a date range
+const expandRecurringEvent = (event: Event, rangeStart: Date, rangeEnd: Date): ExpandedEvent[] => {
+  const occurrences: ExpandedEvent[] = [];
+  const eventStart = startOfDay(new Date(event.start_datetime));
+  
+  // If no recurrence, just return the single event if it's in range
+  if (!event.recurrence_rule) {
+    if (!isBefore(eventStart, rangeStart) && !isAfter(eventStart, rangeEnd)) {
+      occurrences.push({ ...event, occurrenceDate: eventStart });
+    }
+    return occurrences;
+  }
+
+  let currentDate = eventStart;
+  const maxIterations = 366; // Safety limit
+  let iterations = 0;
+
+  while (!isAfter(currentDate, rangeEnd) && iterations < maxIterations) {
+    iterations++;
+    
+    // Only add if within range
+    if (!isBefore(currentDate, rangeStart) && !isAfter(currentDate, rangeEnd)) {
+      // For weekdays rule, skip weekends
+      if (event.recurrence_rule === 'weekdays') {
+        const dayOfWeek = getDay(currentDate);
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          occurrences.push({ ...event, occurrenceDate: new Date(currentDate) });
+        }
+      } else {
+        occurrences.push({ ...event, occurrenceDate: new Date(currentDate) });
+      }
+    }
+
+    // Advance to next occurrence based on rule
+    switch (event.recurrence_rule) {
+      case 'daily':
+        currentDate = addDays(currentDate, 1);
+        break;
+      case 'weekly':
+        currentDate = addWeeks(currentDate, 1);
+        break;
+      case 'weekdays':
+        currentDate = addDays(currentDate, 1);
+        break;
+      case 'monthly':
+        currentDate = addMonths(currentDate, 1);
+        break;
+      default:
+        // Unknown rule, stop
+        return occurrences;
+    }
+  }
+
+  return occurrences;
+};
 
 const eventTypeColors: Record<EventType, string> = {
   fast: 'bg-success/20 text-success border-success/30',
@@ -81,8 +141,15 @@ export default function Calendar() {
     end: endOfMonth(currentDate),
   });
 
+  // Expand all recurring events for the current month
+  const expandedEvents = useMemo(() => {
+    const start = startOfMonth(currentDate);
+    const end = endOfMonth(currentDate);
+    return events.flatMap(event => expandRecurringEvent(event, start, end));
+  }, [events, currentDate]);
+
   const getEventsForDay = (day: Date) => {
-    return events.filter(event => isSameDay(new Date(event.start_datetime), day));
+    return expandedEvents.filter(event => isSameDay(event.occurrenceDate, day));
   };
 
   const selectedDayEvents = getEventsForDay(selectedDate);
