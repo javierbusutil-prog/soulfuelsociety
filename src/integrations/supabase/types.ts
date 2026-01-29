@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_events: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          enrollment_id: string | null
+          event_date: string
+          event_type: string
+          id: string
+          linked_program_id: string | null
+          linked_session_id: string | null
+          reminder_enabled: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          enrollment_id?: string | null
+          event_date: string
+          event_type?: string
+          id?: string
+          linked_program_id?: string | null
+          linked_session_id?: string | null
+          reminder_enabled?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          enrollment_id?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          linked_program_id?: string | null
+          linked_session_id?: string | null
+          reminder_enabled?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "user_program_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_linked_program_id_fkey"
+            columns: ["linked_program_id"]
+            isOneToOne: false
+            referencedRelation: "workout_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_linked_session_id_fkey"
+            columns: ["linked_session_id"]
+            isOneToOne: false
+            referencedRelation: "workout_session_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           content: string
@@ -740,6 +810,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_program_enrollments: {
+        Row: {
+          created_at: string
+          id: string
+          program_id: string
+          selected_days_of_week: number[] | null
+          start_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          program_id: string
+          selected_days_of_week?: number[] | null
+          start_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          program_id?: string
+          selected_days_of_week?: number[] | null
+          start_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_program_enrollments_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "workout_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -757,6 +862,33 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          id: string
+          reminder_time: string
+          reminders_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reminder_time?: string
+          reminders_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reminder_time?: string
+          reminders_enabled?: boolean
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -786,6 +918,89 @@ export type Database = {
             columns: ["workout_id"]
             isOneToOne: false
             referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_programs: {
+        Row: {
+          admin_days_of_week: number[] | null
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          frequency_per_week: number
+          id: string
+          published: boolean
+          schedule_mode: Database["public"]["Enums"]["schedule_mode"]
+          title: string
+          updated_at: string
+          weeks: number
+        }
+        Insert: {
+          admin_days_of_week?: number[] | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          frequency_per_week?: number
+          id?: string
+          published?: boolean
+          schedule_mode?: Database["public"]["Enums"]["schedule_mode"]
+          title: string
+          updated_at?: string
+          weeks?: number
+        }
+        Update: {
+          admin_days_of_week?: number[] | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          frequency_per_week?: number
+          id?: string
+          published?: boolean
+          schedule_mode?: Database["public"]["Enums"]["schedule_mode"]
+          title?: string
+          updated_at?: string
+          weeks?: number
+        }
+        Relationships: []
+      }
+      workout_session_templates: {
+        Row: {
+          content_json: Json | null
+          created_at: string
+          id: string
+          program_id: string
+          session_index: number
+          title: string
+          week_number: number
+        }
+        Insert: {
+          content_json?: Json | null
+          created_at?: string
+          id?: string
+          program_id: string
+          session_index: number
+          title: string
+          week_number: number
+        }
+        Update: {
+          content_json?: Json | null
+          created_at?: string
+          id?: string
+          program_id?: string
+          session_index?: number
+          title?: string
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_session_templates_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "workout_programs"
             referencedColumns: ["id"]
           },
         ]
@@ -871,6 +1086,7 @@ export type Database = {
         | "program_modification"
         | "mobility_assessment"
         | "other"
+      schedule_mode: "admin_selected" | "user_selected"
       subscription_status: "inactive" | "active" | "cancelled" | "past_due"
       workout_level: "beginner" | "intermediate" | "advanced"
       workout_type: "strength" | "cardio" | "mobility" | "recovery" | "hiit"
@@ -1019,6 +1235,7 @@ export const Constants = {
         "mobility_assessment",
         "other",
       ],
+      schedule_mode: ["admin_selected", "user_selected"],
       subscription_status: ["inactive", "active", "cancelled", "past_due"],
       workout_level: ["beginner", "intermediate", "advanced"],
       workout_type: ["strength", "cardio", "mobility", "recovery", "hiit"],
