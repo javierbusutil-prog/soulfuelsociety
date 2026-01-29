@@ -1,18 +1,35 @@
-import { useEffect, useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Check, Pencil, Bell, BellOff } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Check, 
+  Pencil, 
+  Bell, 
+  BellOff, 
+  List, 
+  LayoutGrid,
+  Calendar as CalendarIcon,
+  Dumbbell,
+  CheckCircle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Event, EventCompletion, EventType } from '@/types/database';
+import { CalendarEvent } from '@/types/workoutPrograms';
 import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { EditEventDialog } from '@/components/calendar/EditEventDialog';
+import { CalendarEventDetailDialog } from '@/components/calendar/CalendarEventDetailDialog';
 import { useEventReminders, requestNotificationPermission } from '@/hooks/useEventReminders';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays, addWeeks, getDay, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
+import { useCalendarEvents } from '@/hooks/useWorkoutPrograms';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays, addWeeks, getDay, isAfter, isBefore, startOfDay, endOfDay, parseISO, isToday, isPast, isFuture } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
+import { useEffect, useCallback } from 'react';
 
 export interface ExpandedEvent extends Event {
   occurrenceDate: Date;
@@ -32,15 +49,13 @@ const expandRecurringEvent = (event: Event, rangeStart: Date, rangeEnd: Date): E
   }
 
   let currentDate = eventStart;
-  const maxIterations = 366; // Safety limit
+  const maxIterations = 366;
   let iterations = 0;
 
   while (!isAfter(currentDate, rangeEnd) && iterations < maxIterations) {
     iterations++;
     
-    // Only add if within range
     if (!isBefore(currentDate, rangeStart) && !isAfter(currentDate, rangeEnd)) {
-      // For weekdays rule, skip weekends
       if (event.recurrence_rule === 'weekdays') {
         const dayOfWeek = getDay(currentDate);
         if (dayOfWeek !== 0 && dayOfWeek !== 6) {
@@ -51,7 +66,6 @@ const expandRecurringEvent = (event: Event, rangeStart: Date, rangeEnd: Date): E
       }
     }
 
-    // Advance to next occurrence based on rule
     switch (event.recurrence_rule) {
       case 'daily':
         currentDate = addDays(currentDate, 1);
@@ -66,7 +80,6 @@ const expandRecurringEvent = (event: Event, rangeStart: Date, rangeEnd: Date): E
         currentDate = addMonths(currentDate, 1);
         break;
       default:
-        // Unknown rule, stop
         return occurrences;
     }
   }
@@ -90,6 +103,8 @@ export default function Calendar() {
   const [completions, setCompletions] = useState<EventCompletion[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
+  const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<CalendarEvent | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       return Notification.permission === 'granted';
@@ -97,9 +112,13 @@ export default function Calendar() {
     return false;
   });
 
-  const fetchEvents = async () => {
-    const start = startOfMonth(currentDate);
-    const end = endOfMonth(currentDate);
+  // Workout program calendar events
+  const { events: calendarEvents, loading: calendarLoading, toggleComplete, refetch: refetchCalendarEvents } = useCalendarEvents();
+
+  const fetchEvents = useCallback(async () => {
+    // Fetch events for the entire year to support agenda view
+    const start = startOfMonth(subMonths(currentDate, 1));
+    const end = endOfMonth(addMonths(currentDate, 2));
 
     const { data } = await supabase
       .from('events')
@@ -112,9 +131,9 @@ export default function Calendar() {
       setEvents(data as Event[]);
     }
     setLoading(false);
-  };
+  }, [currentDate]);
 
-  const fetchCompletions = async () => {
+  const fetchCompletions = useCallback(async () => {
     if (!user) return;
 
     const { data } = await supabase
@@ -125,7 +144,14 @@ export default function Calendar() {
     if (data) {
       setCompletions(data as EventCompletion[]);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchEvents();
+    if (user) {
+      fetchCompletions();
+    }
+  }, [user, fetchEvents, fetchCompletions]);
 
   const handleComplete = async (eventId: string) => {
     if (!user) return;
@@ -156,7 +182,7 @@ export default function Calendar() {
     return events.flatMap(event => expandRecurringEvent(event, start, end));
   }, [events, currentDate]);
 
-  // Get today's events for reminders (expand for today only)
+  // Get today's events for reminders
   const todayEvents = useMemo(() => {
     const today = new Date();
     const todayStart = startOfDay(today);
@@ -164,14 +190,33 @@ export default function Calendar() {
     return events.flatMap(event => expandRecurringEvent(event, todayStart, todayEnd));
   }, [events]);
 
-  // Enable event reminders
   useEventReminders(todayEvents);
 
   const getEventsForDay = (day: Date) => {
     return expandedEvents.filter(event => isSameDay(event.occurrenceDate, day));
   };
 
+  const getCalendarEventsForDay = (day: Date) => {
+    return calendarEvents.filter(event => {
+      const eventDate = parseISO(event.event_date);
+      return isSameDay(eventDate, day);
+    });
+  };
+
   const selectedDayEvents = getEventsForDay(selectedDate);
+  const selectedDayCalendarEvents = getCalendarEventsForDay(selectedDate);
+
+  // Agenda view: upcoming events
+  const upcomingCalendarEvents = useMemo(() => {
+    const today = startOfDay(new Date());
+    return calendarEvents
+      .filter(e => {
+        const eventDate = parseISO(e.event_date);
+        return !isBefore(eventDate, today);
+      })
+      .sort((a, b) => parseISO(a.event_date).getTime() - parseISO(b.event_date).getTime())
+      .slice(0, 20);
+  }, [calendarEvents]);
 
   const handleToggleNotifications = async () => {
     if (notificationsEnabled) {
@@ -198,10 +243,14 @@ export default function Calendar() {
     }
   };
 
+  const handleCalendarEventComplete = async (eventId: string) => {
+    await toggleComplete(eventId);
+  };
+
   return (
     <AppLayout title="Calendar">
       <div className="max-w-lg mx-auto p-4">
-        {/* Month navigation */}
+        {/* View Toggle & Month navigation */}
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
             <ChevronLeft className="w-5 h-5" />
@@ -229,135 +278,287 @@ export default function Calendar() {
           </div>
         </div>
 
-        {/* Calendar grid */}
-        <div className="mb-6">
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-              <div key={i} className="text-center text-xs text-muted-foreground font-medium py-2">
-                {day}
+        {/* View Mode Tabs */}
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'month' | 'agenda')} className="mb-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="month" className="flex items-center gap-2">
+              <LayoutGrid className="w-4 h-4" />
+              Month
+            </TabsTrigger>
+            <TabsTrigger value="agenda" className="flex items-center gap-2">
+              <List className="w-4 h-4" />
+              Agenda
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {viewMode === 'month' ? (
+          <>
+            {/* Calendar grid */}
+            <div className="mb-6">
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                  <div key={i} className="text-center text-xs text-muted-foreground font-medium py-2">
+                    {day}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {/* Empty cells for days before month starts */}
-            {Array.from({ length: days[0].getDay() }).map((_, i) => (
-              <div key={`empty-${i}`} />
-            ))}
-            
-            {days.map((day, index) => {
-              const dayEvents = getEventsForDay(day);
-              const isSelected = isSameDay(day, selectedDate);
-              const isToday = isSameDay(day, new Date());
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: days[0].getDay() }).map((_, i) => (
+                  <div key={`empty-${i}`} />
+                ))}
+                
+                {days.map((day, index) => {
+                  const dayEvents = getEventsForDay(day);
+                  const dayCalendarEvents = getCalendarEventsForDay(day);
+                  const hasWorkout = dayCalendarEvents.length > 0;
+                  const completedWorkouts = dayCalendarEvents.filter(e => e.completed).length;
+                  const isSelected = isSameDay(day, selectedDate);
+                  const isTodayDate = isSameDay(day, new Date());
 
-              return (
-                <motion.button
-                  key={day.toISOString()}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.01 }}
-                  onClick={() => setSelectedDate(day)}
-                  className={`
-                    aspect-square rounded-lg flex flex-col items-center justify-center relative transition-colors
-                    ${isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'}
-                    ${isToday && !isSelected ? 'ring-2 ring-primary' : ''}
-                    ${!isSameMonth(day, currentDate) ? 'opacity-30' : ''}
-                  `}
-                >
-                  <span className="text-sm font-medium">{format(day, 'd')}</span>
-                  {dayEvents.length > 0 && (
-                    <div className="flex gap-0.5 mt-0.5">
-                      {dayEvents.slice(0, 3).map((event) => (
-                        <div
-                          key={event.id}
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            event.event_type === 'fast' ? 'bg-success' :
-                            event.event_type === 'workout' ? 'bg-primary' :
-                            'bg-muted-foreground'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
+                  return (
+                    <motion.button
+                      key={day.toISOString()}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.01 }}
+                      onClick={() => setSelectedDate(day)}
+                      className={`
+                        aspect-square rounded-lg flex flex-col items-center justify-center relative transition-colors
+                        ${isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'}
+                        ${isTodayDate && !isSelected ? 'ring-2 ring-primary' : ''}
+                        ${!isSameMonth(day, currentDate) ? 'opacity-30' : ''}
+                      `}
+                    >
+                      <span className="text-sm font-medium">{format(day, 'd')}</span>
+                      <div className="flex gap-0.5 mt-0.5">
+                        {dayEvents.slice(0, 2).map((event, i) => (
+                          <div
+                            key={`${event.id}-${i}`}
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              event.event_type === 'fast' ? 'bg-success' :
+                              event.event_type === 'workout' ? 'bg-primary' :
+                              'bg-muted-foreground'
+                            }`}
+                          />
+                        ))}
+                        {hasWorkout && (
+                          <div className={`w-1.5 h-1.5 rounded-full ${
+                            completedWorkouts === dayCalendarEvents.length ? 'bg-success' : 'bg-warning'
+                          }`} />
+                        )}
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
 
-        {/* Selected day events */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">
-              {format(selectedDate, 'EEEE, MMMM d')}
-            </h3>
-          </div>
+            {/* Selected day events */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">
+                  {format(selectedDate, 'EEEE, MMMM d')}
+                </h3>
+              </div>
 
-          {selectedDayEvents.length === 0 ? (
-            <Card className="p-6 text-center text-muted-foreground">
-              <p>No events scheduled for this day</p>
-            </Card>
-          ) : (
-            selectedDayEvents.map((event, index) => {
-              const isCompleted = completions.some(c => c.event_id === event.id);
-              const canEdit = user && (event.user_id === user.id || isAdmin);
-
-              return (
-                <motion.div
-                  key={event.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className={`p-4 border ${eventTypeColors[event.event_type]}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className={eventTypeColors[event.event_type]}>
-                            {event.event_type.replace('_', ' ')}
-                          </Badge>
-                          {event.is_global && (
-                            <Badge variant="secondary" className="text-xs">Global</Badge>
-                          )}
+              {/* Program workout events for selected day */}
+              {selectedDayCalendarEvents.length > 0 && (
+                <div className="space-y-2">
+                  {selectedDayCalendarEvents.map((event, index) => (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <Card 
+                        className={`p-4 border cursor-pointer hover:bg-card/70 transition-colors ${
+                          event.completed ? 'bg-success/10 border-success/30' : 'bg-primary/10 border-primary/30'
+                        }`}
+                        onClick={() => setSelectedCalendarEvent(event)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            event.completed ? 'bg-success/20' : 'bg-primary/20'
+                          }`}>
+                            {event.completed ? (
+                              <CheckCircle className="w-5 h-5 text-success" />
+                            ) : (
+                              <Dumbbell className="w-5 h-5 text-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm truncate">{event.title}</h4>
+                            {event.description && (
+                              <p className="text-xs text-muted-foreground truncate">{event.description}</p>
+                            )}
+                          </div>
+                          <Button
+                            variant={event.completed ? 'success' : 'outline'}
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCalendarEventComplete(event.id);
+                            }}
+                          >
+                            <Check className="w-4 h-4" />
+                          </Button>
                         </div>
-                        <h4 className="font-semibold">{event.title}</h4>
-                        {event.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {format(new Date(event.start_datetime), 'h:mm a')}
-                          {event.end_datetime && ` - ${format(new Date(event.end_datetime), 'h:mm a')}`}
-                        </p>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        {canEdit && (
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {/* Regular events */}
+              {selectedDayEvents.length === 0 && selectedDayCalendarEvents.length === 0 ? (
+                <Card className="p-6 text-center text-muted-foreground">
+                  <p>No events scheduled for this day</p>
+                </Card>
+              ) : (
+                selectedDayEvents.map((event, index) => {
+                  const isCompleted = completions.some(c => c.event_id === event.id);
+                  const canEdit = user && (event.user_id === user.id || isAdmin);
+
+                  return (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: (index + selectedDayCalendarEvents.length) * 0.1 }}
+                    >
+                      <Card className={`p-4 border ${eventTypeColors[event.event_type]}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline" className={eventTypeColors[event.event_type]}>
+                                {event.event_type.replace('_', ' ')}
+                              </Badge>
+                              {event.is_global && (
+                                <Badge variant="secondary" className="text-xs">Global</Badge>
+                              )}
+                            </div>
+                            <h4 className="font-semibold">{event.title}</h4>
+                            {event.description && (
+                              <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {format(new Date(event.start_datetime), 'h:mm a')}
+                              {event.end_datetime && ` - ${format(new Date(event.end_datetime), 'h:mm a')}`}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setEditingEvent(event)}
+                                className="h-8 w-8"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {event.checkoff_enabled && (
+                              <Button
+                                variant={isCompleted ? 'success' : 'outline'}
+                                size="icon"
+                                onClick={() => handleComplete(event.id)}
+                                className={isCompleted ? 'bg-success hover:bg-success/90' : ''}
+                              >
+                                <Check className={`w-5 h-5 ${isCompleted ? 'text-success-foreground' : ''}`} />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  );
+                })
+              )}
+            </div>
+          </>
+        ) : (
+          /* Agenda View */
+          <div className="space-y-3">
+            <h3 className="font-semibold">Upcoming Workouts</h3>
+            {upcomingCalendarEvents.length === 0 ? (
+              <Card className="p-6 text-center text-muted-foreground">
+                <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No upcoming workouts</p>
+                <p className="text-sm mt-1">Add a program to get started!</p>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {upcomingCalendarEvents.map((event, index) => {
+                  const eventDate = parseISO(event.event_date);
+                  const isTodayEvent = isToday(eventDate);
+                  
+                  return (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                    >
+                      <Card 
+                        className={`p-4 border cursor-pointer hover:bg-card/70 transition-colors ${
+                          event.completed ? 'bg-success/10 border-success/30' : 
+                          isTodayEvent ? 'bg-primary/10 border-primary/30' : 
+                          'bg-card/50 border-border/50'
+                        }`}
+                        onClick={() => setSelectedCalendarEvent(event)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="text-center min-w-[50px]">
+                            <div className="text-xs text-muted-foreground uppercase">
+                              {format(eventDate, 'MMM')}
+                            </div>
+                            <div className={`text-xl font-bold ${isTodayEvent ? 'text-primary' : ''}`}>
+                              {format(eventDate, 'd')}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {format(eventDate, 'EEE')}
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              {isTodayEvent && (
+                                <Badge className="bg-primary/20 text-primary text-xs">Today</Badge>
+                              )}
+                              {event.completed && (
+                                <Badge className="bg-success/20 text-success text-xs">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Done
+                                </Badge>
+                              )}
+                            </div>
+                            <h4 className="font-medium text-sm truncate">{event.title}</h4>
+                            {event.description && (
+                              <p className="text-xs text-muted-foreground truncate">{event.description}</p>
+                            )}
+                          </div>
                           <Button
-                            variant="ghost"
+                            variant={event.completed ? 'success' : 'outline'}
                             size="icon"
-                            onClick={() => setEditingEvent(event)}
-                            className="h-8 w-8"
+                            className="shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCalendarEventComplete(event.id);
+                            }}
                           >
-                            <Pencil className="w-4 h-4" />
+                            <Check className="w-4 h-4" />
                           </Button>
-                        )}
-                        {event.checkoff_enabled && (
-                          <Button
-                            variant={isCompleted ? 'success' : 'outline'}
-                            size="icon"
-                            onClick={() => handleComplete(event.id)}
-                            className={isCompleted ? 'bg-success hover:bg-success/90' : ''}
-                          >
-                            <Check className={`w-5 h-5 ${isCompleted ? 'text-success-foreground' : ''}`} />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })
-          )}
-        </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {editingEvent && (
@@ -366,6 +567,18 @@ export default function Calendar() {
           open={!!editingEvent}
           onOpenChange={(open) => !open && setEditingEvent(null)}
           onEventUpdated={fetchEvents}
+        />
+      )}
+
+      {selectedCalendarEvent && (
+        <CalendarEventDetailDialog
+          event={selectedCalendarEvent}
+          open={!!selectedCalendarEvent}
+          onOpenChange={(open) => !open && setSelectedCalendarEvent(null)}
+          onComplete={() => {
+            handleCalendarEventComplete(selectedCalendarEvent.id);
+            refetchCalendarEvents();
+          }}
         />
       )}
     </AppLayout>
