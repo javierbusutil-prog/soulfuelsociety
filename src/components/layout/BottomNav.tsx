@@ -1,15 +1,15 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Calendar, Dumbbell, MessageCircle, ShoppingBag } from 'lucide-react';
+import { Home, Dumbbell, Calendar, MessageCircle, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
 const navItems = [
-  { path: '/community', icon: Users, label: 'Community' },
-  { path: '/calendar', icon: Calendar, label: 'Calendar' },
+  { path: '/community', icon: Home, label: 'Home' },
   { path: '/workouts', icon: Dumbbell, label: 'Workouts' },
-  { path: '/inbox', icon: MessageCircle, label: 'Inbox', paidOnly: true },
-  { path: '/store', icon: ShoppingBag, label: 'Store' },
+  { path: '/calendar', icon: Calendar, label: 'Calendar' },
+  { path: '/coach', icon: MessageCircle, label: 'Coach', paidOnly: true },
+  { path: '/profile', icon: User, label: 'Profile' },
 ];
 
 export function BottomNav() {
