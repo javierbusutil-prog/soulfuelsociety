@@ -14,6 +14,7 @@ import { WorkoutProgram } from '@/types/workoutPrograms';
 import { useWorkoutPrograms } from '@/hooks/useWorkoutPrograms';
 import { ProgramCard } from '@/components/workouts/ProgramCard';
 import { CreateProgramDialog } from '@/components/workouts/CreateProgramDialog';
+import { CreateWorkoutDialog } from '@/components/workouts/CreateWorkoutDialog';
 import { ProgramDetailView } from '@/components/workouts/ProgramDetailView';
 import {
   DropdownMenu,
@@ -183,6 +184,13 @@ export default function Workouts() {
 
           {/* Single Workouts Tab */}
           <TabsContent value="workouts" className="mt-4">
+            {/* Admin: Add Workout Button */}
+            {isAdmin && (
+              <div className="mb-4">
+                <CreateWorkoutDialog onWorkoutCreated={fetchWorkouts} />
+              </div>
+            )}
+
             {/* Search and filters */}
             <div className="flex gap-2 mb-4">
               <div className="relative flex-1">
