@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, Calendar, MessageCircle, User } from 'lucide-react';
+import { Home, Dumbbell, Calendar, MessageCircle, ShoppingBag, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
@@ -9,6 +9,7 @@ const navItems = [
   { path: '/workouts', icon: Dumbbell, label: 'Workouts' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/coach', icon: MessageCircle, label: 'Coach', paidOnly: true },
+  { path: '/store', icon: ShoppingBag, label: 'Store' },
   { path: '/profile', icon: User, label: 'Profile' },
 ];
 
