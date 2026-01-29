@@ -13,7 +13,7 @@ import Signup from "./pages/auth/Signup";
 import Community from "./pages/Community";
 import Calendar from "./pages/Calendar";
 import Workouts from "./pages/Workouts";
-import Inbox from "./pages/Inbox";
+import Coach from "./pages/Coach";
 import Store from "./pages/Store";
 import Upgrade from "./pages/Upgrade";
 import Profile from "./pages/Profile";
@@ -68,7 +68,7 @@ function AppRoutes() {
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       <Route path="/workouts" element={<ProtectedRoute><Workouts /></ProtectedRoute>} />
-      <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+      <Route path="/coach" element={<ProtectedRoute><Coach /></ProtectedRoute>} />
       <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
       <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
