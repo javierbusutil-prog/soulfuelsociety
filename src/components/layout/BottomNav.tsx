@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
 const navItems = [
-  { path: '/community', icon: Home, label: 'Home' },
+  { path: '/community', icon: Home, label: 'Community' },
   { path: '/workouts', icon: Dumbbell, label: 'Workouts' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/coach', icon: MessageCircle, label: 'Coach', paidOnly: true },
