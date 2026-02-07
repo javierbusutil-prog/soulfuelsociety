@@ -2,6 +2,8 @@
   <rect width="100%" height="100%" fill="none"/>
   <text x="300" y="520" fill="#2E4057" font-family="Georgia, serif" font-size="260" letter-spacing="12" font-weight="500">SOUL</text>
   <text x="1600" y="520" fill="#2E4057" font-family="Georgia, serif" font-size="260" letter-spacing="12" font-weight="500">FUEL</text>
-  <!-- Flame icon between words -->
-  <path d="M1350 330 C1320 380,1380 430,1350 480 C1400 450,1450 380,1350 330 Z" stroke="#2E4057" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Flame icon between words - larger and centered -->
+  <g transform="translate(1280, 280)">
+    <path d="M70 0 C20 80, 100 160, 70 240 C160 180, 220 80, 70 0 Z" stroke="#2E4057" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
 </svg>
