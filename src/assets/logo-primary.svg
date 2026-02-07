@@ -2,11 +2,8 @@
   <rect width="100%" height="100%" fill="none"/>
   <text x="300" y="520" fill="#2E4057" font-family="Georgia, serif" font-size="260" letter-spacing="12" font-weight="500">SOUL</text>
   <text x="1600" y="520" fill="#2E4057" font-family="Georgia, serif" font-size="260" letter-spacing="12" font-weight="500">FUEL</text>
-  <!-- Flame icon between words - solid fill with inner curl -->
-  <g transform="translate(1280, 240)">
-    <!-- Outer flame shape -->
-    <path d="M80 0 C30 70, 0 150, 30 230 C50 280, 100 310, 130 280 C160 250, 170 200, 160 150 C150 100, 130 50, 80 0 Z" fill="#2E4057"/>
-    <!-- Inner curl/teardrop -->
-    <path d="M90 120 C70 150, 70 190, 90 210 C110 230, 130 210, 130 180 C130 150, 110 130, 90 120 Z" fill="#FAFAF8"/>
+  <!-- Flame icon between words -->
+  <g transform="translate(1200, 180)">
+    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTUwIj4KICA8cGF0aCBkPSJNNTAgMCBDMjAgNDAsIDAgODAsIDIwIDEyMCBDMzAgMTQwLCA0NSAxNTAsIDUwIDE1MCBDNTUgMTUwLCA3MCAxNDAsIDgwIDEyMCBDMTAwIDgwLCA4MCA0MCwgNTAgMCBaIiBmaWxsPSIjMkU0MDU3Ii8+CiAgPHBhdGggZD0iTTUwIDYwIEMzNSA4MCwgMzUgMTEwLCA1MCAxMjUgQzY1IDExMCwgNjUgODAsIDUwIDYwIFoiIGZpbGw9IiNGQUZBRjgiLz4KPC9zdmc+" width="160" height="240"/>
   </g>
 </svg>
