@@ -4,12 +4,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Flame } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import logoStacked from '@/assets/logo-stacked.svg';
 
 const signupSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -56,30 +57,27 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Hero gradient */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="flex-1 flex flex-col justify-center px-6 py-12 relative z-10">
+      <div className="flex-1 flex flex-col justify-center px-6 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="sm:mx-auto sm:w-full sm:max-w-sm"
         >
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center shadow-lg glow-primary">
-              <Flame className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <h1 className="text-2xl font-bold">Soul Fuel Society</h1>
+          {/* Stacked Soul Fuel logo for onboarding screens */}
+          <div className="flex justify-center mb-8">
+            <img 
+              src={logoStacked} 
+              alt="Soul Fuel" 
+              className="h-24 w-auto"
+            />
           </div>
 
-          <h2 className="text-center text-xl font-semibold mb-2">
+          <h2 className="text-center font-display text-xl font-medium tracking-editorial mb-2">
             Join the community
           </h2>
-          <p className="text-center text-muted-foreground mb-8">
-            Start your fitness journey today
+          <p className="text-center text-muted-foreground mb-8 text-sm">
+            Start your wellness journey today
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -91,7 +89,6 @@ export default function Signup() {
                 autoComplete="name"
                 placeholder="John Doe"
                 {...register('fullName')}
-                className="h-12"
               />
               {errors.fullName && (
                 <p className="text-sm text-destructive">{errors.fullName.message}</p>
@@ -106,7 +103,6 @@ export default function Signup() {
                 autoComplete="email"
                 placeholder="you@example.com"
                 {...register('email')}
-                className="h-12"
               />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email.message}</p>
@@ -122,14 +118,14 @@ export default function Signup() {
                   autoComplete="new-password"
                   placeholder="••••••••"
                   {...register('password')}
-                  className="h-12 pr-10"
+                  className="pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-5 h-5 stroke-[1.5]" /> : <Eye className="w-5 h-5 stroke-[1.5]" />}
                 </button>
               </div>
               {errors.password && (
@@ -145,7 +141,6 @@ export default function Signup() {
                 autoComplete="new-password"
                 placeholder="••••••••"
                 {...register('confirmPassword')}
-                className="h-12"
               />
               {errors.confirmPassword && (
                 <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
@@ -159,7 +154,7 @@ export default function Signup() {
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-primary hover:underline">
+            <Link to="/login" className="font-medium text-primary hover:underline">
               Sign in
             </Link>
           </p>

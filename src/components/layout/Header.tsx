@@ -10,13 +10,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import logoWordmark from '@/assets/logo-wordmark.svg';
 
 interface HeaderProps {
   title?: string;
   showBack?: boolean;
 }
 
-export function Header({ title = 'Soul Fuel Society' }: HeaderProps) {
+export function Header({ title }: HeaderProps) {
   const { user, profile, isAdmin, isPTAdmin, signOut } = useAuth();
 
   const getInitials = (name: string | null) => {
@@ -25,21 +26,27 @@ export function Header({ title = 'Soul Fuel Society' }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 glass border-b border-border/50">
+    <header className="sticky top-0 z-40 bg-background border-b border-border">
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">SF</span>
-          </div>
-          <span className="font-bold text-lg tracking-tight">{title}</span>
+        <Link to="/" className="flex items-center">
+          {/* Wordmark logo for headers - no logo if title is provided */}
+          {title ? (
+            <h1 className="font-display text-lg font-medium tracking-editorial">{title}</h1>
+          ) : (
+            <img 
+              src={logoWordmark} 
+              alt="Soul Fuel" 
+              className="h-6 w-auto"
+            />
+          )}
         </Link>
         
         <div className="flex items-center gap-2">
           {user && (
             <>
-              <Button variant="ghost" size="icon-sm" className="relative" asChild>
+              <Button variant="ghost" size="icon-sm" asChild>
                 <Link to="/notifications">
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-5 h-5 stroke-[1.5]" />
                 </Link>
               </Button>
               
@@ -48,13 +55,13 @@ export function Header({ title = 'Soul Fuel Society' }: HeaderProps) {
                   <Button variant="ghost" size="icon-sm" className="rounded-full">
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={profile?.avatar_url || undefined} />
-                      <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                      <AvatarFallback className="bg-secondary text-foreground text-xs font-medium">
                         {getInitials(profile?.full_name)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-48 bg-background border-border">
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="flex items-center gap-2">
                       <User className="w-4 h-4" />
