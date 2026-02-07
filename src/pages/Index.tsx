@@ -47,7 +47,7 @@ export default function Index() {
             Transform your body and mind with our community-driven fitness platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button asChild size="xl" variant="gradient">
+            <Button asChild size="xl" variant="accent">
               <Link to="/signup">
                 Get Started Free
                 <ArrowRight className="w-5 h-5 ml-2" />

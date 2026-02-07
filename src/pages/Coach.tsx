@@ -148,7 +148,7 @@ export default function Coach() {
             <p className="text-muted-foreground mb-6 max-w-xs mx-auto">
               Message your coach directly, receive personalized guidance, and stay accountable with 1:1 support.
             </p>
-            <Button asChild variant="gradient" size="lg">
+            <Button asChild variant="accent" size="lg">
               <Link to="/upgrade">Upgrade Now</Link>
             </Button>
           </motion.div>

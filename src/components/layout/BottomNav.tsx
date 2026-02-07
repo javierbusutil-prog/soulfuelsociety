@@ -1,11 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Dumbbell, Calendar, MessageCircle, ShoppingBag, User } from 'lucide-react';
+import { Users, Dumbbell, Calendar, MessageCircle, ShoppingBag, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { motion } from 'framer-motion';
 
 const navItems = [
-  { path: '/community', icon: Home, label: 'Community' },
+  { path: '/community', icon: Users, label: 'Community' },
   { path: '/workouts', icon: Dumbbell, label: 'Workouts' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/coach', icon: MessageCircle, label: 'Coach', paidOnly: true },
@@ -35,17 +34,15 @@ export function BottomNav() {
               )}
             >
               <div className="relative">
-                <item.icon className={cn("w-6 h-6", isActive && "stroke-[2.5]")} />
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full"
-                    transition={{ type: "spring", bounce: 0.3, duration: 0.5 }}
-                  />
-                )}
+                <item.icon 
+                  className={cn(
+                    "w-5 h-5 transition-all duration-200",
+                    isActive ? "stroke-[2]" : "stroke-[1.5]"
+                  )} 
+                />
               </div>
               <span className={cn(
-                "text-[10px] mt-1 font-medium",
+                "text-[10px] mt-1.5 font-medium tracking-wide",
                 isActive && "text-primary"
               )}>
                 {item.label}
