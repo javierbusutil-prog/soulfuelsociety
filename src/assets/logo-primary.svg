@@ -3,7 +3,10 @@
   <text x="300" y="520" fill="#2E4057" font-family="Georgia, serif" font-size="260" letter-spacing="12" font-weight="500">SOUL</text>
   <text x="1600" y="520" fill="#2E4057" font-family="Georgia, serif" font-size="260" letter-spacing="12" font-weight="500">FUEL</text>
   <!-- Flame icon between words -->
-  <g transform="translate(1200, 180)">
-    <image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTUwIj4KICA8cGF0aCBkPSJNNTAgMCBDMjAgNDAsIDAgODAsIDIwIDEyMCBDMzAgMTQwLCA0NSAxNTAsIDUwIDE1MCBDNTUgMTUwLCA3MCAxNDAsIDgwIDEyMCBDMTAwIDgwLCA4MCA0MCwgNTAgMCBaIiBmaWxsPSIjMkU0MDU3Ii8+CiAgPHBhdGggZD0iTTUwIDYwIEMzNSA4MCwgMzUgMTEwLCA1MCAxMjUgQzY1IDExMCwgNjUgODAsIDUwIDYwIFoiIGZpbGw9IiNGQUZBRjgiLz4KPC9zdmc+" width="160" height="240"/>
+  <g transform="translate(1150, 150)">
+    <svg width="400" height="500" viewBox="0 0 1500 1500">
+      <path d="M750 200 C550 350, 400 550, 450 800 C480 950, 600 1100, 750 1100 C900 1100, 1020 950, 1050 800 C1100 550, 950 350, 750 200 Z" fill="#2E4057"/>
+      <path d="M750 550 C650 700, 650 850, 750 950 C850 850, 850 700, 750 550 Z" fill="#FAFAF8"/>
+    </svg>
   </g>
 </svg>
