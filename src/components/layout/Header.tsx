@@ -29,16 +29,12 @@ export function Header({ title }: HeaderProps) {
     <header className="sticky top-0 z-40 bg-background border-b border-border">
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
         <Link to="/" className="flex items-center">
-          {/* Wordmark logo for headers - no logo if title is provided */}
-          {title ? (
-            <h1 className="font-display text-lg font-medium tracking-editorial">{title}</h1>
-          ) : (
-            <img 
-              src={logoWordmark} 
-              alt="Soul Fuel" 
-              className="h-6 w-auto"
-            />
-          )}
+          {/* Always show wordmark logo in header - per brand guidelines */}
+          <img 
+            src={logoWordmark} 
+            alt="Soul Fuel" 
+            className="h-5 w-auto"
+          />
         </Link>
         
         <div className="flex items-center gap-2">
