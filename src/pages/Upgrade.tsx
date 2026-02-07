@@ -67,7 +67,7 @@ export default function Upgrade() {
             ))}
           </ul>
 
-          <Button onClick={handleUpgrade} variant="gradient" size="xl" className="w-full">
+          <Button onClick={handleUpgrade} variant="accent" size="xl" className="w-full">
             Start Paid Membership
           </Button>
 
