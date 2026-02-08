@@ -1,11 +1,10 @@
 import { motion } from 'framer-motion';
-import { Check, Zap, MessageCircle, Dumbbell, Stethoscope } from 'lucide-react';
+import { Crown, Check, Zap, MessageCircle, Dumbbell, Stethoscope } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import soulFuelIcon from '@/assets/soul-fuel-icon.svg';
 
 const features = [
   { icon: MessageCircle, label: '1:1 Coaching Access', description: 'Direct messaging with your personal coach' },
@@ -34,7 +33,7 @@ export default function Upgrade() {
           className="text-center mb-8"
         >
           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <img src={soulFuelIcon} alt="Soul Fuel" className="h-10 w-auto" />
+            <Crown className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold mb-2">Unlock Your Full Potential</h1>
           <p className="text-muted-foreground">
