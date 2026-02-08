@@ -56,7 +56,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-secondary flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <div className="flex-1 flex flex-col justify-center px-6 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
