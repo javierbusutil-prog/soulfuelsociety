@@ -28,7 +28,7 @@ export function Header({ title }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-background border-b border-border">
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
-        <Link to="/" className="flex items-center -ml-4">
+        <Link to="/" className="flex items-center -ml-6">
           {/* Always show wordmark logo in header - per brand guidelines */}
           <img 
             src={logoWordmark} 
