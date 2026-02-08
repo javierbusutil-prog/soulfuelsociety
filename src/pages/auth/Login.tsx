@@ -55,12 +55,12 @@ export default function Login() {
           transition={{ duration: 0.5 }}
           className="sm:mx-auto sm:w-full sm:max-w-sm"
         >
-          {/* Stacked Soul Fuel logo for onboarding screens */}
+          {/* Soul Fuel wordmark logo for onboarding screens */}
           <div className="flex justify-center mb-10">
             <img 
               src={logoStacked} 
               alt="Soul Fuel" 
-              className="h-28 w-auto"
+              className="h-16 w-auto mix-blend-multiply"
             />
           </div>
 
