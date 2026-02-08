@@ -56,13 +56,14 @@ export default function Login() {
           className="sm:mx-auto sm:w-full sm:max-w-sm"
         >
           {/* Soul Fuel wordmark logo for onboarding screens */}
-          <div className="flex justify-center mb-10 px-4">
-            <img 
-              src={logoStacked} 
-              alt="Soul Fuel" 
-              className="h-12 w-auto"
-              style={{ filter: 'drop-shadow(0 0 0 transparent)' }}
-            />
+          <div className="flex justify-center mb-10">
+            <div className="overflow-hidden">
+              <img 
+                src={logoStacked} 
+                alt="Soul Fuel" 
+                className="h-12 w-auto object-contain"
+              />
+            </div>
           </div>
 
           <h2 className="text-center font-display text-xl font-medium tracking-editorial mb-8">
