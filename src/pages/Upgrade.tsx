@@ -33,8 +33,8 @@ export default function Upgrade() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <div className="flex justify-center mb-4">
-            <img src={soulFuelIcon} alt="Soul Fuel" className="h-16 w-auto" />
+          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <img src={soulFuelIcon} alt="Soul Fuel" className="h-10 w-auto" />
           </div>
           <h1 className="text-2xl font-bold mb-2">Unlock Your Full Potential</h1>
           <p className="text-muted-foreground">
