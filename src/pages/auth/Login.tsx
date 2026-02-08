@@ -61,7 +61,7 @@ export default function Login() {
               <img 
                 src={logoStacked} 
                 alt="Soul Fuel" 
-                className="h-12 w-auto object-contain mix-blend-multiply"
+                className="h-12 w-auto object-contain"
               />
             </div>
           </div>
