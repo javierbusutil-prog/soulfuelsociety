@@ -11,7 +11,8 @@ import {
   LayoutGrid,
   Calendar as CalendarIcon,
   Dumbbell,
-  CheckCircle
+  CheckCircle,
+  Flame
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -25,8 +26,11 @@ import { CalendarEvent } from '@/types/workoutPrograms';
 import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { EditEventDialog } from '@/components/calendar/EditEventDialog';
 import { CalendarEventDetailDialog } from '@/components/calendar/CalendarEventDetailDialog';
+import { FastingTimer } from '@/components/calendar/FastingTimer';
+import { FastSessionEntry } from '@/components/calendar/FastSessionEntry';
 import { useEventReminders, requestNotificationPermission } from '@/hooks/useEventReminders';
 import { useCalendarEvents } from '@/hooks/useWorkoutPrograms';
+import { useFastingSessions } from '@/hooks/useFastingSessions';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays, addWeeks, getDay, isAfter, isBefore, startOfDay, endOfDay, parseISO, isToday, isPast, isFuture } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useEffect, useCallback } from 'react';
@@ -114,6 +118,9 @@ export default function Calendar() {
 
   // Workout program calendar events
   const { events: calendarEvents, loading: calendarLoading, toggleComplete, refetch: refetchCalendarEvents } = useCalendarEvents();
+
+  // Fasting sessions
+  const { getSessionsForDate, deleteFastSession, completedSessions } = useFastingSessions();
 
   const fetchEvents = useCallback(async () => {
     // Fetch events for the entire year to support agenda view
@@ -203,8 +210,14 @@ export default function Calendar() {
     });
   };
 
+  // Get fast sessions for a specific day
+  const getFastSessionsForDay = (day: Date) => {
+    return getSessionsForDate(day);
+  };
+
   const selectedDayEvents = getEventsForDay(selectedDate);
   const selectedDayCalendarEvents = getCalendarEventsForDay(selectedDate);
+  const selectedDayFastSessions = getFastSessionsForDay(selectedDate);
 
   // Agenda view: upcoming events
   const upcomingCalendarEvents = useMemo(() => {
@@ -311,7 +324,9 @@ export default function Calendar() {
                 {days.map((day, index) => {
                   const dayEvents = getEventsForDay(day);
                   const dayCalendarEvents = getCalendarEventsForDay(day);
+                  const dayFastSessions = getFastSessionsForDay(day);
                   const hasWorkout = dayCalendarEvents.length > 0;
+                  const hasFast = dayFastSessions.length > 0;
                   const completedWorkouts = dayCalendarEvents.filter(e => e.completed).length;
                   const isSelected = isSameDay(day, selectedDate);
                   const isTodayDate = isSameDay(day, new Date());
@@ -347,11 +362,20 @@ export default function Calendar() {
                             completedWorkouts === dayCalendarEvents.length ? 'bg-success' : 'bg-warning'
                           }`} />
                         )}
+                        {hasFast && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                        )}
                       </div>
                     </motion.button>
                   );
                 })}
               </div>
+            </div>
+
+            {/* Fasting Timer Module */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Fasting Timer</h3>
+              <FastingTimer />
             </div>
 
             {/* Selected day events */}
@@ -411,8 +435,22 @@ export default function Calendar() {
                 </div>
               )}
 
+              {/* Fast session entries for selected day */}
+              {selectedDayFastSessions.length > 0 && (
+                <div className="space-y-2">
+                  {selectedDayFastSessions.map((session, index) => (
+                    <FastSessionEntry
+                      key={session.id}
+                      session={session}
+                      index={index}
+                      onDelete={deleteFastSession}
+                    />
+                  ))}
+                </div>
+              )}
+
               {/* Regular events */}
-              {selectedDayEvents.length === 0 && selectedDayCalendarEvents.length === 0 ? (
+              {selectedDayEvents.length === 0 && selectedDayCalendarEvents.length === 0 && selectedDayFastSessions.length === 0 ? (
                 <Card className="p-6 text-center text-muted-foreground">
                   <p>No events scheduled for this day</p>
                 </Card>
