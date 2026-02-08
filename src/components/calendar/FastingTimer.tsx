@@ -16,7 +16,12 @@ import {
 import { useFastingSessions, formatTimerDisplay } from '@/hooks/useFastingSessions';
 import { useAuth } from '@/contexts/AuthContext';
 
-export function FastingTimer() {
+interface FastingTimerProps {
+  onFastStarted?: () => void;
+  onFastEnded?: () => void;
+}
+
+export function FastingTimer({ onFastStarted, onFastEnded }: FastingTimerProps) {
   const { user } = useAuth();
   const { activeSession, elapsedSeconds, startFast, endFast, loading } = useFastingSessions();
   const [showEndConfirmation, setShowEndConfirmation] = useState(false);
@@ -25,14 +30,20 @@ export function FastingTimer() {
   const isFasting = !!activeSession;
 
   const handleStartFast = async () => {
-    await startFast();
+    const success = await startFast();
+    if (success && onFastStarted) {
+      onFastStarted();
+    }
   };
 
   const handleEndFast = async () => {
     setIsEnding(true);
-    await endFast();
+    const success = await endFast();
     setIsEnding(false);
     setShowEndConfirmation(false);
+    if (success && onFastEnded) {
+      onFastEnded();
+    }
   };
 
   if (!user) {

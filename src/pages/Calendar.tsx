@@ -120,7 +120,7 @@ export default function Calendar() {
   const { events: calendarEvents, loading: calendarLoading, toggleComplete, refetch: refetchCalendarEvents } = useCalendarEvents();
 
   // Fasting sessions
-  const { getSessionsForDate, deleteFastSession, completedSessions } = useFastingSessions();
+  const { getSessionsForDate, deleteFastSession, completedSessions, refetch: refetchFastingSessions } = useFastingSessions();
 
   const fetchEvents = useCallback(async () => {
     // Fetch events for the entire year to support agenda view
@@ -375,7 +375,7 @@ export default function Calendar() {
             {/* Fasting Timer Module */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-muted-foreground mb-3">Fasting Timer</h3>
-              <FastingTimer />
+              <FastingTimer onFastEnded={refetchFastingSessions} />
             </div>
 
             {/* Selected day events */}
