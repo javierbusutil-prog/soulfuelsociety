@@ -20,7 +20,7 @@ const benefits = [
 
 export default function Index() {
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-secondary">
       <div className="relative z-10 max-w-lg mx-auto px-6 py-12">
         {/* Hero with Primary Horizontal Logo */}
         <motion.div
@@ -72,9 +72,9 @@ export default function Index() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 + index * 0.08 }}
-              className="bg-secondary/50 border border-border rounded-2xl p-4"
+              className="bg-background border border-border rounded-2xl p-4"
             >
-              <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center mb-3 border border-border">
+              <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center mb-3 border border-border">
                 <feature.icon className="w-5 h-5 text-primary stroke-[1.5]" />
               </div>
               <h3 className="font-medium text-sm mb-1">{feature.label}</h3>
@@ -88,7 +88,7 @@ export default function Index() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="bg-secondary/30 border border-border rounded-2xl p-6"
+          className="bg-background border border-border rounded-2xl p-6"
         >
           <h2 className="font-display text-xl font-medium tracking-editorial mb-5 text-center">Why Join?</h2>
           <ul className="space-y-3">
