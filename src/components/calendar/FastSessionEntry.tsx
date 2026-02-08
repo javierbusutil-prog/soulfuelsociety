@@ -32,7 +32,7 @@ export function FastSessionEntry({ session, index, onDelete }: FastSessionEntryP
     setShowDeleteConfirmation(false);
   };
 
-  const durationDisplay = session.duration_minutes 
+  const durationDisplay = session.duration_minutes !== null && session.duration_minutes !== undefined
     ? formatDuration(session.duration_minutes) 
     : 'Unknown duration';
 
