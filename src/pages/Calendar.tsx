@@ -146,6 +146,7 @@ export default function Calendar() {
   } = useCycleTracker();
 
   const hideCycleMarkers = cycleSettings?.hide_cycle_markers ?? false;
+  const showCycleLegend = !hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle');
 
   const fetchEvents = useCallback(async () => {
     // Fetch events for the entire year to support agenda view
@@ -439,6 +440,28 @@ export default function Calendar() {
                 })}
               </div>
             </div>
+
+            {/* Calendar Legend */}
+            {showCycleLegend && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4 px-1 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                  Period
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-300 border border-rose-400" />
+                  Predicted
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-teal-400" />
+                  Fertile
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-violet-500" />
+                  Ovulation
+                </span>
+              </div>
+            )}
 
             {/* Fasting Timer Module */}
             <div className="mb-6">
