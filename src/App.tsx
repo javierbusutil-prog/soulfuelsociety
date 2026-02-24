@@ -61,9 +61,9 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+      <Route path="/" element={<Navigate to="/waitlist" replace />} />
+      <Route path="/login" element={<Navigate to="/waitlist" replace />} />
+      <Route path="/signup" element={<Navigate to="/waitlist" replace />} />
       <Route path="/waitlist" element={<Waitlist />} />
       
       {/* Protected routes */}
