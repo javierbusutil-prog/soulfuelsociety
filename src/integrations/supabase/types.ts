@@ -116,6 +116,81 @@ export type Database = {
           },
         ]
       }
+      cycle_entries: {
+        Row: {
+          created_at: string
+          date: string
+          flow_level: string | null
+          id: string
+          is_period: boolean
+          notes: string | null
+          symptoms: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          flow_level?: string | null
+          id?: string
+          is_period?: boolean
+          notes?: string | null
+          symptoms?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          flow_level?: string | null
+          id?: string
+          is_period?: boolean
+          notes?: string | null
+          symptoms?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cycle_settings: {
+        Row: {
+          created_at: string
+          cycle_length_days: number
+          hide_cycle_markers: boolean
+          id: string
+          period_length_days: number
+          prediction_enabled: boolean
+          reminder_enabled: boolean
+          reminder_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_length_days?: number
+          hide_cycle_markers?: boolean
+          id?: string
+          period_length_days?: number
+          prediction_enabled?: boolean
+          reminder_enabled?: boolean
+          reminder_time?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cycle_length_days?: number
+          hide_cycle_markers?: boolean
+          id?: string
+          period_length_days?: number
+          prediction_enabled?: boolean
+          reminder_enabled?: boolean
+          reminder_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_completions: {
         Row: {
           completed_at: string
