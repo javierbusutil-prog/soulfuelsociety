@@ -17,6 +17,7 @@ import Coach from "./pages/Coach";
 import Store from "./pages/Store";
 import Upgrade from "./pages/Upgrade";
 import Profile from "./pages/Profile";
+import Waitlist from "./pages/Waitlist";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ function AppRoutes() {
       <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+      <Route path="/waitlist" element={<Waitlist />} />
       
       {/* Protected routes */}
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
