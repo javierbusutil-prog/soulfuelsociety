@@ -20,7 +20,7 @@ const benefits = [
 
 export default function Index() {
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-background">
       <div className="relative z-10 max-w-lg mx-auto px-6 py-12">
         {/* Hero with Primary Horizontal Logo */}
         <motion.div
