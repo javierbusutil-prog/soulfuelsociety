@@ -34,13 +34,9 @@ export default function Index() {
             <img 
               src={logoPrimary} 
               alt="Soul Fuel" 
-              className="h-16 w-auto"
+              className="h-32 w-auto"
             />
           </div>
-          
-          <h1 className="font-display text-2xl font-medium tracking-editorial-wide text-primary mb-4">
-            SOCIETY
-          </h1>
           
           <p className="text-muted-foreground text-base mb-8 max-w-sm mx-auto leading-relaxed">
             Transform your body and mind with our community-driven wellness platform.
