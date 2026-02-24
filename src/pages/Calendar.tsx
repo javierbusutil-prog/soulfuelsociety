@@ -31,6 +31,7 @@ import { FastingTimer } from '@/components/calendar/FastingTimer';
 import { FastSessionEntry } from '@/components/calendar/FastSessionEntry';
 import { LogPeriodDialog } from '@/components/calendar/LogPeriodDialog';
 import { CycleSettingsDialog } from '@/components/calendar/CycleSettingsDialog';
+import { CycleAnalytics } from '@/components/calendar/CycleAnalytics';
 import { useEventReminders, requestNotificationPermission } from '@/hooks/useEventReminders';
 import { useCalendarEvents } from '@/hooks/useWorkoutPrograms';
 import { useFastingSessions } from '@/hooks/useFastingSessions';
@@ -137,6 +138,9 @@ export default function Calendar() {
     togglePeriodDay,
     updateEntry: updateCycleEntry,
     updateSettings: updateCycleSettings,
+    analytics: cycleAnalytics,
+    periodClusters,
+    prediction: cyclePrediction,
   } = useCycleTracker();
 
   const hideCycleMarkers = cycleSettings?.hide_cycle_markers ?? false;
@@ -430,7 +434,18 @@ export default function Calendar() {
               <FastingTimer onFastEnded={refetchFastingSessions} />
             </div>
 
-            {/* Selected day events */}
+            {/* Cycle Analytics - shown when cycle filter active */}
+            {calendarFilter === 'cycle' && (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Cycle Insights</h3>
+                <CycleAnalytics
+                  analytics={cycleAnalytics}
+                  periodClusters={periodClusters}
+                  prediction={cyclePrediction}
+                />
+              </div>
+            )}
+
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">

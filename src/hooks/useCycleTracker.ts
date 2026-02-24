@@ -124,37 +124,80 @@ export function useCycleTracker() {
     return entries.find(e => e.date === dateStr);
   };
 
-  // Predict next period based on most recent period start
-  const prediction = useMemo(() => {
-    if (!settings?.prediction_enabled) return null;
-    
-    // Find period "starts" - first day of each period cluster
+  // Compute period clusters (each cluster = one period)
+  const periodClusters = useMemo(() => {
     const periodDates = entries
       .filter(e => e.is_period)
       .map(e => e.date)
       .sort();
 
-    if (periodDates.length === 0) return null;
+    if (periodDates.length === 0) return [];
 
-    // Find the most recent period start (gap of >3 days from previous entry)
-    const periodStarts: string[] = [];
-    for (let i = 0; i < periodDates.length; i++) {
-      if (i === 0) {
-        periodStarts.push(periodDates[i]);
+    const clusters: { start: string; end: string; days: string[] }[] = [];
+    let currentCluster = { start: periodDates[0], end: periodDates[0], days: [periodDates[0]] };
+
+    for (let i = 1; i < periodDates.length; i++) {
+      const gap = differenceInDays(parseISO(periodDates[i]), parseISO(periodDates[i - 1]));
+      if (gap <= 3) {
+        currentCluster.end = periodDates[i];
+        currentCluster.days.push(periodDates[i]);
       } else {
-        const daysBetween = differenceInDays(
-          parseISO(periodDates[i]),
-          parseISO(periodDates[i - 1])
-        );
-        if (daysBetween > 3) {
-          periodStarts.push(periodDates[i]);
-        }
+        clusters.push(currentCluster);
+        currentCluster = { start: periodDates[i], end: periodDates[i], days: [periodDates[i]] };
       }
     }
+    clusters.push(currentCluster);
+    return clusters;
+  }, [entries]);
 
-    if (periodStarts.length === 0) return null;
+  // Analytics
+  const analytics = useMemo(() => {
+    if (periodClusters.length === 0) return null;
 
-    const lastPeriodStart = parseISO(periodStarts[periodStarts.length - 1]);
+    // Period lengths (days per cluster)
+    const periodLengths = periodClusters.map(c => c.days.length);
+    const avgPeriodLength = periodLengths.reduce((a, b) => a + b, 0) / periodLengths.length;
+
+    // Cycle lengths (gap between consecutive period starts)
+    const cycleLengths: number[] = [];
+    for (let i = 1; i < periodClusters.length; i++) {
+      const gap = differenceInDays(
+        parseISO(periodClusters[i].start),
+        parseISO(periodClusters[i - 1].start)
+      );
+      cycleLengths.push(gap);
+    }
+    const avgCycleLength = cycleLengths.length > 0
+      ? cycleLengths.reduce((a, b) => a + b, 0) / cycleLengths.length
+      : null;
+
+    // Symptom frequency
+    const symptomCounts: Record<string, number> = {};
+    entries.filter(e => e.is_period).forEach(e => {
+      (e.symptoms || []).forEach(s => {
+        symptomCounts[s] = (symptomCounts[s] || 0) + 1;
+      });
+    });
+    const topSymptoms = Object.entries(symptomCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    return {
+      totalPeriods: periodClusters.length,
+      avgPeriodLength: Math.round(avgPeriodLength * 10) / 10,
+      periodLengths,
+      avgCycleLength: avgCycleLength ? Math.round(avgCycleLength * 10) / 10 : null,
+      cycleLengths,
+      topSymptoms,
+    };
+  }, [periodClusters, entries]);
+
+  // Predict next period based on most recent period start
+  const prediction = useMemo(() => {
+    if (!settings?.prediction_enabled) return null;
+    if (periodClusters.length === 0) return null;
+
+    const lastPeriodStart = parseISO(periodClusters[periodClusters.length - 1].start);
     const cycleLength = settings.cycle_length_days || 28;
     const periodLength = settings.period_length_days || 5;
 
@@ -166,7 +209,7 @@ export function useCycleTracker() {
       nextPeriodEnd,
       lastPeriodStart,
     };
-  }, [entries, settings]);
+  }, [periodClusters, settings]);
 
   const isPredictedPeriodDay = (date: Date): boolean => {
     if (!prediction) return false;
@@ -186,6 +229,8 @@ export function useCycleTracker() {
     getEntriesForDate,
     prediction,
     isPredictedPeriodDay,
+    analytics,
+    periodClusters,
     refetch: fetchEntries,
   };
 }
