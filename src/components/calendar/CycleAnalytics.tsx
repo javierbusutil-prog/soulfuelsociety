@@ -28,6 +28,9 @@ interface CycleAnalyticsProps {
     nextPeriodStart: Date;
     nextPeriodEnd: Date;
     lastPeriodStart: Date;
+    ovulationDay: Date;
+    fertileWindowStart: Date;
+    fertileWindowEnd: Date;
   } | null;
 }
 
@@ -129,6 +132,48 @@ export function CycleAnalytics({ analytics, periodClusters, prediction }: CycleA
           </motion.div>
         )}
       </div>
+
+      {/* Fertile Window & Ovulation */}
+      {prediction && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.22 }}
+        >
+          <Card className="p-4">
+            <h4 className="text-sm font-medium mb-3">Fertility Estimates</h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                  <span className="text-xs">🥚</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Estimated Ovulation</p>
+                  <p className="text-sm font-semibold">
+                    {format(prediction.ovulationDay, 'MMM d')}
+                    <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                      ({differenceInDays(prediction.ovulationDay, new Date()) > 0
+                        ? `in ${differenceInDays(prediction.ovulationDay, new Date())} days`
+                        : `${Math.abs(differenceInDays(prediction.ovulationDay, new Date()))} days ago`})
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+                  <span className="text-xs">🌱</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-muted-foreground">Fertile Window</p>
+                  <p className="text-sm font-semibold">
+                    {format(prediction.fertileWindowStart, 'MMM d')} – {format(prediction.fertileWindowEnd, 'MMM d')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Period Length Trend */}
       {analytics.periodLengths.length > 1 && (

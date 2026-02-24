@@ -135,6 +135,8 @@ export default function Calendar() {
     settings: cycleSettings,
     getEntriesForDate,
     isPredictedPeriodDay,
+    isFertileDay,
+    isOvulationDay,
     togglePeriodDay,
     updateEntry: updateCycleEntry,
     updateSettings: updateCycleSettings,
@@ -373,6 +375,8 @@ export default function Calendar() {
                   const cycleEntry = getEntriesForDate(day);
                   const hasPeriod = !!cycleEntry;
                   const isPredicted = isPredictedPeriodDay(day);
+                  const isFertile = isFertileDay(day);
+                  const isOvulation = isOvulationDay(day);
                   const showCycle = !hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle');
 
                   return (
@@ -389,6 +393,8 @@ export default function Calendar() {
                         ${!isSameMonth(day, currentDate) ? 'opacity-30' : ''}
                         ${showCycle && hasPeriod && !isSelected ? 'bg-rose-100 dark:bg-rose-900/30' : ''}
                         ${showCycle && isPredicted && !hasPeriod && !isSelected ? 'bg-rose-50 dark:bg-rose-900/15 ring-1 ring-rose-300/50 ring-inset' : ''}
+                        ${showCycle && isOvulation && !hasPeriod && !isPredicted && !isSelected ? 'bg-violet-100 dark:bg-violet-900/30' : ''}
+                        ${showCycle && isFertile && !isOvulation && !hasPeriod && !isPredicted && !isSelected ? 'bg-teal-50 dark:bg-teal-900/15' : ''}
                       `}
                     >
                       <span className="text-sm font-medium">{format(day, 'd')}</span>
@@ -420,6 +426,12 @@ export default function Calendar() {
                         )}
                         {showCycle && isPredicted && !hasPeriod && (
                           <div className="w-1.5 h-1.5 rounded-full bg-rose-300 border border-rose-400" />
+                        )}
+                        {showCycle && isOvulation && !hasPeriod && !isPredicted && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                        )}
+                        {showCycle && isFertile && !isOvulation && !hasPeriod && !isPredicted && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-teal-400" />
                         )}
                       </div>
                     </motion.button>
@@ -480,6 +492,38 @@ export default function Calendar() {
                     </div>
                   </div>
                 </Card>
+              )}
+
+              {/* Fertile window / Ovulation indicator for selected day */}
+              {!hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle') && (
+                <>
+                  {isOvulationDay(selectedDate) && (
+                    <Card className="p-3 border bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800/30">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+                          <span className="text-sm">🥚</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm">Estimated Ovulation Day</h4>
+                          <p className="text-xs text-muted-foreground">Peak fertility — highest chance of conception</p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                  {isFertileDay(selectedDate) && !isOvulationDay(selectedDate) && (
+                    <Card className="p-3 border bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800/30">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
+                          <span className="text-sm">🌱</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm">Fertile Window</h4>
+                          <p className="text-xs text-muted-foreground">Higher chance of conception during this window</p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                </>
               )}
 
               {/* Program workout events for selected day */}
