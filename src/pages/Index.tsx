@@ -34,7 +34,7 @@ export default function Index() {
             <img 
               src={logoPrimary} 
               alt="Soul Fuel" 
-              className="h-32 w-auto"
+              className="h-80 w-auto"
             />
           </div>
           
