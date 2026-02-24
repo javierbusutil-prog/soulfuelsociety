@@ -66,7 +66,7 @@ export default function Waitlist() {
         className="w-full max-w-md text-center"
       >
         {/* Logo */}
-        <img src={logoPrimary} alt="Soul Fuel" className="h-80 mx-auto mb-8" />
+        <img src={logoPrimary} alt="Soul Fuel" className="h-80 mx-auto mb-2" />
 
         {submitted ? (
           <motion.div
