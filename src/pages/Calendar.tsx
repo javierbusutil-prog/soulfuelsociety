@@ -12,7 +12,8 @@ import {
   Calendar as CalendarIcon,
   Dumbbell,
   CheckCircle,
-  Flame
+  Flame,
+  Droplet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -28,9 +29,12 @@ import { EditEventDialog } from '@/components/calendar/EditEventDialog';
 import { CalendarEventDetailDialog } from '@/components/calendar/CalendarEventDetailDialog';
 import { FastingTimer } from '@/components/calendar/FastingTimer';
 import { FastSessionEntry } from '@/components/calendar/FastSessionEntry';
+import { LogPeriodDialog } from '@/components/calendar/LogPeriodDialog';
+import { CycleSettingsDialog } from '@/components/calendar/CycleSettingsDialog';
 import { useEventReminders, requestNotificationPermission } from '@/hooks/useEventReminders';
 import { useCalendarEvents } from '@/hooks/useWorkoutPrograms';
 import { useFastingSessions } from '@/hooks/useFastingSessions';
+import { useCycleTracker } from '@/hooks/useCycleTracker';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays, addWeeks, getDay, isAfter, isBefore, startOfDay, endOfDay, parseISO, isToday, isPast, isFuture } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useEffect, useCallback } from 'react';
@@ -109,6 +113,8 @@ export default function Calendar() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
   const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<CalendarEvent | null>(null);
+  const [calendarFilter, setCalendarFilter] = useState<'all' | 'workouts' | 'cycle'>('all');
+  const [showPeriodLog, setShowPeriodLog] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       return Notification.permission === 'granted';
@@ -121,6 +127,19 @@ export default function Calendar() {
 
   // Fasting sessions
   const { getSessionsForDate, deleteFastSession, completedSessions, refetch: refetchFastingSessions } = useFastingSessions();
+
+  // Cycle tracker
+  const {
+    entries: cycleEntries,
+    settings: cycleSettings,
+    getEntriesForDate,
+    isPredictedPeriodDay,
+    togglePeriodDay,
+    updateEntry: updateCycleEntry,
+    updateSettings: updateCycleSettings,
+  } = useCycleTracker();
+
+  const hideCycleMarkers = cycleSettings?.hide_cycle_markers ?? false;
 
   const fetchEvents = useCallback(async () => {
     // Fetch events for the entire year to support agenda view
@@ -307,6 +326,23 @@ export default function Calendar() {
 
         {viewMode === 'month' ? (
           <>
+            {/* Filter Chips */}
+            <div className="flex gap-2 mb-4">
+              {(['all', 'workouts', 'cycle'] as const).map(filter => (
+                <Badge
+                  key={filter}
+                  variant={calendarFilter === filter ? 'default' : 'outline'}
+                  className="cursor-pointer capitalize"
+                  onClick={() => setCalendarFilter(filter)}
+                >
+                  {filter === 'all' ? 'All' : filter === 'workouts' ? 'Workouts' : 'Cycle'}
+                </Badge>
+              ))}
+              <div className="ml-auto">
+                <CycleSettingsDialog settings={cycleSettings} onUpdateSettings={updateCycleSettings} />
+              </div>
+            </div>
+
             {/* Calendar grid */}
             <div className="mb-6">
               <div className="grid grid-cols-7 gap-1 mb-2">
@@ -330,6 +366,10 @@ export default function Calendar() {
                   const completedWorkouts = dayCalendarEvents.filter(e => e.completed).length;
                   const isSelected = isSameDay(day, selectedDate);
                   const isTodayDate = isSameDay(day, new Date());
+                  const cycleEntry = getEntriesForDate(day);
+                  const hasPeriod = !!cycleEntry;
+                  const isPredicted = isPredictedPeriodDay(day);
+                  const showCycle = !hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle');
 
                   return (
                     <motion.button
@@ -343,27 +383,39 @@ export default function Calendar() {
                         ${isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'}
                         ${isTodayDate && !isSelected ? 'ring-2 ring-primary' : ''}
                         ${!isSameMonth(day, currentDate) ? 'opacity-30' : ''}
+                        ${showCycle && hasPeriod && !isSelected ? 'bg-rose-100 dark:bg-rose-900/30' : ''}
+                        ${showCycle && isPredicted && !hasPeriod && !isSelected ? 'bg-rose-50 dark:bg-rose-900/15 ring-1 ring-rose-300/50 ring-inset' : ''}
                       `}
                     >
                       <span className="text-sm font-medium">{format(day, 'd')}</span>
                       <div className="flex gap-0.5 mt-0.5">
-                        {dayEvents.slice(0, 2).map((event, i) => (
-                          <div
-                            key={`${event.id}-${i}`}
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              event.event_type === 'fast' ? 'bg-success' :
-                              event.event_type === 'workout' ? 'bg-primary' :
-                              'bg-muted-foreground'
-                            }`}
-                          />
-                        ))}
-                        {hasWorkout && (
-                          <div className={`w-1.5 h-1.5 rounded-full ${
-                            completedWorkouts === dayCalendarEvents.length ? 'bg-success' : 'bg-warning'
-                          }`} />
+                        {(calendarFilter === 'all' || calendarFilter === 'workouts') && (
+                          <>
+                            {dayEvents.slice(0, 2).map((event, i) => (
+                              <div
+                                key={`${event.id}-${i}`}
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  event.event_type === 'fast' ? 'bg-success' :
+                                  event.event_type === 'workout' ? 'bg-primary' :
+                                  'bg-muted-foreground'
+                                }`}
+                              />
+                            ))}
+                            {hasWorkout && (
+                              <div className={`w-1.5 h-1.5 rounded-full ${
+                                completedWorkouts === dayCalendarEvents.length ? 'bg-success' : 'bg-warning'
+                              }`} />
+                            )}
+                            {hasFast && (
+                              <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                            )}
+                          </>
                         )}
-                        {hasFast && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                        {showCycle && hasPeriod && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        )}
+                        {showCycle && isPredicted && !hasPeriod && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-rose-300 border border-rose-400" />
                         )}
                       </div>
                     </motion.button>
@@ -384,7 +436,36 @@ export default function Calendar() {
                 <h3 className="font-semibold">
                   {format(selectedDate, 'EEEE, MMMM d')}
                 </h3>
+                <Button
+                  variant={getEntriesForDate(selectedDate) ? 'default' : 'outline'}
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setShowPeriodLog(true)}
+                >
+                  <Droplet className="w-3.5 h-3.5" />
+                  {getEntriesForDate(selectedDate) ? 'Edit Period' : 'Log Period'}
+                </Button>
               </div>
+
+              {/* Cycle entry for selected day */}
+              {getEntriesForDate(selectedDate) && !hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle') && (
+                <Card className="p-3 border bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
+                      <Droplet className="w-4 h-4 text-rose-500" fill="currentColor" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm">Period Day</h4>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {getEntriesForDate(selectedDate)?.flow_level || 'medium'} flow
+                        {(getEntriesForDate(selectedDate)?.symptoms?.length ?? 0) > 0 && (
+                          <> · {getEntriesForDate(selectedDate)!.symptoms.join(', ')}</>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )}
 
               {/* Program workout events for selected day */}
               {selectedDayCalendarEvents.length > 0 && (
@@ -619,6 +700,15 @@ export default function Calendar() {
           }}
         />
       )}
+
+      <LogPeriodDialog
+        open={showPeriodLog}
+        onOpenChange={setShowPeriodLog}
+        date={selectedDate}
+        existingEntry={getEntriesForDate(selectedDate)}
+        onTogglePeriod={togglePeriodDay}
+        onUpdateEntry={updateCycleEntry}
+      />
     </AppLayout>
   );
 }
