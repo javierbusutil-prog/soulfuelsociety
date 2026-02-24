@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -6,19 +7,50 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet } from 'lucide-react';
+import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet, Users, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCycleTracker } from '@/hooks/useCycleTracker';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Profile() {
   const { user, profile, roles, isPaidMember, isAdmin, signOut } = useAuth();
   const { settings, updateSettings } = useCycleTracker();
+  const [waitlistEntries, setWaitlistEntries] = useState<{ id: string; name: string; email: string; created_at: string }[]>([]);
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
 
   const cycleTrackingEnabled = settings?.prediction_enabled !== false;
 
+  useEffect(() => {
+    if (isAdmin) {
+      setWaitlistLoading(true);
+      supabase
+        .from('waitlist' as any)
+        .select('*')
+        .order('created_at', { ascending: false })
+        .then(({ data }) => {
+          if (data) setWaitlistEntries(data as any);
+          setWaitlistLoading(false);
+        });
+    }
+  }, [isAdmin]);
+
   const handleCycleToggle = async (enabled: boolean) => {
     await updateSettings({ prediction_enabled: enabled });
+  };
+
+  const exportCSV = () => {
+    const header = 'Name,Email,Signed Up\n';
+    const rows = waitlistEntries
+      .map(e => `"${e.name}","${e.email}","${new Date(e.created_at).toLocaleDateString()}"`)
+      .join('\n');
+    const blob = new Blob([header + rows], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `waitlist-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const getInitials = (name: string | null) => {
@@ -100,6 +132,49 @@ export default function Profile() {
             />
           </div>
         </Card>
+
+        {/* Admin: Waitlist Dashboard */}
+        {isAdmin && (
+          <Card className="p-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Users className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Waitlist</p>
+                  <p className="text-xs text-muted-foreground">
+                    {waitlistLoading ? 'Loading...' : `${waitlistEntries.length} signups`}
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={exportCSV}
+                disabled={waitlistEntries.length === 0}
+              >
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                Export CSV
+              </Button>
+            </div>
+            {waitlistEntries.length > 0 && (
+              <div className="max-h-48 overflow-y-auto divide-y divide-border rounded-lg border border-border">
+                {waitlistEntries.map(entry => (
+                  <div key={entry.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <div>
+                      <p className="font-medium text-foreground">{entry.name}</p>
+                      <p className="text-xs text-muted-foreground">{entry.email}</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                      {new Date(entry.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
 
         <Card className="divide-y divide-border">
           {menuItems.map((item, index) => (
