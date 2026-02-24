@@ -4,12 +4,22 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Settings, HelpCircle, LogOut, ChevronRight } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useCycleTracker } from '@/hooks/useCycleTracker';
 
 export default function Profile() {
   const { user, profile, roles, isPaidMember, isAdmin, signOut } = useAuth();
+  const { settings, updateSettings } = useCycleTracker();
+
+  const cycleTrackingEnabled = settings?.prediction_enabled !== false;
+
+  const handleCycleToggle = async (enabled: boolean) => {
+    await updateSettings({ prediction_enabled: enabled });
+  };
 
   const getInitials = (name: string | null) => {
     if (!name) return 'U';
@@ -71,6 +81,25 @@ export default function Profile() {
             </div>
           </Card>
         )}
+
+        <Card className="p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-rose-100 dark:bg-rose-900/30 rounded-lg flex items-center justify-center">
+                <Droplet className="w-4 h-4 text-rose-500" />
+              </div>
+              <div>
+                <Label htmlFor="cycle-toggle" className="font-medium cursor-pointer">Cycle Tracking</Label>
+                <p className="text-xs text-muted-foreground">Track periods & get predictions</p>
+              </div>
+            </div>
+            <Switch
+              id="cycle-toggle"
+              checked={cycleTrackingEnabled}
+              onCheckedChange={handleCycleToggle}
+            />
+          </div>
+        </Card>
 
         <Card className="divide-y divide-border">
           {menuItems.map((item, index) => (
