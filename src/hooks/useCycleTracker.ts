@@ -204,10 +204,19 @@ export function useCycleTracker() {
     const nextPeriodStart = addDays(lastPeriodStart, cycleLength);
     const nextPeriodEnd = addDays(nextPeriodStart, periodLength - 1);
 
+    // Ovulation typically occurs ~14 days before the next period
+    const ovulationDay = addDays(nextPeriodStart, -14);
+    // Fertile window: 5 days before ovulation + ovulation day
+    const fertileWindowStart = addDays(ovulationDay, -5);
+    const fertileWindowEnd = ovulationDay;
+
     return {
       nextPeriodStart,
       nextPeriodEnd,
       lastPeriodStart,
+      ovulationDay,
+      fertileWindowStart,
+      fertileWindowEnd,
     };
   }, [periodClusters, settings]);
 
@@ -217,6 +226,19 @@ export function useCycleTracker() {
     const start = startOfDay(prediction.nextPeriodStart);
     const end = startOfDay(prediction.nextPeriodEnd);
     return d >= start && d <= end;
+  };
+
+  const isFertileDay = (date: Date): boolean => {
+    if (!prediction) return false;
+    const d = startOfDay(date);
+    const start = startOfDay(prediction.fertileWindowStart);
+    const end = startOfDay(prediction.fertileWindowEnd);
+    return d >= start && d <= end;
+  };
+
+  const isOvulationDay = (date: Date): boolean => {
+    if (!prediction) return false;
+    return isSameDay(date, prediction.ovulationDay);
   };
 
   return {
@@ -229,6 +251,8 @@ export function useCycleTracker() {
     getEntriesForDate,
     prediction,
     isPredictedPeriodDay,
+    isFertileDay,
+    isOvulationDay,
     analytics,
     periodClusters,
     refetch: fetchEntries,
