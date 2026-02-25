@@ -33,7 +33,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/waitlist" replace />;
   }
   
   return <>{children}</>;
@@ -65,6 +65,7 @@ function AppRoutes() {
       <Route path="/login" element={<Navigate to="/waitlist" replace />} />
       <Route path="/signup" element={<Navigate to="/waitlist" replace />} />
       <Route path="/waitlist" element={<Waitlist />} />
+      <Route path="/admin-login" element={<PublicRoute><Login /></PublicRoute>} />
       
       {/* Protected routes */}
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
