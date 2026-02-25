@@ -17,7 +17,7 @@ export function BottomNav() {
   const { isPaidMember } = useAuth();
 
   return (
-    <nav className="tab-bar z-50">
+    <nav className="tab-bar z-50" role="navigation" aria-label="Main navigation">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
         {navItems.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
@@ -27,6 +27,8 @@ export function BottomNav() {
             <Link
               key={item.path}
               to={isLocked ? '/upgrade' : item.path}
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={isLocked ? `${item.label} (requires upgrade)` : item.label}
               className={cn(
                 "flex flex-col items-center justify-center w-16 h-full relative transition-colors duration-200",
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
@@ -35,6 +37,7 @@ export function BottomNav() {
             >
               <div className="relative">
                 <item.icon 
+                  aria-hidden="true"
                   className={cn(
                     "w-5 h-5 transition-all duration-200",
                     isActive ? "stroke-[2]" : "stroke-[1.5]"

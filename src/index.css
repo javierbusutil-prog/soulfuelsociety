@@ -33,7 +33,7 @@
 
     /* Muted */
     --muted: 38 37% 89%;
-    --muted-foreground: 213 20% 45%;
+    --muted-foreground: 213 20% 38%;
 
     /* Accent - Muted Clay #C27A5A (use sparingly for CTAs only) */
     --accent: 19 48% 55%;
@@ -117,6 +117,33 @@
 @layer base {
   * {
     @apply border-border;
+  }
+
+  /* Skip navigation link for keyboard users */
+  .skip-nav {
+    @apply absolute left-2 top-2 z-[100] bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium;
+    transform: translateY(-200%);
+    transition: transform 0.2s ease;
+  }
+
+  .skip-nav:focus {
+    transform: translateY(0);
+  }
+
+  /* Enhanced focus indicators for WCAG 2.1 AA */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+    outline-style: solid;
+  }
+
+  /* Ensure motion preferences are respected */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   body {

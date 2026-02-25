@@ -27,10 +27,9 @@ export function Header({ title }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-background border-b border-border">
+    <header className="sticky top-0 z-40 bg-background border-b border-border" role="banner">
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
-        <Link to="/" className="flex items-center -ml-14">
-          {/* Always show wordmark logo in header - per brand guidelines */}
+        <Link to="/" className="flex items-center -ml-14" aria-label="Soul Fuel - Home">
           <img 
             src={logoWordmark} 
             alt="Soul Fuel" 
