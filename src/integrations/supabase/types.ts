@@ -191,6 +191,57 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_nutrition: {
+        Row: {
+          created_at: string
+          date: string
+          electrolyte_taken: boolean
+          energy_level: number | null
+          hydration_goal: number
+          hydration_logged: number
+          id: string
+          mood_level: number | null
+          protein_goal: number
+          protein_logged: number
+          protein_priority: boolean
+          updated_at: string
+          user_id: string
+          whole_foods_focus: boolean
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          electrolyte_taken?: boolean
+          energy_level?: number | null
+          hydration_goal?: number
+          hydration_logged?: number
+          id?: string
+          mood_level?: number | null
+          protein_goal?: number
+          protein_logged?: number
+          protein_priority?: boolean
+          updated_at?: string
+          user_id: string
+          whole_foods_focus?: boolean
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          electrolyte_taken?: boolean
+          energy_level?: number | null
+          hydration_goal?: number
+          hydration_logged?: number
+          id?: string
+          mood_level?: number | null
+          protein_goal?: number
+          protein_logged?: number
+          protein_priority?: boolean
+          updated_at?: string
+          user_id?: string
+          whole_foods_focus?: boolean
+        }
+        Relationships: []
+      }
       event_completions: {
         Row: {
           completed_at: string
