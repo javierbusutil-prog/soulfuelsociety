@@ -13,6 +13,10 @@ import { HydrationTracker } from '@/components/nutrition/HydrationTracker';
 import { EnergyMoodCheckin } from '@/components/nutrition/EnergyMoodCheckin';
 import { ConsistencyRing } from '@/components/nutrition/ConsistencyRing';
 import { WeeklyTrends } from '@/components/nutrition/WeeklyTrends';
+import { CyclePhaseGuidance } from '@/components/nutrition/CyclePhaseGuidance';
+import { MealStructureTracker } from '@/components/nutrition/MealStructureTracker';
+import { WeeklyReflection } from '@/components/nutrition/WeeklyReflection';
+import { SmartInsights } from '@/components/nutrition/SmartInsights';
 
 export default function Nutrition() {
   const [searchParams] = useSearchParams();
@@ -68,6 +72,13 @@ export default function Nutrition() {
           </Button>
         </div>
 
+        {/* Cycle Phase Guidance */}
+        <CyclePhaseGuidance
+          cycleEntries={cycleEntries}
+          cycleSettings={cycleSettings}
+          selectedDate={selectedDate}
+        />
+
         <ConsistencyRing
           proteinMet={proteinMet}
           hydrationMet={hydrationMet}
@@ -100,9 +111,21 @@ export default function Nutrition() {
           setGoal={nutrition.setGoal}
         />
 
+        {/* Meal Structure Tracking */}
+        <MealStructureTracker selectedDate={selectedDate} />
+
         <EnergyMoodCheckin
           entry={nutrition.entry}
           setCheckin={nutrition.setCheckin}
+        />
+
+        {/* Weekly Reflection */}
+        <WeeklyReflection />
+
+        {/* Smart Insights (shows after 14+ days of data) */}
+        <SmartInsights
+          cycleEntries={cycleEntries}
+          cycleSettings={cycleSettings}
         />
 
         <WeeklyTrends />
