@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Heart, Clock, Dumbbell, Check, LayoutGrid, Calendar } from 'lucide-react';
+import { Search, Filter, Heart, Clock, Dumbbell, Check, LayoutGrid, Calendar, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import { ProgramCard } from '@/components/workouts/ProgramCard';
 import { CreateProgramDialog } from '@/components/workouts/CreateProgramDialog';
 import { CreateWorkoutDialog } from '@/components/workouts/CreateWorkoutDialog';
 import { ProgramDetailView } from '@/components/workouts/ProgramDetailView';
+import { MovementLibrary } from '@/components/movements/MovementLibrary';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -171,14 +172,18 @@ export default function Workouts() {
       <div className="max-w-lg mx-auto p-4">
         {/* Tabs for Workouts vs Programs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="workouts" className="flex items-center gap-2">
-              <Dumbbell className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="workouts" className="flex items-center gap-1.5 text-xs">
+              <Dumbbell className="w-3.5 h-3.5" />
               Workouts
             </TabsTrigger>
-            <TabsTrigger value="programs" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+            <TabsTrigger value="programs" className="flex items-center gap-1.5 text-xs">
+              <Calendar className="w-3.5 h-3.5" />
               Programs
+            </TabsTrigger>
+            <TabsTrigger value="movements" className="flex items-center gap-1.5 text-xs">
+              <BookOpen className="w-3.5 h-3.5" />
+              Movements
             </TabsTrigger>
           </TabsList>
 
@@ -396,6 +401,11 @@ export default function Workouts() {
                 ))
               )}
             </div>
+          </TabsContent>
+
+          {/* Movement Library Tab */}
+          <TabsContent value="movements" className="mt-4">
+            <MovementLibrary />
           </TabsContent>
         </Tabs>
       </div>
