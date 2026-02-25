@@ -39,6 +39,7 @@ import { toast } from '@/hooks/use-toast';
 import { WorkoutProgram, WorkoutSessionTemplate, DAYS_OF_WEEK, SessionContent } from '@/types/workoutPrograms';
 import { useSessionTemplates } from '@/hooks/useWorkoutPrograms';
 import { EnrollProgramDialog } from './EnrollProgramDialog';
+import { ExerciseLink } from './ExerciseLink';
 
 interface ProgramDetailViewProps {
   program: WorkoutProgram;
@@ -233,7 +234,21 @@ export function ProgramDetailView({
                       </Badge>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{session.title}</p>
-                        {session.content_json?.notes && (
+                        {session.content_json?.exercises && session.content_json.exercises.length > 0 && (
+                          <div className="mt-1 space-y-0.5">
+                            {session.content_json.exercises.map((ex, exIdx) => (
+                              <div key={exIdx} className="text-xs text-muted-foreground flex items-center gap-1">
+                                <ExerciseLink exerciseName={ex.name} />
+                                {ex.sets && ex.reps && (
+                                  <span className="text-muted-foreground/60">
+                                    — {ex.sets}×{ex.reps}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {session.content_json?.notes && !session.content_json?.exercises?.length && (
                           <p className="text-xs text-muted-foreground truncate">
                             {session.content_json.notes}
                           </p>
