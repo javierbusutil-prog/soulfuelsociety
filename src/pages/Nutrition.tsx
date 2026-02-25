@@ -1,3 +1,8 @@
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { format, subDays, addDays, isToday, parseISO } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useNutrition } from '@/hooks/useNutrition';
 import { useFastingSessions } from '@/hooks/useFastingSessions';
@@ -9,27 +14,58 @@ import { EnergyMoodCheckin } from '@/components/nutrition/EnergyMoodCheckin';
 import { ConsistencyRing } from '@/components/nutrition/ConsistencyRing';
 
 export default function Nutrition() {
-  const nutrition = useNutrition();
-  const { completedSessions, getSessionsForDate } = useFastingSessions();
+  const [searchParams] = useSearchParams();
+  const initialDate = searchParams.get('date');
+
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    initialDate ? parseISO(initialDate) : new Date()
+  );
+
+  const nutrition = useNutrition(selectedDate);
+  const { getSessionsForDate } = useFastingSessions();
   const { entries: cycleEntries, settings: cycleSettings } = useCycleTracker();
 
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-  const fastCompleted = getSessionsForDate(today).length > 0;
-  const cycleLogged = cycleEntries.some(e => e.date === todayStr);
+  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  const fastCompleted = getSessionsForDate(selectedDate).length > 0;
+  const cycleLogged = cycleEntries.some(e => e.date === dateStr);
   const cycleEnabled = !!cycleSettings && !cycleSettings.hide_cycle_markers;
 
-  // Consistency ring data
   const proteinMet = (nutrition.entry?.protein_logged || 0) >= (nutrition.entry?.protein_goal || 120);
   const hydrationMet = (nutrition.entry?.hydration_logged || 0) >= (nutrition.entry?.hydration_goal || 64);
+
+  const goBack = () => setSelectedDate(d => subDays(d, 1));
+  const goForward = () => setSelectedDate(d => addDays(d, 1));
+  const goToday = () => setSelectedDate(new Date());
 
   return (
     <AppLayout title="Nutrition">
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
-        <header>
-          <h1 className="text-2xl font-display tracking-editorial">Daily Fuel</h1>
-          <p className="text-sm text-muted-foreground mt-1">Simple habits, real results.</p>
-        </header>
+        {/* Date navigation */}
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="icon-sm" onClick={goBack} aria-label="Previous day">
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <div className="text-center">
+            <h1 className="text-2xl font-display tracking-editorial">Daily Fuel</h1>
+            <button
+              onClick={goToday}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {isToday(selectedDate)
+                ? 'Today'
+                : format(selectedDate, 'EEE, MMM d')}
+            </button>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={goForward}
+            disabled={isToday(selectedDate)}
+            aria-label="Next day"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
 
         <ConsistencyRing
           proteinMet={proteinMet}
