@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Pencil, Check } from 'lucide-react';
+import { ProteinCalculatorDialog } from './ProteinCalculatorDialog';
 import type { DailyNutrition } from '@/hooks/useNutrition';
 
 interface Props {
@@ -33,31 +34,37 @@ export function ProteinTracker({ entry, addProtein, setGoal }: Props) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-sans font-semibold tracking-normal">Protein</CardTitle>
-          {editingGoal ? (
-            <div className="flex items-center gap-1.5">
-              <Input
-                type="number"
-                value={goalInput}
-                onChange={e => setGoalInput(e.target.value)}
-                className="w-20 h-7 text-xs"
-                placeholder={String(goal)}
-                autoFocus
-                aria-label="Protein goal in grams"
-              />
-              <Button size="icon-sm" variant="ghost" onClick={saveGoal} aria-label="Save goal">
-                <Check className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-          ) : (
-            <button
-              onClick={() => { setGoalInput(String(goal)); setEditingGoal(true); }}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Edit protein goal"
-            >
-              <Pencil className="w-3 h-3" />
-              {goal}g goal
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            <ProteinCalculatorDialog
+              currentGoal={goal}
+              onSetGoal={(g) => setGoal('protein_goal', g)}
+            />
+            {editingGoal ? (
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="number"
+                  value={goalInput}
+                  onChange={e => setGoalInput(e.target.value)}
+                  className="w-20 h-7 text-xs"
+                  placeholder={String(goal)}
+                  autoFocus
+                  aria-label="Protein goal in grams"
+                />
+                <Button size="icon-sm" variant="ghost" onClick={saveGoal} aria-label="Save goal">
+                  <Check className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setGoalInput(String(goal)); setEditingGoal(true); }}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Edit protein goal"
+              >
+                <Pencil className="w-3 h-3" />
+                {goal}g goal
+              </button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
