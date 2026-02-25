@@ -10,7 +10,9 @@ import {
   CheckCircle,
   Eye,
   EyeOff,
-  Save
+  Save,
+  Download,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -135,10 +137,12 @@ export function ProgramDetailView({
         </Button>
         <div className="flex-1">
           <h1 className="font-bold text-xl">{program.title}</h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            {program.weeks} weeks • {program.frequency_per_week}x/week
-          </div>
+          {!program.ebook_url && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="w-4 h-4" />
+              {program.weeks} weeks • {program.frequency_per_week}x/week
+            </div>
+          )}
         </div>
         {isAdmin && (
           <Button
@@ -168,120 +172,147 @@ export function ProgramDetailView({
         </Card>
       )}
 
-      {/* Enrollment Status / Button */}
-      {!isAdmin && (
-        <div className="mb-6">
-          {isEnrolled ? (
-            <Card className="p-4 bg-success/10 border-success/30">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-6 h-6 text-success" />
-                <div className="flex-1">
-                  <p className="font-medium">You're enrolled!</p>
-                  <p className="text-sm text-muted-foreground">
-                    Check your calendar for scheduled workouts
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ) : (
-            <EnrollProgramDialog 
-              program={program} 
-              sessions={sessions}
-              onEnrolled={onEnrollmentChange}
-            />
+      {/* E-Book Program */}
+      {program.ebook_url ? (
+        <Card className="p-6 bg-card/50 text-center">
+          <FileText className="w-16 h-16 mx-auto mb-4 text-primary/60" />
+          <h2 className="font-semibold text-lg mb-2">E-Book Program</h2>
+          {program.description && (
+            <p className="text-sm text-muted-foreground mb-6">{program.description}</p>
           )}
-        </div>
-      )}
-
-      {/* Week breakdown */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Program Schedule</h2>
-          {isAdmin && (
-            <Button size="sm" onClick={() => setIsAddingSession(true)}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add Session
+          <div className="flex flex-col gap-2">
+            <Button asChild>
+              <a href={program.ebook_url} target="_blank" rel="noopener noreferrer">
+                <Eye className="w-4 h-4 mr-2" />
+                View E-Book
+              </a>
             </Button>
-          )}
-        </div>
-
-        {Array.from({ length: program.weeks }, (_, i) => i + 1).map(week => {
-          const weekSessions = sessionsByWeek[week] || [];
-          
-          return (
-            <Card key={week} className="p-4 bg-card/50">
-              <h3 className="font-medium mb-3 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-primary" />
-                Week {week}
-              </h3>
-              
-              {weekSessions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No sessions added yet
-                </p>
+            <Button variant="outline" asChild>
+              <a href={program.ebook_url} download>
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </a>
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <>
+          {/* Enrollment Status / Button */}
+          {!isAdmin && (
+            <div className="mb-6">
+              {isEnrolled ? (
+                <Card className="p-4 bg-success/10 border-success/30">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-success" />
+                    <div className="flex-1">
+                      <p className="font-medium">You're enrolled!</p>
+                      <p className="text-sm text-muted-foreground">
+                        Check your calendar for scheduled workouts
+                      </p>
+                    </div>
+                  </div>
+                </Card>
               ) : (
-                <div className="space-y-2">
-                  {weekSessions.map((session, idx) => (
-                    <motion.div
-                      key={session.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg"
-                    >
-                      <Badge variant="outline" className="shrink-0">
-                        Day {session.session_index}
-                      </Badge>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{session.title}</p>
-                        {session.content_json?.exercises && session.content_json.exercises.length > 0 && (
-                          <div className="mt-1 space-y-0.5">
-                            {session.content_json.exercises.map((ex, exIdx) => (
-                              <div key={exIdx} className="text-xs text-muted-foreground flex items-center gap-1">
-                                <ExerciseLink exerciseName={ex.name} />
-                                {ex.sets && ex.reps && (
-                                  <span className="text-muted-foreground/60">
-                                    — {ex.sets}×{ex.reps}
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {session.content_json?.notes && !session.content_json?.exercises?.length && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {session.content_json.notes}
-                          </p>
-                        )}
-                      </div>
-                      {isAdmin && (
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => setEditingSession(session)}
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={() => setDeleteConfirm(session.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
+                <EnrollProgramDialog 
+                  program={program} 
+                  sessions={sessions}
+                  onEnrolled={onEnrollmentChange}
+                />
               )}
-            </Card>
-          );
-        })}
-      </div>
+            </div>
+          )}
+
+          {/* Week breakdown */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">Program Schedule</h2>
+              {isAdmin && (
+                <Button size="sm" onClick={() => setIsAddingSession(true)}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Session
+                </Button>
+              )}
+            </div>
+
+            {Array.from({ length: program.weeks }, (_, i) => i + 1).map(week => {
+              const weekSessions = sessionsByWeek[week] || [];
+              
+              return (
+                <Card key={week} className="p-4 bg-card/50">
+                  <h3 className="font-medium mb-3 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    Week {week}
+                  </h3>
+                  
+                  {weekSessions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No sessions added yet
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {weekSessions.map((session, idx) => (
+                        <motion.div
+                          key={session.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg"
+                        >
+                          <Badge variant="outline" className="shrink-0">
+                            Day {session.session_index}
+                          </Badge>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{session.title}</p>
+                            {session.content_json?.exercises && session.content_json.exercises.length > 0 && (
+                              <div className="mt-1 space-y-0.5">
+                                {session.content_json.exercises.map((ex, exIdx) => (
+                                  <div key={exIdx} className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <ExerciseLink exerciseName={ex.name} />
+                                    {ex.sets && ex.reps && (
+                                      <span className="text-muted-foreground/60">
+                                        — {ex.sets}×{ex.reps}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {session.content_json?.notes && !session.content_json?.exercises?.length && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {session.content_json.notes}
+                              </p>
+                            )}
+                          </div>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => setEditingSession(session)}
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={() => setDeleteConfirm(session.id)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* Add Session Dialog */}
       <Dialog open={isAddingSession} onOpenChange={setIsAddingSession}>

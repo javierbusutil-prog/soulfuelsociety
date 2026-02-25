@@ -60,6 +60,7 @@ export function useWorkoutPrograms() {
       admin_days_of_week: program.admin_days_of_week || null,
       published: program.published || false,
       created_by: user?.id || null,
+      ebook_url: program.ebook_url || null,
     };
     
     const { data, error } = await supabase

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Calendar, Clock, Users, CheckCircle, Settings } from 'lucide-react';
+import { Calendar, Clock, Users, CheckCircle, Settings, FileText } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -87,24 +87,33 @@ export function ProgramCard({
           )}
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              {program.weeks} weeks
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="w-3.5 h-3.5" />
-              {program.frequency_per_week}x/week
-            </span>
-            {program.schedule_mode === 'admin_selected' && daysLabel && (
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
-                {daysLabel}
-              </span>
-            )}
-            {program.schedule_mode === 'user_selected' && (
-              <Badge variant="outline" className="text-xs">
-                Choose your days
+            {program.ebook_url ? (
+              <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                <FileText className="w-3 h-3 mr-1" />
+                E-Book
               </Badge>
+            ) : (
+              <>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  {program.weeks} weeks
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" />
+                  {program.frequency_per_week}x/week
+                </span>
+                {program.schedule_mode === 'admin_selected' && daysLabel && (
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    {daysLabel}
+                  </span>
+                )}
+                {program.schedule_mode === 'user_selected' && (
+                  <Badge variant="outline" className="text-xs">
+                    Choose your days
+                  </Badge>
+                )}
+              </>
             )}
           </div>
         </div>

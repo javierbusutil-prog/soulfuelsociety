@@ -1525,6 +1525,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          ebook_url: string | null
           frequency_per_week: number
           id: string
           published: boolean
@@ -1539,6 +1540,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          ebook_url?: string | null
           frequency_per_week?: number
           id?: string
           published?: boolean
@@ -1553,6 +1555,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          ebook_url?: string | null
           frequency_per_week?: number
           id?: string
           published?: boolean
