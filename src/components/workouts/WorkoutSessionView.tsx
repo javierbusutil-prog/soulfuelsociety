@@ -37,6 +37,7 @@ interface ExerciseData {
   template_id: string | null;
   name: string;
   superset_movement_name: string;
+  superset_tracking_type: 'sets_reps' | 'time' | 'total_reps';
   notes: string;
   tracking_type: 'sets_reps' | 'time' | 'total_reps';
   section_type: 'warmup' | 'main';
@@ -46,6 +47,12 @@ interface ExerciseData {
   total_reps_result: number | null;
   sets: SetData[];
   default_rest: string;
+  // Superset user tracking
+  superset_completed: boolean;
+  superset_time_result: string;
+  superset_total_reps_result: number | null;
+  superset_sets: SetData[];
+  superset_default_rest: string;
 }
 
 interface WorkoutSessionViewProps {
@@ -69,7 +76,6 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
   }, [workout.id]);
 
   const loadWorkoutStructure = async () => {
-    // Fetch sections
     const { data: sectionsData } = await supabase
       .from('workout_sections')
       .select('*')
@@ -77,7 +83,6 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
       .order('sort_order');
 
     if (!sectionsData || sectionsData.length === 0) {
-      // No structure defined - show empty state
       setExercises([]);
       setLoading(false);
       return;
@@ -109,10 +114,25 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
           }
         }
 
+        const hasSuperset = !!ex.superset_movement_name;
+        const supersetSets: SetData[] = [];
+        if (hasSuperset && (ex.superset_tracking_type || 'sets_reps') === 'sets_reps') {
+          for (let i = 1; i <= (ex.superset_default_sets || 3); i++) {
+            supersetSets.push({
+              set_number: i,
+              target_reps: ex.superset_default_reps || '10',
+              completed_reps: null,
+              weight: null,
+              completed: false,
+            });
+          }
+        }
+
         exerciseList.push({
           template_id: ex.id,
           name: ex.name,
           superset_movement_name: ex.superset_movement_name || '',
+          superset_tracking_type: (ex.superset_tracking_type || 'sets_reps') as any,
           notes: ex.notes || '',
           tracking_type: ex.tracking_type as any,
           section_type: section.section_type as 'warmup' | 'main',
@@ -122,16 +142,19 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
           total_reps_result: null,
           sets,
           default_rest: ex.default_rest || '',
+          superset_completed: false,
+          superset_time_result: '',
+          superset_total_reps_result: null,
+          superset_sets: supersetSets,
+          superset_default_rest: ex.superset_default_rest || '',
         });
       }
     }
 
     setExercises(exerciseList);
-    // Auto-open first exercise
     if (exerciseList.length > 0) setOpenExercises(new Set([0]));
     setLoading(false);
 
-    // Create workout log
     if (user) {
       const { data: logData } = await supabase
         .from('workout_logs')
@@ -155,38 +178,47 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
     setExercises(updated);
   };
 
+  const toggleSupersetComplete = (index: number) => {
+    const updated = [...exercises];
+    updated[index].superset_completed = !updated[index].superset_completed;
+    setExercises(updated);
+  };
+
   const updateSet = (exIndex: number, setIndex: number, field: keyof SetData, value: any) => {
     const updated = [...exercises];
     (updated[exIndex].sets[setIndex] as any)[field] = value;
     setExercises(updated);
   };
 
+  const updateSupersetSet = (exIndex: number, setIndex: number, field: keyof SetData, value: any) => {
+    const updated = [...exercises];
+    (updated[exIndex].superset_sets[setIndex] as any)[field] = value;
+    setExercises(updated);
+  };
+
   const toggleSetComplete = (exIndex: number, setIndex: number) => {
     const updated = [...exercises];
     updated[exIndex].sets[setIndex].completed = !updated[exIndex].sets[setIndex].completed;
-    
-    // Check if all sets done → auto-complete exercise
     const allDone = updated[exIndex].sets.every(s => s.completed);
     if (allDone) updated[exIndex].completed = true;
 
-    // Auto-advance: open next uncompleted set's exercise
     if (updated[exIndex].sets[setIndex].completed) {
       const nextSetIndex = setIndex + 1;
-      if (nextSetIndex < updated[exIndex].sets.length) {
-        // Stay on same exercise
-      } else {
-        // Move to next exercise
+      if (nextSetIndex >= updated[exIndex].sets.length) {
         const nextExIndex = exIndex + 1;
         if (nextExIndex < updated.length) {
-          setOpenExercises(prev => {
-            const next = new Set(prev);
-            next.add(nextExIndex);
-            return next;
-          });
+          setOpenExercises(prev => new Set(prev).add(nextExIndex));
         }
       }
     }
+    setExercises(updated);
+  };
 
+  const toggleSupersetSetComplete = (exIndex: number, setIndex: number) => {
+    const updated = [...exercises];
+    updated[exIndex].superset_sets[setIndex].completed = !updated[exIndex].superset_sets[setIndex].completed;
+    const allDone = updated[exIndex].superset_sets.every(s => s.completed);
+    if (allDone) updated[exIndex].superset_completed = true;
     setExercises(updated);
   };
 
@@ -202,18 +234,28 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
     setExercises(updated);
   };
 
+  const updateSupersetTimeResult = (index: number, value: string) => {
+    const updated = [...exercises];
+    updated[index].superset_time_result = value;
+    setExercises(updated);
+  };
+
+  const updateSupersetTotalReps = (index: number, value: number | null) => {
+    const updated = [...exercises];
+    updated[index].superset_total_reps_result = value;
+    setExercises(updated);
+  };
+
   const handleFinishWorkout = async () => {
     if (!user || !workoutLogId) return;
     setFinishing(true);
 
     try {
-      // Update workout log
       await supabase
         .from('workout_logs')
         .update({ completed_at: new Date().toISOString() })
         .eq('id', workoutLogId);
 
-      // Save exercise logs
       for (const ex of exercises) {
         const { data: exLog } = await supabase
           .from('exercise_logs')
@@ -228,24 +270,49 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
             total_reps_result: ex.tracking_type === 'total_reps' ? ex.total_reps_result : null,
             section_type: ex.section_type,
             sort_order: ex.sort_order,
+            superset_tracking_type: ex.superset_movement_name ? ex.superset_tracking_type : null,
+            superset_completed: ex.superset_movement_name ? ex.superset_completed : false,
+            superset_time_result: ex.superset_tracking_type === 'time' ? ex.superset_time_result || null : null,
+            superset_total_reps_result: ex.superset_tracking_type === 'total_reps' ? ex.superset_total_reps_result : null,
           })
           .select()
           .single();
 
-        if (exLog && ex.sets.length > 0) {
-          const setInserts = ex.sets.map(s => ({
-            exercise_log_id: exLog.id,
-            set_number: s.set_number,
-            target_reps: s.target_reps,
-            completed_reps: s.completed_reps,
-            weight: s.weight,
-            completed: s.completed,
-          }));
-          await supabase.from('set_logs').insert(setInserts);
+        if (exLog) {
+          const allSetInserts: any[] = [];
+
+          // Main exercise sets
+          if (ex.sets.length > 0) {
+            allSetInserts.push(...ex.sets.map(s => ({
+              exercise_log_id: exLog.id,
+              set_number: s.set_number,
+              target_reps: s.target_reps,
+              completed_reps: s.completed_reps,
+              weight: s.weight,
+              completed: s.completed,
+              is_superset_set: false,
+            })));
+          }
+
+          // Superset sets
+          if (ex.superset_sets.length > 0) {
+            allSetInserts.push(...ex.superset_sets.map(s => ({
+              exercise_log_id: exLog.id,
+              set_number: s.set_number,
+              target_reps: s.target_reps,
+              completed_reps: s.completed_reps,
+              weight: s.weight,
+              completed: s.completed,
+              is_superset_set: true,
+            })));
+          }
+
+          if (allSetInserts.length > 0) {
+            await supabase.from('set_logs').insert(allSetInserts);
+          }
         }
       }
 
-      // Also add to workout_completions for backward compat
       await supabase.from('workout_completions').insert({
         workout_id: workout.id,
         user_id: user.id,
@@ -271,7 +338,6 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
       <div className="p-4 space-y-4">
         <div className="h-8 bg-muted rounded animate-pulse" />
         <div className="h-32 bg-muted rounded animate-pulse" />
-        <div className="h-32 bg-muted rounded animate-pulse" />
       </div>
     );
   }
@@ -284,7 +350,7 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
         </Button>
         <Card className="p-8 text-center text-muted-foreground">
           <p className="font-medium mb-2">No exercises configured</p>
-          <p className="text-sm">An admin needs to add warm-up and main workout exercises to this workout first.</p>
+          <p className="text-sm">An admin needs to add exercises to this workout first.</p>
         </Card>
       </div>
     );
@@ -309,7 +375,7 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
       {/* Warm-Up Section */}
       {warmupExercises.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             🔥 Warm-Up
           </h3>
           <div className="space-y-2">
@@ -325,15 +391,23 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
                       checked={ex.completed}
                       onCheckedChange={() => toggleExerciseComplete(globalIndex)}
                     />
-                      <div className="flex-1">
+                    <div className="flex-1">
                       <p className={`text-sm font-medium ${ex.completed ? 'line-through text-muted-foreground' : ''}`}>
                         {ex.name}
-                        {ex.superset_movement_name && (
-                          <span className="text-primary"> + {ex.superset_movement_name}</span>
-                        )}
                       </p>
                       {ex.superset_movement_name && (
-                        <Badge variant="outline" className="text-[10px] mt-0.5">Superset</Badge>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <Badge variant="outline" className="text-[10px]">Superset</Badge>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm ${ex.superset_completed ? 'line-through text-muted-foreground' : 'text-primary'}`}>
+                              + {ex.superset_movement_name}
+                            </span>
+                            <Checkbox
+                              checked={ex.superset_completed}
+                              onCheckedChange={() => toggleSupersetComplete(globalIndex)}
+                            />
+                          </div>
+                        </div>
                       )}
                       {ex.notes && (
                         <p className="text-xs text-muted-foreground mt-0.5">{ex.notes}</p>
@@ -350,7 +424,7 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
       {/* Main Workout Section */}
       {mainExercises.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             💪 Main Workout
           </h3>
           <div className="space-y-2">
@@ -374,12 +448,11 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium ${ex.completed ? 'line-through text-muted-foreground' : ''}`}>
                           {ex.name}
-                          {ex.superset_movement_name && (
-                            <span className="text-primary"> + {ex.superset_movement_name}</span>
-                          )}
                         </p>
                         {ex.superset_movement_name && (
-                          <Badge variant="outline" className="text-[10px]">Superset</Badge>
+                          <p className="text-sm text-primary">+ {ex.superset_movement_name}
+                            <Badge variant="outline" className="text-[10px] ml-1.5">Superset</Badge>
+                          </p>
                         )}
                         <div className="flex items-center gap-2 mt-0.5">
                           {ex.tracking_type === 'sets_reps' && (
@@ -412,103 +485,49 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
                     </CollapsibleTrigger>
 
                     <CollapsibleContent>
-                      <div className="px-3 pb-3 space-y-2">
+                      <div className="px-3 pb-3 space-y-3">
                         {ex.notes && (
                           <p className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded-lg">
                             💡 {ex.notes}
                           </p>
                         )}
 
-                        {/* Sets × Reps Tracking */}
-                        {ex.tracking_type === 'sets_reps' && (
-                          <div className="space-y-1.5">
-                            <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2rem] gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase px-1">
-                              <span>Set</span>
-                              <span>Target</span>
-                              <span>Reps</span>
-                              <span>Weight</span>
-                              <span></span>
+                        {/* Main exercise tracking */}
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1.5">{ex.name}</p>
+                          <TrackingBlock
+                            trackingType={ex.tracking_type}
+                            sets={ex.sets}
+                            timeResult={ex.time_result}
+                            totalRepsResult={ex.total_reps_result}
+                            completed={ex.completed}
+                            onUpdateSet={(si, f, v) => updateSet(globalIndex, si, f, v)}
+                            onToggleSetComplete={(si) => toggleSetComplete(globalIndex, si)}
+                            onUpdateTime={(v) => updateTimeResult(globalIndex, v)}
+                            onUpdateTotalReps={(v) => updateTotalReps(globalIndex, v)}
+                            onToggleComplete={() => toggleExerciseComplete(globalIndex)}
+                          />
+                        </div>
+
+                        {/* Superset tracking */}
+                        {ex.superset_movement_name && (
+                          <div className="border-t border-border/50 pt-3">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <Badge variant="outline" className="text-[10px]">Superset</Badge>
+                              <p className="text-xs font-semibold text-primary">{ex.superset_movement_name}</p>
                             </div>
-                            {ex.sets.map((set, setIdx) => (
-                              <div
-                                key={setIdx}
-                                className={`grid grid-cols-[2rem_1fr_1fr_1fr_2rem] gap-1.5 items-center ${
-                                  set.completed ? 'opacity-60' : ''
-                                }`}
-                              >
-                                <span className="text-xs text-center font-medium text-muted-foreground">
-                                  {set.set_number}
-                                </span>
-                                <span className="text-xs text-center text-muted-foreground">
-                                  {set.target_reps}
-                                </span>
-                                <Input
-                                  type="number"
-                                  placeholder="—"
-                                  className="h-8 text-xs text-center px-1"
-                                  value={set.completed_reps ?? ''}
-                                  onChange={(e) =>
-                                    updateSet(globalIndex, setIdx, 'completed_reps', e.target.value ? parseInt(e.target.value) : null)
-                                  }
-                                />
-                                <Input
-                                  type="number"
-                                  placeholder="lbs"
-                                  className="h-8 text-xs text-center px-1"
-                                  value={set.weight ?? ''}
-                                  onChange={(e) =>
-                                    updateSet(globalIndex, setIdx, 'weight', e.target.value ? parseFloat(e.target.value) : null)
-                                  }
-                                />
-                                <Checkbox
-                                  checked={set.completed}
-                                  onCheckedChange={() => toggleSetComplete(globalIndex, setIdx)}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* For Time Tracking */}
-                        {ex.tracking_type === 'time' && (
-                          <div className="flex items-center gap-2">
-                            <Timer className="w-4 h-4 text-muted-foreground" />
-                            <Input
-                              placeholder="mm:ss"
-                              className="h-9 text-sm w-32"
-                              value={ex.time_result}
-                              onChange={(e) => updateTimeResult(globalIndex, e.target.value)}
+                            <TrackingBlock
+                              trackingType={ex.superset_tracking_type}
+                              sets={ex.superset_sets}
+                              timeResult={ex.superset_time_result}
+                              totalRepsResult={ex.superset_total_reps_result}
+                              completed={ex.superset_completed}
+                              onUpdateSet={(si, f, v) => updateSupersetSet(globalIndex, si, f, v)}
+                              onToggleSetComplete={(si) => toggleSupersetSetComplete(globalIndex, si)}
+                              onUpdateTime={(v) => updateSupersetTimeResult(globalIndex, v)}
+                              onUpdateTotalReps={(v) => updateSupersetTotalReps(globalIndex, v)}
+                              onToggleComplete={() => toggleSupersetComplete(globalIndex)}
                             />
-                            <Button
-                              size="sm"
-                              variant={ex.completed ? 'success' : 'outline'}
-                              onClick={() => toggleExerciseComplete(globalIndex)}
-                            >
-                              {ex.completed ? 'Done' : 'Save'}
-                            </Button>
-                          </div>
-                        )}
-
-                        {/* Total Reps Tracking */}
-                        {ex.tracking_type === 'total_reps' && (
-                          <div className="flex items-center gap-2">
-                            <Hash className="w-4 h-4 text-muted-foreground" />
-                            <Input
-                              type="number"
-                              placeholder="Total reps"
-                              className="h-9 text-sm w-32"
-                              value={ex.total_reps_result ?? ''}
-                              onChange={(e) =>
-                                updateTotalReps(globalIndex, e.target.value ? parseInt(e.target.value) : null)
-                              }
-                            />
-                            <Button
-                              size="sm"
-                              variant={ex.completed ? 'success' : 'outline'}
-                              onClick={() => toggleExerciseComplete(globalIndex)}
-                            >
-                              {ex.completed ? 'Done' : 'Save'}
-                            </Button>
                           </div>
                         )}
                       </div>
@@ -533,7 +552,6 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
         </Button>
       </div>
 
-      {/* Finish Confirmation */}
       <AlertDialog open={showFinishConfirm} onOpenChange={setShowFinishConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -551,5 +569,112 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+/** Reusable tracking UI for both main exercise and superset */
+function TrackingBlock({
+  trackingType,
+  sets,
+  timeResult,
+  totalRepsResult,
+  completed,
+  onUpdateSet,
+  onToggleSetComplete,
+  onUpdateTime,
+  onUpdateTotalReps,
+  onToggleComplete,
+}: {
+  trackingType: 'sets_reps' | 'time' | 'total_reps';
+  sets: SetData[];
+  timeResult: string;
+  totalRepsResult: number | null;
+  completed: boolean;
+  onUpdateSet: (setIndex: number, field: keyof SetData, value: any) => void;
+  onToggleSetComplete: (setIndex: number) => void;
+  onUpdateTime: (value: string) => void;
+  onUpdateTotalReps: (value: number | null) => void;
+  onToggleComplete: () => void;
+}) {
+  return (
+    <>
+      {trackingType === 'sets_reps' && (
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2rem] gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase px-1">
+            <span>Set</span>
+            <span>Target</span>
+            <span>Reps</span>
+            <span>Weight</span>
+            <span></span>
+          </div>
+          {sets.map((set, setIdx) => (
+            <div
+              key={setIdx}
+              className={`grid grid-cols-[2rem_1fr_1fr_1fr_2rem] gap-1.5 items-center ${set.completed ? 'opacity-60' : ''}`}
+            >
+              <span className="text-xs text-center font-medium text-muted-foreground">{set.set_number}</span>
+              <span className="text-xs text-center text-muted-foreground">{set.target_reps}</span>
+              <Input
+                type="number"
+                placeholder="—"
+                className="h-8 text-xs text-center px-1"
+                value={set.completed_reps ?? ''}
+                onChange={(e) => onUpdateSet(setIdx, 'completed_reps', e.target.value ? parseInt(e.target.value) : null)}
+              />
+              <Input
+                type="number"
+                placeholder="lbs"
+                className="h-8 text-xs text-center px-1"
+                value={set.weight ?? ''}
+                onChange={(e) => onUpdateSet(setIdx, 'weight', e.target.value ? parseFloat(e.target.value) : null)}
+              />
+              <Checkbox
+                checked={set.completed}
+                onCheckedChange={() => onToggleSetComplete(setIdx)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {trackingType === 'time' && (
+        <div className="flex items-center gap-2">
+          <Timer className="w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="mm:ss"
+            className="h-9 text-sm w-32"
+            value={timeResult}
+            onChange={(e) => onUpdateTime(e.target.value)}
+          />
+          <Button
+            size="sm"
+            variant={completed ? 'success' : 'outline'}
+            onClick={onToggleComplete}
+          >
+            {completed ? 'Done' : 'Save'}
+          </Button>
+        </div>
+      )}
+
+      {trackingType === 'total_reps' && (
+        <div className="flex items-center gap-2">
+          <Hash className="w-4 h-4 text-muted-foreground" />
+          <Input
+            type="number"
+            placeholder="Total reps"
+            className="h-9 text-sm w-32"
+            value={totalRepsResult ?? ''}
+            onChange={(e) => onUpdateTotalReps(e.target.value ? parseInt(e.target.value) : null)}
+          />
+          <Button
+            size="sm"
+            variant={completed ? 'success' : 'outline'}
+            onClick={onToggleComplete}
+          >
+            {completed ? 'Done' : 'Save'}
+          </Button>
+        </div>
+      )}
+    </>
   );
 }

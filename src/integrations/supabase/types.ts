@@ -1253,6 +1253,7 @@ export type Database = {
           created_at: string
           exercise_log_id: string
           id: string
+          is_superset_set: boolean
           set_number: number
           target_reps: string | null
           weight: number | null
@@ -1263,6 +1264,7 @@ export type Database = {
           created_at?: string
           exercise_log_id: string
           id?: string
+          is_superset_set?: boolean
           set_number?: number
           target_reps?: string | null
           weight?: number | null
@@ -1273,6 +1275,7 @@ export type Database = {
           created_at?: string
           exercise_log_id?: string
           id?: string
+          is_superset_set?: boolean
           set_number?: number
           target_reps?: string | null
           weight?: number | null
