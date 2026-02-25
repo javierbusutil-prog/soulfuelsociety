@@ -326,7 +326,11 @@ export type Database = {
           notes: string | null
           section_type: string
           sort_order: number
+          superset_completed: boolean | null
           superset_movement_name: string | null
+          superset_time_result: string | null
+          superset_total_reps_result: number | null
+          superset_tracking_type: string | null
           time_result: string | null
           total_reps_result: number | null
           tracking_type: string
@@ -341,7 +345,11 @@ export type Database = {
           notes?: string | null
           section_type?: string
           sort_order?: number
+          superset_completed?: boolean | null
           superset_movement_name?: string | null
+          superset_time_result?: string | null
+          superset_total_reps_result?: number | null
+          superset_tracking_type?: string | null
           time_result?: string | null
           total_reps_result?: number | null
           tracking_type?: string
@@ -356,7 +364,11 @@ export type Database = {
           notes?: string | null
           section_type?: string
           sort_order?: number
+          superset_completed?: boolean | null
           superset_movement_name?: string | null
+          superset_time_result?: string | null
+          superset_total_reps_result?: number | null
+          superset_tracking_type?: string | null
           time_result?: string | null
           total_reps_result?: number | null
           tracking_type?: string
@@ -390,7 +402,11 @@ export type Database = {
           notes: string | null
           section_id: string
           sort_order: number
+          superset_default_reps: string | null
+          superset_default_rest: string | null
+          superset_default_sets: number | null
           superset_movement_name: string | null
+          superset_tracking_type: string | null
           tracking_type: string
         }
         Insert: {
@@ -403,7 +419,11 @@ export type Database = {
           notes?: string | null
           section_id: string
           sort_order?: number
+          superset_default_reps?: string | null
+          superset_default_rest?: string | null
+          superset_default_sets?: number | null
           superset_movement_name?: string | null
+          superset_tracking_type?: string | null
           tracking_type?: string
         }
         Update: {
@@ -416,7 +436,11 @@ export type Database = {
           notes?: string | null
           section_id?: string
           sort_order?: number
+          superset_default_reps?: string | null
+          superset_default_rest?: string | null
+          superset_default_sets?: number | null
           superset_movement_name?: string | null
+          superset_tracking_type?: string | null
           tracking_type?: string
         }
         Relationships: [
