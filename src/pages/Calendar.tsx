@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -105,6 +106,7 @@ const eventTypeColors: Record<EventType, string> = {
 };
 
 export default function Calendar() {
+  const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -486,15 +488,25 @@ export default function Calendar() {
                 <h3 className="font-semibold">
                   {format(selectedDate, 'EEEE, MMMM d')}
                 </h3>
-                <Button
-                  variant={getEntriesForDate(selectedDate) ? 'default' : 'outline'}
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => setShowPeriodLog(true)}
-                >
-                  <Droplet className="w-3.5 h-3.5" />
-                  {getEntriesForDate(selectedDate) ? 'Edit Period' : 'Log Period'}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => navigate(`/nutrition?date=${format(selectedDate, 'yyyy-MM-dd')}`)}
+                  >
+                    🍎 Nutrition
+                  </Button>
+                  <Button
+                    variant={getEntriesForDate(selectedDate) ? 'default' : 'outline'}
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => setShowPeriodLog(true)}
+                  >
+                    <Droplet className="w-3.5 h-3.5" />
+                    {getEntriesForDate(selectedDate) ? 'Edit Period' : 'Log Period'}
+                  </Button>
+                </div>
               </div>
 
               {/* Cycle entry for selected day */}
