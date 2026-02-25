@@ -36,6 +36,7 @@ interface SetData {
 interface ExerciseData {
   template_id: string | null;
   name: string;
+  superset_movement_name: string;
   notes: string;
   tracking_type: 'sets_reps' | 'time' | 'total_reps';
   section_type: 'warmup' | 'main';
@@ -111,6 +112,7 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
         exerciseList.push({
           template_id: ex.id,
           name: ex.name,
+          superset_movement_name: ex.superset_movement_name || '',
           notes: ex.notes || '',
           tracking_type: ex.tracking_type as any,
           section_type: section.section_type as 'warmup' | 'main',
@@ -219,6 +221,7 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
             workout_log_id: workoutLogId,
             exercise_template_id: ex.template_id,
             exercise_name: ex.name,
+            superset_movement_name: ex.superset_movement_name || null,
             tracking_type: ex.tracking_type,
             completed: ex.completed,
             time_result: ex.tracking_type === 'time' ? ex.time_result || null : null,
@@ -322,10 +325,16 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
                       checked={ex.completed}
                       onCheckedChange={() => toggleExerciseComplete(globalIndex)}
                     />
-                    <div className="flex-1">
+                      <div className="flex-1">
                       <p className={`text-sm font-medium ${ex.completed ? 'line-through text-muted-foreground' : ''}`}>
                         {ex.name}
+                        {ex.superset_movement_name && (
+                          <span className="text-primary"> + {ex.superset_movement_name}</span>
+                        )}
                       </p>
+                      {ex.superset_movement_name && (
+                        <Badge variant="outline" className="text-[10px] mt-0.5">Superset</Badge>
+                      )}
                       {ex.notes && (
                         <p className="text-xs text-muted-foreground mt-0.5">{ex.notes}</p>
                       )}
@@ -365,7 +374,13 @@ export function WorkoutSessionView({ workout, onBack, onComplete }: WorkoutSessi
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium ${ex.completed ? 'line-through text-muted-foreground' : ''}`}>
                           {ex.name}
+                          {ex.superset_movement_name && (
+                            <span className="text-primary"> + {ex.superset_movement_name}</span>
+                          )}
                         </p>
+                        {ex.superset_movement_name && (
+                          <Badge variant="outline" className="text-[10px]">Superset</Badge>
+                        )}
                         <div className="flex items-center gap-2 mt-0.5">
                           {ex.tracking_type === 'sets_reps' && (
                             <span className="text-xs text-muted-foreground">

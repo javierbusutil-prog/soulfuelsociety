@@ -30,6 +30,7 @@ interface ExerciseTemplate {
   default_reps: string;
   default_rest: string;
   sort_order: number;
+  superset_movement_name: string;
 }
 
 interface Section {
@@ -85,6 +86,7 @@ export function WorkoutStructureEditor({ workoutId, onClose }: WorkoutStructureE
             default_reps: e.default_reps || '10',
             default_rest: e.default_rest || '',
             sort_order: e.sort_order,
+            superset_movement_name: e.superset_movement_name || '',
           })),
       }));
       setSections(mapped);
@@ -108,6 +110,7 @@ export function WorkoutStructureEditor({ workoutId, onClose }: WorkoutStructureE
       default_reps: '10',
       default_rest: '',
       sort_order: updated[sectionIndex].exercises.length,
+      superset_movement_name: '',
     });
     setSections(updated);
     setOpenSections(prev => new Set(prev).add(sectionIndex));
@@ -162,6 +165,7 @@ export function WorkoutStructureEditor({ workoutId, onClose }: WorkoutStructureE
             default_reps: ex.tracking_type === 'sets_reps' ? ex.default_reps : null,
             default_rest: ex.default_rest.trim() || null,
             sort_order: i,
+            superset_movement_name: ex.superset_movement_name.trim() || null,
           })).filter(e => e.name);
 
           if (exerciseInserts.length > 0) {
@@ -288,6 +292,16 @@ export function WorkoutStructureEditor({ workoutId, onClose }: WorkoutStructureE
                           </div>
                         </div>
                       )}
+
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Superset with (optional)</Label>
+                        <Input
+                          className="h-9 text-xs"
+                          placeholder="e.g., Lateral Raises"
+                          value={exercise.superset_movement_name}
+                          onChange={(e) => updateExercise(sectionIndex, exIndex, 'superset_movement_name', e.target.value)}
+                        />
+                      </div>
 
                       <Textarea
                         placeholder="Notes/cues (optional)"

@@ -25,6 +25,7 @@ interface WorkoutLogSummary {
 interface ExerciseLogDetail {
   id: string;
   exercise_name: string;
+  superset_movement_name: string | null;
   tracking_type: string;
   completed: boolean;
   time_result: string | null;
@@ -145,6 +146,7 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
     const details: ExerciseLogDetail[] = exercisesData.map(ex => ({
       id: ex.id,
       exercise_name: ex.exercise_name,
+      superset_movement_name: ex.superset_movement_name || null,
       tracking_type: ex.tracking_type,
       completed: ex.completed,
       time_result: ex.time_result,
@@ -266,7 +268,12 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
                                       ) : (
                                         <div className="w-3.5 h-3.5 border border-border rounded-sm shrink-0" />
                                       )}
-                                      <span className="flex-1 font-medium text-xs">{ex.exercise_name}</span>
+                                      <span className="flex-1 font-medium text-xs">
+                                        {ex.exercise_name}
+                                        {ex.superset_movement_name && (
+                                          <span className="text-primary"> + {ex.superset_movement_name}</span>
+                                        )}
+                                      </span>
                                       {ex.tracking_type === 'time' && ex.time_result && (
                                         <Badge variant="secondary" className="text-[10px]">
                                           <Clock className="w-2.5 h-2.5 mr-0.5" /> {ex.time_result}
