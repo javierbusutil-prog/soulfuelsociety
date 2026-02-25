@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Bell, Settings, User, LogOut, Shield } from 'lucide-react';
+import { Settings, User, LogOut, Shield } from 'lucide-react';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -40,11 +41,7 @@ export function Header({ title }: HeaderProps) {
         <div className="flex items-center gap-2">
           {user && (
             <>
-              <Button variant="ghost" size="icon-sm" asChild>
-                <Link to="/notifications">
-                  <Bell className="w-5 h-5 stroke-[1.5]" />
-                </Link>
-              </Button>
+              <NotificationBell />
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
