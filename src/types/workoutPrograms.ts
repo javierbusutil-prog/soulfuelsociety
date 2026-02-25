@@ -67,11 +67,30 @@ export interface CalendarEvent {
   created_at: string;
 }
 
+export interface RingHabits {
+  workout: boolean;
+  protein: boolean;
+  hydration: boolean;
+  fasting: boolean;
+  cycle_logging: boolean;
+  whole_foods: boolean;
+}
+
+export const DEFAULT_RING_HABITS: RingHabits = {
+  workout: true,
+  protein: true,
+  hydration: true,
+  fasting: false,
+  cycle_logging: false,
+  whole_foods: false,
+};
+
 export interface UserSettings {
   id: string;
   user_id: string;
   reminders_enabled: boolean;
   reminder_time: 'morning' | 'afternoon' | 'evening';
+  ring_habits: RingHabits;
   created_at: string;
   updated_at: string;
 }

@@ -1192,6 +1192,7 @@ export type Database = {
           id: string
           reminder_time: string
           reminders_enabled: boolean
+          ring_habits: Json
           updated_at: string
           user_id: string
         }
@@ -1200,6 +1201,7 @@ export type Database = {
           id?: string
           reminder_time?: string
           reminders_enabled?: boolean
+          ring_habits?: Json
           updated_at?: string
           user_id: string
         }
@@ -1208,6 +1210,7 @@ export type Database = {
           id?: string
           reminder_time?: string
           reminders_enabled?: boolean
+          ring_habits?: Json
           updated_at?: string
           user_id?: string
         }
