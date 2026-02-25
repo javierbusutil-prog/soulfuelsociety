@@ -14,6 +14,7 @@ import { WorkoutProgram } from '@/types/workoutPrograms';
 import { useWorkoutPrograms } from '@/hooks/useWorkoutPrograms';
 import { ProgramCard } from '@/components/workouts/ProgramCard';
 import { CreateProgramDialog } from '@/components/workouts/CreateProgramDialog';
+import { UploadEbookDialog } from '@/components/workouts/UploadEbookDialog';
 import { CreateWorkoutDialog } from '@/components/workouts/CreateWorkoutDialog';
 import { EditWorkoutDialog } from '@/components/workouts/EditWorkoutDialog';
 import { ProgramDetailView } from '@/components/workouts/ProgramDetailView';
@@ -432,8 +433,9 @@ export default function Workouts() {
           {/* Programs Tab */}
           <TabsContent value="programs" className="mt-4">
             {isAdmin && (
-              <div className="mb-4">
+              <div className="flex gap-2 mb-4">
                 <CreateProgramDialog onProgramCreated={createProgram} />
+                <UploadEbookDialog onProgramCreated={createProgram} />
               </div>
             )}
             <div className="space-y-3">
