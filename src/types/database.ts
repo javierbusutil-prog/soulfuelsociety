@@ -246,3 +246,7 @@ export interface OrderItem {
   // Joined fields
   product?: Product;
 }
+
+// Re-export Movement types
+export type { Movement } from './movements';
+export { MUSCLE_GROUPS, MOVEMENT_CATEGORIES, EQUIPMENT_OPTIONS, DIFFICULTY_LEVELS, COMMON_TAGS } from './movements';

@@ -514,6 +514,98 @@ export type Database = {
           },
         ]
       }
+      movement_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          movement_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          movement_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          movement_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movement_favorites_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "movements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movements: {
+        Row: {
+          category: string
+          common_mistakes: string[]
+          created_at: string
+          created_by: string | null
+          difficulty: string
+          equipment: string
+          form_cues: string[]
+          id: string
+          muscle_group: string
+          name: string
+          progressions: string[]
+          published: boolean
+          regressions: string[]
+          safety_notes: string | null
+          tags: string[]
+          thumbnail_url: string | null
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          category?: string
+          common_mistakes?: string[]
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          equipment?: string
+          form_cues?: string[]
+          id?: string
+          muscle_group?: string
+          name: string
+          progressions?: string[]
+          published?: boolean
+          regressions?: string[]
+          safety_notes?: string | null
+          tags?: string[]
+          thumbnail_url?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          category?: string
+          common_mistakes?: string[]
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          equipment?: string
+          form_cues?: string[]
+          id?: string
+          muscle_group?: string
+          name?: string
+          progressions?: string[]
+          published?: boolean
+          regressions?: string[]
+          safety_notes?: string | null
+          tags?: string[]
+          thumbnail_url?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
