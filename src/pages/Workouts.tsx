@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Heart, Clock, Dumbbell, Check, LayoutGrid, Calendar, BookOpen, Pencil, Trash2, MoreVertical } from 'lucide-react';
+import { Search, Filter, Heart, Clock, Dumbbell, Check, Calendar, BookOpen, Pencil, Trash2, Play, History, ListChecks } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,9 @@ import { CreateProgramDialog } from '@/components/workouts/CreateProgramDialog';
 import { CreateWorkoutDialog } from '@/components/workouts/CreateWorkoutDialog';
 import { EditWorkoutDialog } from '@/components/workouts/EditWorkoutDialog';
 import { ProgramDetailView } from '@/components/workouts/ProgramDetailView';
+import { WorkoutSessionView } from '@/components/workouts/WorkoutSessionView';
+import { WorkoutHistory } from '@/components/workouts/WorkoutHistory';
+import { WorkoutStructureEditor } from '@/components/workouts/WorkoutStructureEditor';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +37,12 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const levelColors: Record<WorkoutLevel, string> = {
   beginner: 'bg-success/20 text-success border-success/30',
@@ -62,6 +71,9 @@ export default function Workouts() {
   const [selectedProgram, setSelectedProgram] = useState<WorkoutProgram | null>(null);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [deletingWorkout, setDeletingWorkout] = useState<Workout | null>(null);
+  const [activeSession, setActiveSession] = useState<Workout | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [structureWorkout, setStructureWorkout] = useState<Workout | null>(null);
   const { 
     programs, 
     loading: programsLoading, 
@@ -123,9 +135,7 @@ export default function Workouts() {
 
   const toggleFavorite = async (workoutId: string) => {
     if (!user) return;
-
     const isFavorite = favorites.includes(workoutId);
-
     if (isFavorite) {
       await supabase.from('favorites').delete().eq('workout_id', workoutId).eq('user_id', user.id);
       setFavorites(favorites.filter(id => id !== workoutId));
@@ -135,26 +145,10 @@ export default function Workouts() {
     }
   };
 
-  const markComplete = async (workoutId: string) => {
-    if (!user) return;
-
-    await supabase.from('workout_completions').insert({
-      workout_id: workoutId,
-      user_id: user.id,
-    });
-
-    setCompletedToday([...completedToday, workoutId]);
-  };
-
   const handleDeleteWorkout = async (workout: Workout) => {
     try {
-      const { error } = await supabase
-        .from('workouts')
-        .delete()
-        .eq('id', workout.id);
-
+      const { error } = await supabase.from('workouts').delete().eq('id', workout.id);
       if (error) throw error;
-
       setWorkouts(prev => prev.filter(w => w.id !== workout.id));
       setDeletingWorkout(null);
     } catch (error: any) {
@@ -170,10 +164,34 @@ export default function Workouts() {
     return matchesSearch && matchesLevel && matchesType;
   });
 
-  // Filter programs - show only published for non-admins
   const visiblePrograms = programs.filter(p => isAdmin || p.published);
 
-  // If viewing a program detail
+  // Active workout session view
+  if (activeSession) {
+    return (
+      <AppLayout title={activeSession.title}>
+        <WorkoutSessionView
+          workout={activeSession}
+          onBack={() => setActiveSession(null)}
+          onComplete={() => {
+            setActiveSession(null);
+            fetchTodayCompletions();
+          }}
+        />
+      </AppLayout>
+    );
+  }
+
+  // Workout history view
+  if (showHistory) {
+    return (
+      <AppLayout title="Workout History">
+        <WorkoutHistory onBack={() => setShowHistory(false)} />
+      </AppLayout>
+    );
+  }
+
+  // Program detail view
   if (selectedProgram) {
     return (
       <AppLayout title="Program Details">
@@ -198,7 +216,6 @@ export default function Workouts() {
   return (
     <AppLayout title="Workouts">
       <div className="max-w-lg mx-auto p-4">
-        {/* Tabs for Workouts vs Programs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="workouts" className="flex items-center gap-1.5 text-xs">
@@ -215,14 +232,24 @@ export default function Workouts() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Single Workouts Tab */}
+          {/* Workouts Tab */}
           <TabsContent value="workouts" className="mt-4">
-            {/* Admin: Add Workout Button */}
-            {isAdmin && (
-              <div className="mb-4">
-                <CreateWorkoutDialog onWorkoutCreated={fetchWorkouts} />
-              </div>
-            )}
+            {/* Top actions row */}
+            <div className="flex gap-2 mb-4">
+              {isAdmin && (
+                <div className="flex-1">
+                  <CreateWorkoutDialog onWorkoutCreated={fetchWorkouts} />
+                </div>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => setShowHistory(true)}
+                className={isAdmin ? '' : 'w-full'}
+              >
+                <History className="w-4 h-4 mr-1.5" />
+                History
+              </Button>
+            </div>
 
             {/* Search and filters */}
             <div className="flex gap-2 mb-4">
@@ -248,11 +275,8 @@ export default function Workouts() {
                       key={level}
                       checked={levelFilter.includes(level)}
                       onCheckedChange={(checked) => {
-                        if (checked) {
-                          setLevelFilter([...levelFilter, level]);
-                        } else {
-                          setLevelFilter(levelFilter.filter(l => l !== level));
-                        }
+                        if (checked) setLevelFilter([...levelFilter, level]);
+                        else setLevelFilter(levelFilter.filter(l => l !== level));
                       }}
                     >
                       {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -264,11 +288,8 @@ export default function Workouts() {
                       key={type}
                       checked={typeFilter.includes(type)}
                       onCheckedChange={(checked) => {
-                        if (checked) {
-                          setTypeFilter([...typeFilter, type]);
-                        } else {
-                          setTypeFilter(typeFilter.filter(t => t !== type));
-                        }
+                        if (checked) setTypeFilter([...typeFilter, type]);
+                        else setTypeFilter(typeFilter.filter(t => t !== type));
                       }}
                     >
                       {typeIcons[type]} {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -282,22 +303,12 @@ export default function Workouts() {
             {(levelFilter.length > 0 || typeFilter.length > 0) && (
               <div className="flex flex-wrap gap-2 mb-4">
                 {levelFilter.map(level => (
-                  <Badge
-                    key={level}
-                    variant="secondary"
-                    className="cursor-pointer"
-                    onClick={() => setLevelFilter(levelFilter.filter(l => l !== level))}
-                  >
+                  <Badge key={level} variant="secondary" className="cursor-pointer" onClick={() => setLevelFilter(levelFilter.filter(l => l !== level))}>
                     {level} ×
                   </Badge>
                 ))}
                 {typeFilter.map(type => (
-                  <Badge
-                    key={type}
-                    variant="secondary"
-                    className="cursor-pointer"
-                    onClick={() => setTypeFilter(typeFilter.filter(t => t !== type))}
-                  >
+                  <Badge key={type} variant="secondary" className="cursor-pointer" onClick={() => setTypeFilter(typeFilter.filter(t => t !== type))}>
                     {type} ×
                   </Badge>
                 ))}
@@ -348,6 +359,13 @@ export default function Workouts() {
                                 {isAdmin && (
                                   <>
                                     <button
+                                      onClick={() => setStructureWorkout(workout)}
+                                      className="text-muted-foreground hover:text-foreground p-1"
+                                      title="Edit exercises"
+                                    >
+                                      <ListChecks className="w-4 h-4" />
+                                    </button>
+                                    <button
                                       onClick={() => setEditingWorkout(workout)}
                                       className="text-muted-foreground hover:text-foreground p-1"
                                     >
@@ -387,11 +405,18 @@ export default function Workouts() {
                               <Button
                                 size="sm"
                                 variant={isCompleted ? 'success' : 'default'}
-                                onClick={() => !isCompleted && markComplete(workout.id)}
+                                onClick={() => setActiveSession(workout)}
                                 disabled={isCompleted}
                               >
-                                <Check className="w-4 h-4 mr-1" />
-                                {isCompleted ? 'Completed' : 'Mark Complete'}
+                                {isCompleted ? (
+                                  <>
+                                    <Check className="w-4 h-4 mr-1" /> Completed
+                                  </>
+                                ) : (
+                                  <>
+                                    <Play className="w-4 h-4 mr-1" /> Start Workout
+                                  </>
+                                )}
                               </Button>
                             </div>
                           </div>
@@ -406,14 +431,11 @@ export default function Workouts() {
 
           {/* Programs Tab */}
           <TabsContent value="programs" className="mt-4">
-            {/* Admin: Create Program Button */}
             {isAdmin && (
               <div className="mb-4">
                 <CreateProgramDialog onProgramCreated={createProgram} />
               </div>
             )}
-
-            {/* Programs Grid */}
             <div className="space-y-3">
               {programsLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
@@ -429,9 +451,7 @@ export default function Workouts() {
                 <Card className="p-8 text-center text-muted-foreground">
                   <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>No programs available</p>
-                  {isAdmin && (
-                    <p className="text-sm mt-2">Create your first program above!</p>
-                  )}
+                  {isAdmin && <p className="text-sm mt-2">Create your first program above!</p>}
                 </Card>
               ) : (
                 visiblePrograms.map((program, index) => (
@@ -464,6 +484,21 @@ export default function Workouts() {
             onWorkoutUpdated={fetchWorkouts}
           />
         )}
+
+        {/* Workout Structure Editor Dialog */}
+        <Dialog open={!!structureWorkout} onOpenChange={(open) => !open && setStructureWorkout(null)}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Exercises — {structureWorkout?.title}</DialogTitle>
+            </DialogHeader>
+            {structureWorkout && (
+              <WorkoutStructureEditor
+                workoutId={structureWorkout.id}
+                onClose={() => setStructureWorkout(null)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Delete Confirmation */}
         <AlertDialog open={!!deletingWorkout} onOpenChange={(open) => !open && setDeletingWorkout(null)}>
