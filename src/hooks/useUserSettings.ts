@@ -53,7 +53,7 @@ export function useUserSettings() {
         .insert({
           user_id: user.id,
           ...updates,
-        })
+        } as any)
         .select()
         .single();
 
