@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Heart, Clock, Dumbbell, Check, LayoutGrid, Calendar, BookOpen } from 'lucide-react';
+import { Search, Filter, Heart, Clock, Dumbbell, Check, LayoutGrid, Calendar, BookOpen, Pencil, Trash2, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,18 @@ import { useWorkoutPrograms } from '@/hooks/useWorkoutPrograms';
 import { ProgramCard } from '@/components/workouts/ProgramCard';
 import { CreateProgramDialog } from '@/components/workouts/CreateProgramDialog';
 import { CreateWorkoutDialog } from '@/components/workouts/CreateWorkoutDialog';
+import { EditWorkoutDialog } from '@/components/workouts/EditWorkoutDialog';
 import { ProgramDetailView } from '@/components/workouts/ProgramDetailView';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { MovementLibrary } from '@/components/movements/MovementLibrary';
 import {
   DropdownMenu,
@@ -49,7 +60,8 @@ export default function Workouts() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('workouts');
   const [selectedProgram, setSelectedProgram] = useState<WorkoutProgram | null>(null);
-
+  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
+  const [deletingWorkout, setDeletingWorkout] = useState<Workout | null>(null);
   const { 
     programs, 
     loading: programsLoading, 
@@ -132,6 +144,22 @@ export default function Workouts() {
     });
 
     setCompletedToday([...completedToday, workoutId]);
+  };
+
+  const handleDeleteWorkout = async (workout: Workout) => {
+    try {
+      const { error } = await supabase
+        .from('workouts')
+        .delete()
+        .eq('id', workout.id);
+
+      if (error) throw error;
+
+      setWorkouts(prev => prev.filter(w => w.id !== workout.id));
+      setDeletingWorkout(null);
+    } catch (error: any) {
+      console.error('Failed to delete workout:', error.message);
+    }
   };
 
   const filteredWorkouts = workouts.filter(workout => {
@@ -316,12 +344,30 @@ export default function Workouts() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
                               <h3 className="font-semibold truncate">{workout.title}</h3>
-                              <button
-                                onClick={() => toggleFavorite(workout.id)}
-                                className={`shrink-0 ${isFavorite ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                              >
-                                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-                              </button>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {isAdmin && (
+                                  <>
+                                    <button
+                                      onClick={() => setEditingWorkout(workout)}
+                                      className="text-muted-foreground hover:text-foreground p-1"
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => setDeletingWorkout(workout)}
+                                      className="text-muted-foreground hover:text-destructive p-1"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                )}
+                                <button
+                                  onClick={() => toggleFavorite(workout.id)}
+                                  className={`${isFavorite ? 'text-primary' : 'text-muted-foreground hover:text-foreground'} p-1`}
+                                >
+                                  <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                                </button>
+                              </div>
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className={levelColors[workout.level]}>
@@ -408,6 +454,37 @@ export default function Workouts() {
             <MovementLibrary />
           </TabsContent>
         </Tabs>
+
+        {/* Edit Workout Dialog */}
+        {editingWorkout && (
+          <EditWorkoutDialog
+            workout={editingWorkout}
+            open={!!editingWorkout}
+            onOpenChange={(open) => !open && setEditingWorkout(null)}
+            onWorkoutUpdated={fetchWorkouts}
+          />
+        )}
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={!!deletingWorkout} onOpenChange={(open) => !open && setDeletingWorkout(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Workout</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{deletingWorkout?.title}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deletingWorkout && handleDeleteWorkout(deletingWorkout)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
