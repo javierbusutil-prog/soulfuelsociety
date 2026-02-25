@@ -58,7 +58,7 @@ export default function Waitlist() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6" role="main" aria-label="Join the waitlist">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -94,7 +94,7 @@ export default function Waitlist() {
             </p>
 
             <Card className="p-6 text-left">
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" aria-label="Waitlist signup form">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
                   <Input
@@ -118,9 +118,9 @@ export default function Waitlist() {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full" disabled={loading} aria-busy={loading}>
                   {loading ? 'Joining...' : 'Join the Waitlist'}
-                  {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
+                  {!loading && <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />}
                 </Button>
               </form>
             </Card>

@@ -15,10 +15,18 @@ export function NotificationBell() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon-sm" className="relative">
-          <Bell className="w-5 h-5 stroke-[1.5]" />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="relative"
+          aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
+        >
+          <Bell className="w-5 h-5 stroke-[1.5]" aria-hidden="true" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+            <span
+              className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center"
+              aria-hidden="true"
+            >
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -40,16 +48,18 @@ export function NotificationBell() {
           ) : notifications.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">No notifications yet</p>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border" role="list" aria-label="Notifications list">
               {notifications.map((n) => (
                 <button
                   key={n.id}
+                  role="listitem"
+                  aria-label={`${n.read ? '' : 'Unread: '}${n.title}. ${n.body || ''}`}
                   className={`w-full text-left px-4 py-3 hover:bg-secondary/50 transition-colors ${!n.read ? 'bg-primary/5' : ''}`}
                   onClick={() => !n.read && markAsRead(n.id)}
                 >
                   <div className="flex items-start gap-2">
                     {!n.read && (
-                      <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" aria-hidden="true" />
                     )}
                     <div className={!n.read ? '' : 'ml-4'}>
                       <p className="text-sm font-medium leading-tight">{n.title}</p>
