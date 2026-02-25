@@ -18,6 +18,7 @@ import Store from "./pages/Store";
 import Upgrade from "./pages/Upgrade";
 import Profile from "./pages/Profile";
 import Waitlist from "./pages/Waitlist";
+import Nutrition from "./pages/Nutrition";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ function AppRoutes() {
       
       {/* Protected routes */}
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+      <Route path="/nutrition" element={<ProtectedRoute><Nutrition /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       <Route path="/workouts" element={<ProtectedRoute><Workouts /></ProtectedRoute>} />
       <Route path="/coach" element={<ProtectedRoute><Coach /></ProtectedRoute>} />
