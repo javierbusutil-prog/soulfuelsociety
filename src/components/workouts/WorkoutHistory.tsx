@@ -22,10 +22,23 @@ interface WorkoutLogSummary {
   summary: string;
 }
 
+interface SetLogDetail {
+  set_number: number;
+  target_reps: string | null;
+  completed_reps: number | null;
+  weight: number | null;
+  completed: boolean;
+  is_superset_set: boolean;
+}
+
 interface ExerciseLogDetail {
   id: string;
   exercise_name: string;
   superset_movement_name: string | null;
+  superset_tracking_type: string | null;
+  superset_completed: boolean;
+  superset_time_result: string | null;
+  superset_total_reps_result: number | null;
   tracking_type: string;
   completed: boolean;
   time_result: string | null;
@@ -33,14 +46,7 @@ interface ExerciseLogDetail {
   section_type: string;
   sort_order: number;
   sets: SetLogDetail[];
-}
-
-interface SetLogDetail {
-  set_number: number;
-  target_reps: string | null;
-  completed_reps: number | null;
-  weight: number | null;
-  completed: boolean;
+  superset_sets: SetLogDetail[];
 }
 
 interface WorkoutHistoryProps {
@@ -76,7 +82,6 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
       return;
     }
 
-    // Get workout titles
     const workoutIds = [...new Set(logsData.map(l => l.workout_id))];
     const { data: workoutsData } = await supabase
       .from('workouts')
@@ -85,7 +90,6 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
 
     const titleMap = new Map((workoutsData || []).map(w => [w.id, w.title]));
 
-    // Get exercise counts per log
     const logIds = logsData.map(l => l.id);
     const { data: exerciseCounts } = await supabase
       .from('exercise_logs')
@@ -143,26 +147,40 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
       .in('exercise_log_id', exerciseIds)
       .order('set_number');
 
-    const details: ExerciseLogDetail[] = exercisesData.map(ex => ({
-      id: ex.id,
-      exercise_name: ex.exercise_name,
-      superset_movement_name: ex.superset_movement_name || null,
-      tracking_type: ex.tracking_type,
-      completed: ex.completed,
-      time_result: ex.time_result,
-      total_reps_result: ex.total_reps_result,
-      section_type: ex.section_type,
-      sort_order: ex.sort_order,
-      sets: (setsData || [])
-        .filter(s => s.exercise_log_id === ex.id)
-        .map(s => ({
+    const details: ExerciseLogDetail[] = exercisesData.map(ex => {
+      const allSets = (setsData || []).filter(s => s.exercise_log_id === ex.id);
+      return {
+        id: ex.id,
+        exercise_name: ex.exercise_name,
+        superset_movement_name: ex.superset_movement_name || null,
+        superset_tracking_type: ex.superset_tracking_type || null,
+        superset_completed: ex.superset_completed || false,
+        superset_time_result: ex.superset_time_result || null,
+        superset_total_reps_result: ex.superset_total_reps_result || null,
+        tracking_type: ex.tracking_type,
+        completed: ex.completed,
+        time_result: ex.time_result,
+        total_reps_result: ex.total_reps_result,
+        section_type: ex.section_type,
+        sort_order: ex.sort_order,
+        sets: allSets.filter(s => !s.is_superset_set).map(s => ({
           set_number: s.set_number,
           target_reps: s.target_reps,
           completed_reps: s.completed_reps,
           weight: s.weight,
           completed: s.completed,
+          is_superset_set: false,
         })),
-    }));
+        superset_sets: allSets.filter(s => s.is_superset_set).map(s => ({
+          set_number: s.set_number,
+          target_reps: s.target_reps,
+          completed_reps: s.completed_reps,
+          weight: s.weight,
+          completed: s.completed,
+          is_superset_set: true,
+        })),
+      };
+    });
 
     setLogDetail(details);
     setOpenExercises(new Set());
@@ -237,14 +255,12 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
                 </div>
               </Card>
 
-              {/* Detail view */}
               {selectedLog === log.id && (
                 <div className="mt-1 ml-2 space-y-1.5">
                   {detailLoading ? (
                     <div className="p-3 text-sm text-muted-foreground">Loading...</div>
                   ) : (
                     <>
-                      {/* Group by section */}
                       {['warmup', 'main'].map(sectionType => {
                         const sectionExercises = logDetail.filter(e => e.section_type === sectionType);
                         if (sectionExercises.length === 0) return null;
@@ -253,7 +269,7 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
                             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 py-1">
                               {sectionType === 'warmup' ? '🔥 Warm-Up' : '💪 Main Workout'}
                             </p>
-                            {sectionExercises.map((ex, idx) => {
+                            {sectionExercises.map((ex) => {
                               const globalIdx = logDetail.indexOf(ex);
                               return (
                                 <Collapsible
@@ -268,12 +284,12 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
                                       ) : (
                                         <div className="w-3.5 h-3.5 border border-border rounded-sm shrink-0" />
                                       )}
-                                      <span className="flex-1 font-medium text-xs">
-                                        {ex.exercise_name}
+                                      <div className="flex-1 min-w-0">
+                                        <span className="font-medium text-xs">{ex.exercise_name}</span>
                                         {ex.superset_movement_name && (
-                                          <span className="text-primary"> + {ex.superset_movement_name}</span>
+                                          <span className="text-primary text-xs"> + {ex.superset_movement_name}</span>
                                         )}
-                                      </span>
+                                      </div>
                                       {ex.tracking_type === 'time' && ex.time_result && (
                                         <Badge variant="secondary" className="text-[10px]">
                                           <Clock className="w-2.5 h-2.5 mr-0.5" /> {ex.time_result}
@@ -284,7 +300,7 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
                                           <Hash className="w-2.5 h-2.5 mr-0.5" /> {ex.total_reps_result}
                                         </Badge>
                                       )}
-                                      {ex.sets.length > 0 && (
+                                      {(ex.sets.length > 0 || ex.superset_sets.length > 0) && (
                                         openExercises.has(globalIdx) ? (
                                           <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
                                         ) : (
@@ -292,28 +308,34 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
                                         )
                                       )}
                                     </CollapsibleTrigger>
-                                    {ex.sets.length > 0 && (
+                                    {(ex.sets.length > 0 || ex.superset_sets.length > 0) && (
                                       <CollapsibleContent>
-                                        <div className="px-3 pb-2 space-y-1">
-                                          <div className="grid grid-cols-4 gap-1 text-[10px] font-semibold text-muted-foreground uppercase">
-                                            <span>Set</span>
-                                            <span>Target</span>
-                                            <span>Reps</span>
-                                            <span>Weight</span>
-                                          </div>
-                                          {ex.sets.map(set => (
-                                            <div
-                                              key={set.set_number}
-                                              className={`grid grid-cols-4 gap-1 text-xs ${
-                                                set.completed ? 'text-foreground' : 'text-muted-foreground'
-                                              }`}
-                                            >
-                                              <span>{set.set_number}</span>
-                                              <span>{set.target_reps || '—'}</span>
-                                              <span>{set.completed_reps ?? '—'}</span>
-                                              <span>{set.weight ? `${set.weight} lbs` : '—'}</span>
+                                        <div className="px-3 pb-2 space-y-2">
+                                          {/* Main sets */}
+                                          {ex.sets.length > 0 && (
+                                            <HistorySetsTable label={ex.exercise_name} sets={ex.sets} />
+                                          )}
+
+                                          {/* Superset sets */}
+                                          {ex.superset_movement_name && ex.superset_sets.length > 0 && (
+                                            <HistorySetsTable label={`${ex.superset_movement_name} (Superset)`} sets={ex.superset_sets} />
+                                          )}
+
+                                          {/* Superset time/reps results */}
+                                          {ex.superset_movement_name && ex.superset_tracking_type === 'time' && ex.superset_time_result && (
+                                            <div className="flex items-center gap-1 text-xs">
+                                              <Badge variant="outline" className="text-[10px]">Superset</Badge>
+                                              <Clock className="w-3 h-3 text-muted-foreground" />
+                                              <span>{ex.superset_time_result}</span>
                                             </div>
-                                          ))}
+                                          )}
+                                          {ex.superset_movement_name && ex.superset_tracking_type === 'total_reps' && ex.superset_total_reps_result && (
+                                            <div className="flex items-center gap-1 text-xs">
+                                              <Badge variant="outline" className="text-[10px]">Superset</Badge>
+                                              <Hash className="w-3 h-3 text-muted-foreground" />
+                                              <span>{ex.superset_total_reps_result} reps</span>
+                                            </div>
+                                          )}
                                         </div>
                                       </CollapsibleContent>
                                     )}
@@ -332,6 +354,31 @@ export function WorkoutHistory({ onBack }: WorkoutHistoryProps) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function HistorySetsTable({ label, sets }: { label: string; sets: { set_number: number; target_reps: string | null; completed_reps: number | null; weight: number | null; completed: boolean }[] }) {
+  return (
+    <div>
+      <p className="text-[10px] font-semibold text-muted-foreground mb-1">{label}</p>
+      <div className="grid grid-cols-4 gap-1 text-[10px] font-semibold text-muted-foreground uppercase">
+        <span>Set</span>
+        <span>Target</span>
+        <span>Reps</span>
+        <span>Weight</span>
+      </div>
+      {sets.map(set => (
+        <div
+          key={set.set_number}
+          className={`grid grid-cols-4 gap-1 text-xs ${set.completed ? 'text-foreground' : 'text-muted-foreground'}`}
+        >
+          <span>{set.set_number}</span>
+          <span>{set.target_reps || '—'}</span>
+          <span>{set.completed_reps ?? '—'}</span>
+          <span>{set.weight ? `${set.weight} lbs` : '—'}</span>
+        </div>
+      ))}
     </div>
   );
 }
