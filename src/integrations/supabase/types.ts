@@ -437,6 +437,42 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_logs: {
+        Row: {
+          created_at: string
+          date: string
+          has_carbs: boolean
+          has_fiber: boolean
+          has_healthy_fats: boolean
+          has_protein: boolean
+          id: string
+          meal_label: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          has_carbs?: boolean
+          has_fiber?: boolean
+          has_healthy_fats?: boolean
+          has_protein?: boolean
+          id?: string
+          meal_label?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          has_carbs?: boolean
+          has_fiber?: boolean
+          has_healthy_fats?: boolean
+          has_protein?: boolean
+          id?: string
+          meal_label?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -1103,6 +1139,39 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      weekly_reflections: {
+        Row: {
+          cravings_intensity: number
+          created_at: string
+          energy_rating: number
+          id: string
+          notes: string | null
+          protein_consistency: number
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          cravings_intensity?: number
+          created_at?: string
+          energy_rating?: number
+          id?: string
+          notes?: string | null
+          protein_consistency?: number
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          cravings_intensity?: number
+          created_at?: string
+          energy_rating?: number
+          id?: string
+          notes?: string | null
+          protein_consistency?: number
+          user_id?: string
+          week_start?: string
         }
         Relationships: []
       }
