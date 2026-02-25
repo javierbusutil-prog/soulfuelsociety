@@ -12,6 +12,7 @@ import { ProteinTracker } from '@/components/nutrition/ProteinTracker';
 import { HydrationTracker } from '@/components/nutrition/HydrationTracker';
 import { EnergyMoodCheckin } from '@/components/nutrition/EnergyMoodCheckin';
 import { ConsistencyRing } from '@/components/nutrition/ConsistencyRing';
+import { WeeklyTrends } from '@/components/nutrition/WeeklyTrends';
 
 export default function Nutrition() {
   const [searchParams] = useSearchParams();
@@ -103,6 +104,8 @@ export default function Nutrition() {
           entry={nutrition.entry}
           setCheckin={nutrition.setCheckin}
         />
+
+        <WeeklyTrends />
       </div>
     </AppLayout>
   );
