@@ -22,6 +22,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { WorkoutLevel, WorkoutType } from '@/types/database';
+import { WorkoutStructureEditor } from './WorkoutStructureEditor';
 
 interface CreateWorkoutDialogProps {
   onWorkoutCreated: () => void;
@@ -31,6 +32,8 @@ export function CreateWorkoutDialog({ onWorkoutCreated }: CreateWorkoutDialogPro
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<'info' | 'structure'>('info');
+  const [createdWorkoutId, setCreatedWorkoutId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -42,7 +45,22 @@ export function CreateWorkoutDialog({ onWorkoutCreated }: CreateWorkoutDialogPro
     is_featured: false,
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      level: 'beginner',
+      workout_type: 'strength',
+      duration_minutes: 30,
+      equipment: '',
+      coaching_notes: '',
+      is_featured: false,
+    });
+    setStep('info');
+    setCreatedWorkoutId(null);
+  };
+
+  const handleSubmitInfo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
       toast({ title: 'Title is required', variant: 'destructive' });
@@ -58,7 +76,7 @@ export function CreateWorkoutDialog({ onWorkoutCreated }: CreateWorkoutDialogPro
         .map(e => e.trim())
         .filter(e => e.length > 0);
 
-      const { error } = await supabase.from('workouts').insert({
+      const { data, error } = await supabase.from('workouts').insert({
         title: formData.title.trim(),
         description: formData.description.trim() || null,
         level: formData.level,
@@ -68,23 +86,13 @@ export function CreateWorkoutDialog({ onWorkoutCreated }: CreateWorkoutDialogPro
         coaching_notes: formData.coaching_notes.trim() || null,
         is_featured: formData.is_featured,
         created_by: user?.id,
-      });
+      }).select().single();
 
       if (error) throw error;
 
-      toast({ title: 'Workout created successfully!' });
-      setOpen(false);
-      setFormData({
-        title: '',
-        description: '',
-        level: 'beginner',
-        workout_type: 'strength',
-        duration_minutes: 30,
-        equipment: '',
-        coaching_notes: '',
-        is_featured: false,
-      });
-      onWorkoutCreated();
+      setCreatedWorkoutId(data.id);
+      setStep('structure');
+      toast({ title: 'Workout created! Now add exercises.' });
     } catch (error: any) {
       toast({ title: 'Failed to create workout', description: error.message, variant: 'destructive' });
     } finally {
@@ -92,8 +100,22 @@ export function CreateWorkoutDialog({ onWorkoutCreated }: CreateWorkoutDialogPro
     }
   };
 
+  const handleClose = (isOpen: boolean) => {
+    if (!isOpen) {
+      if (createdWorkoutId) onWorkoutCreated();
+      resetForm();
+    }
+    setOpen(isOpen);
+  };
+
+  const handleStructureDone = () => {
+    onWorkoutCreated();
+    resetForm();
+    setOpen(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogTrigger asChild>
         <Button className="w-full">
           <Plus className="w-4 h-4 mr-2" />
@@ -102,114 +124,121 @@ export function CreateWorkoutDialog({ onWorkoutCreated }: CreateWorkoutDialogPro
       </DialogTrigger>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Workout</DialogTitle>
+          <DialogTitle>
+            {step === 'info' ? 'Create New Workout' : `Add Exercises — ${formData.title}`}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g., Full Body Strength"
-            />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe the workout..."
-              rows={3}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        {step === 'info' && (
+          <form onSubmit={handleSubmitInfo} className="space-y-4">
             <div className="space-y-2">
-              <Label>Level</Label>
-              <Select
-                value={formData.level}
-                onValueChange={(value: WorkoutLevel) => setFormData({ ...formData, level: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="e.g., Full Body Strength"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label>Type</Label>
-              <Select
-                value={formData.workout_type}
-                onValueChange={(value: WorkoutType) => setFormData({ ...formData, workout_type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="strength">💪 Strength</SelectItem>
-                  <SelectItem value="cardio">🏃 Cardio</SelectItem>
-                  <SelectItem value="mobility">🧘 Mobility</SelectItem>
-                  <SelectItem value="recovery">🌙 Recovery</SelectItem>
-                  <SelectItem value="hiit">🔥 HIIT</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Describe the workout..."
+                rows={3}
+              />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="duration">Duration (minutes)</Label>
-            <Input
-              id="duration"
-              type="number"
-              min={5}
-              max={180}
-              value={formData.duration_minutes}
-              onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 30 })}
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Level</Label>
+                <Select
+                  value={formData.level}
+                  onValueChange={(value: WorkoutLevel) => setFormData({ ...formData, level: value })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select
+                  value={formData.workout_type}
+                  onValueChange={(value: WorkoutType) => setFormData({ ...formData, workout_type: value })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="strength">💪 Strength</SelectItem>
+                    <SelectItem value="cardio">🏃 Cardio</SelectItem>
+                    <SelectItem value="mobility">🧘 Mobility</SelectItem>
+                    <SelectItem value="recovery">🌙 Recovery</SelectItem>
+                    <SelectItem value="hiit">🔥 HIIT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="equipment">Equipment (comma-separated)</Label>
-            <Input
-              id="equipment"
-              value={formData.equipment}
-              onChange={(e) => setFormData({ ...formData, equipment: e.target.value })}
-              placeholder="e.g., Dumbbells, Resistance bands"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="duration">Duration (minutes)</Label>
+              <Input
+                id="duration"
+                type="number"
+                min={5}
+                max={180}
+                value={formData.duration_minutes}
+                onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 30 })}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="coaching_notes">Coaching Notes</Label>
-            <Textarea
-              id="coaching_notes"
-              value={formData.coaching_notes}
-              onChange={(e) => setFormData({ ...formData, coaching_notes: e.target.value })}
-              placeholder="Tips or instructions for the workout..."
-              rows={2}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="equipment">Equipment (comma-separated)</Label>
+              <Input
+                id="equipment"
+                value={formData.equipment}
+                onChange={(e) => setFormData({ ...formData, equipment: e.target.value })}
+                placeholder="e.g., Dumbbells, Resistance bands"
+              />
+            </div>
 
-          <div className="flex items-center justify-between">
-            <Label htmlFor="featured">Featured Workout</Label>
-            <Switch
-              id="featured"
-              checked={formData.is_featured}
-              onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="coaching_notes">Coaching Notes</Label>
+              <Textarea
+                id="coaching_notes"
+                value={formData.coaching_notes}
+                onChange={(e) => setFormData({ ...formData, coaching_notes: e.target.value })}
+                placeholder="Tips or instructions..."
+                rows={2}
+              />
+            </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Creating...' : 'Create Workout'}
-          </Button>
-        </form>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="featured">Featured Workout</Label>
+              <Switch
+                id="featured"
+                checked={formData.is_featured}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_featured: checked })}
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating...' : 'Next: Add Exercises'}
+            </Button>
+          </form>
+        )}
+
+        {step === 'structure' && createdWorkoutId && (
+          <WorkoutStructureEditor
+            workoutId={createdWorkoutId}
+            onClose={handleStructureDone}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
