@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Pin, Heart, MessageCircle, Loader2, ChevronDown } from 'lucide-react';
+import { Send, Pin, Heart, MessageCircle, Loader2, ChevronDown, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -26,8 +26,11 @@ export default function Community() {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [selectedPost, setSelectedPost] = useState<PostWithProfile | null>(null);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -121,18 +124,55 @@ export default function Community() {
     setLoading(false);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      return; // 10MB limit
+    }
+    setMediaFile(file);
+    setMediaPreview(URL.createObjectURL(file));
+  };
+
+  const clearMedia = () => {
+    setMediaFile(null);
+    if (mediaPreview) URL.revokeObjectURL(mediaPreview);
+    setMediaPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !user || !selectedGroup || sending) return;
+    if ((!newMessage.trim() && !mediaFile) || !user || !selectedGroup || sending) return;
 
     setSending(true);
+    let mediaUrl: string | null = null;
+
+    // Upload media if present
+    if (mediaFile) {
+      const ext = mediaFile.name.split('.').pop();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('community-media')
+        .upload(path, mediaFile);
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from('community-media')
+          .getPublicUrl(path);
+        mediaUrl = urlData.publicUrl;
+      }
+    }
+
     const { error } = await supabase.from('posts').insert({
       group_id: selectedGroup,
       user_id: user.id,
-      content: newMessage.trim(),
+      content: newMessage.trim() || (mediaFile ? '📷 Photo' : ''),
+      media_url: mediaUrl,
     });
 
     if (!error) {
       setNewMessage('');
+      clearMedia();
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
@@ -283,8 +323,33 @@ export default function Community() {
 
         {/* Input bar */}
         {user && (
-          <div className="shrink-0 bg-background border-t border-border px-3 py-2">
+          <div className="shrink-0 bg-background border-t border-border px-3 py-2 space-y-2">
+            {/* Media preview */}
+            {mediaPreview && (
+              <div className="relative inline-block">
+                <img src={mediaPreview} alt="Preview" className="h-20 rounded-lg object-cover border border-border" />
+                <button
+                  onClick={clearMedia}
+                  className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center shadow-sm"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
             <div className="flex items-end gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <ImagePlus className="w-5 h-5" />
+              </button>
               <textarea
                 ref={textareaRef}
                 value={newMessage}
@@ -303,7 +368,7 @@ export default function Community() {
                 size="icon"
                 className="rounded-full h-10 w-10 shrink-0"
                 onClick={handleSendMessage}
-                disabled={!newMessage.trim() || sending}
+                disabled={(!newMessage.trim() && !mediaFile) || sending}
               >
                 {sending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
