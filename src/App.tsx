@@ -63,8 +63,8 @@ function AppRoutes() {
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Navigate to="/waitlist" replace />} />
-      <Route path="/login" element={<Navigate to="/waitlist" replace />} />
-      <Route path="/signup" element={<Navigate to="/waitlist" replace />} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
       <Route path="/waitlist" element={<Waitlist />} />
       <Route path="/admin-login" element={<PublicRoute><Login /></PublicRoute>} />
       
