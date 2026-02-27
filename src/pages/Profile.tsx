@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet, Users, Download, UserPlus, Trash2 } from 'lucide-react';
+import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet, Users, Download, UserPlus, Trash2, Copy, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -22,6 +22,7 @@ export default function Profile() {
   const [invitedEmails, setInvitedEmails] = useState<{ id: string; email: string; created_at: string }[]>([]);
   const [newInviteEmail, setNewInviteEmail] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
   const cycleTrackingEnabled = settings?.prediction_enabled !== false;
 
@@ -72,6 +73,13 @@ export default function Profile() {
   const handleRemoveInvite = async (id: string) => {
     await supabase.from('invited_emails').delete().eq('id', id);
     fetchInvitedEmails();
+  };
+
+  const handleCopyInviteLink = (email: string) => {
+    const link = `https://soulfuelsociety.lovable.app/signup?email=${encodeURIComponent(email)}`;
+    navigator.clipboard.writeText(link);
+    setCopiedEmail(email);
+    setTimeout(() => setCopiedEmail(null), 2000);
   };
 
   const handleCycleToggle = async (enabled: boolean) => {
@@ -257,12 +265,25 @@ export default function Profile() {
                         {new Date(entry.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <button
-                      onClick={() => handleRemoveInvite(entry.id)}
-                      className="text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleCopyInviteLink(entry.email)}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                        title="Copy invite link"
+                      >
+                        {copiedEmail === entry.email ? (
+                          <Check className="w-3.5 h-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleRemoveInvite(entry.id)}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
