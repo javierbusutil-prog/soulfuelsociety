@@ -43,6 +43,31 @@ export default function Community() {
     }
   }, [selectedGroup, user]);
 
+  // Real-time subscription for new/updated/deleted posts
+  useEffect(() => {
+    if (!selectedGroup) return;
+
+    const channel = supabase
+      .channel(`posts-${selectedGroup}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts',
+          filter: `group_id=eq.${selectedGroup}`,
+        },
+        () => {
+          fetchPosts(selectedGroup);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedGroup, user]);
+
   useEffect(() => {
     scrollToBottom();
   }, [posts]);
