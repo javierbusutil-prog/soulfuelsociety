@@ -58,11 +58,23 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function SmartRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  return <Navigate to={user ? "/community" : "/waitlist"} replace />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<Navigate to="/waitlist" replace />} />
+      <Route path="/" element={<SmartRedirect />} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
       <Route path="/waitlist" element={<Waitlist />} />
