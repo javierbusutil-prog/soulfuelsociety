@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import logoStacked from '@/assets/logo-stacked.svg';
 
 const signupSchema = z.object({
@@ -37,6 +38,24 @@ export default function Signup() {
 
   const onSubmit = async (data: SignupForm) => {
     setLoading(true);
+
+    // Check if the email is on the invite list
+    const { data: invite } = await supabase
+      .from('invited_emails')
+      .select('id')
+      .eq('email', data.email.toLowerCase().trim())
+      .maybeSingle();
+
+    if (!invite) {
+      setLoading(false);
+      toast({
+        title: 'Access restricted',
+        description: 'This app is currently invite-only. Please contact the admin for access.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const { error } = await signUp(data.email, data.password, data.fullName);
     setLoading(false);
 
