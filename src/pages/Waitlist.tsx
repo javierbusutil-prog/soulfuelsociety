@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -127,6 +128,13 @@ export default function Waitlist() {
 
             <p className="text-xs text-muted-foreground mt-4">
               No spam, ever. We'll only email you when it's time.
+            </p>
+
+            <p className="text-sm text-muted-foreground mt-6">
+              Already have an account?{' '}
+              <Link to="/login" className="font-medium text-primary hover:underline">
+                Sign in
+              </Link>
             </p>
           </>
         )}
