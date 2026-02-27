@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet, Users, Download } from 'lucide-react';
+import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet, Users, Download, UserPlus, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCycleTracker } from '@/hooks/useCycleTracker';
@@ -18,6 +19,9 @@ export default function Profile() {
   const { settings, updateSettings } = useCycleTracker();
   const [waitlistEntries, setWaitlistEntries] = useState<{ id: string; name: string; email: string; created_at: string }[]>([]);
   const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const [invitedEmails, setInvitedEmails] = useState<{ id: string; email: string; created_at: string }[]>([]);
+  const [newInviteEmail, setNewInviteEmail] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   const cycleTrackingEnabled = settings?.prediction_enabled !== false;
 
@@ -32,8 +36,37 @@ export default function Profile() {
           if (data) setWaitlistEntries(data as any);
           setWaitlistLoading(false);
         });
+      fetchInvitedEmails();
     }
   }, [isAdmin]);
+
+  const fetchInvitedEmails = async () => {
+    const { data } = await supabase
+      .from('invited_emails')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setInvitedEmails(data as any);
+  };
+
+  const handleAddInvite = async () => {
+    const email = newInviteEmail.toLowerCase().trim();
+    if (!email || !user) return;
+    setInviteLoading(true);
+    const { error } = await supabase.from('invited_emails').insert({
+      email,
+      invited_by: user.id,
+    } as any);
+    if (!error) {
+      setNewInviteEmail('');
+      fetchInvitedEmails();
+    }
+    setInviteLoading(false);
+  };
+
+  const handleRemoveInvite = async (id: string) => {
+    await supabase.from('invited_emails').delete().eq('id', id);
+    fetchInvitedEmails();
+  };
 
   const handleCycleToggle = async (enabled: boolean) => {
     await updateSettings({ prediction_enabled: enabled });
@@ -169,6 +202,61 @@ export default function Profile() {
                     <span className="text-xs text-muted-foreground shrink-0 ml-2">
                       {new Date(entry.created_at).toLocaleDateString()}
                     </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Admin: Invite Test Users */}
+        {isAdmin && (
+          <Card className="p-4 mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 bg-accent/10 rounded-lg flex items-center justify-center">
+                <UserPlus className="w-4 h-4 text-accent" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Invite Test Users</p>
+                <p className="text-xs text-muted-foreground">
+                  {invitedEmails.length} invited
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 mb-3">
+              <Input
+                type="email"
+                placeholder="user@example.com"
+                value={newInviteEmail}
+                onChange={(e) => setNewInviteEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddInvite()}
+                className="flex-1"
+              />
+              <Button
+                size="sm"
+                onClick={handleAddInvite}
+                disabled={!newInviteEmail.trim() || inviteLoading}
+              >
+                <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+                Add
+              </Button>
+            </div>
+            {invitedEmails.length > 0 && (
+              <div className="max-h-48 overflow-y-auto divide-y divide-border rounded-lg border border-border">
+                {invitedEmails.map(entry => (
+                  <div key={entry.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <div>
+                      <p className="text-foreground">{entry.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(entry.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveInvite(entry.id)}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 ))}
               </div>
