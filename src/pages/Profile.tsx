@@ -59,6 +59,12 @@ export default function Profile() {
     if (!error) {
       setNewInviteEmail('');
       fetchInvitedEmails();
+      // Send invite email notification
+      supabase.functions.invoke('send-invite-email', {
+        body: { email },
+      }).then(({ error: fnError }) => {
+        if (fnError) console.error('Failed to send invite email:', fnError);
+      });
     }
     setInviteLoading(false);
   };
