@@ -54,15 +54,18 @@ export default function Community() {
       .channel(`posts-${selectedGroup}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'posts',
-          filter: `group_id=eq.${selectedGroup}`,
-        },
-        () => {
-          fetchPosts(selectedGroup);
-        }
+        { event: '*', schema: 'public', table: 'posts', filter: `group_id=eq.${selectedGroup}` },
+        () => { fetchPosts(selectedGroup); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reactions' },
+        () => { fetchPosts(selectedGroup); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        () => { fetchPosts(selectedGroup); }
       )
       .subscribe();
 
