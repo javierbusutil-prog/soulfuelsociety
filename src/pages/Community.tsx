@@ -1,15 +1,13 @@
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, Pin, MessageCircle, Heart } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Pin, Heart, MessageCircle, Loader2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Post, Group, Profile } from '@/types/database';
-import { formatDistanceToNow } from 'date-fns';
-import { CreatePostDialog } from '@/components/community/CreatePostDialog';
+import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns';
 import { PostDetailDialog } from '@/components/community/PostDetailDialog';
 
 interface PostWithProfile extends Post {
@@ -25,8 +23,15 @@ export default function Community() {
   const [posts, setPosts] = useState<PostWithProfile[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [createPostOpen, setCreatePostOpen] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
+  const [sending, setSending] = useState(false);
   const [selectedPost, setSelectedPost] = useState<PostWithProfile | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     fetchGroups();
@@ -37,6 +42,10 @@ export default function Community() {
       fetchPosts(selectedGroup);
     }
   }, [selectedGroup, user]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [posts]);
 
   const fetchGroups = async () => {
     const { data } = await supabase.from('groups').select('*').order('is_default', { ascending: false });
@@ -50,16 +59,14 @@ export default function Community() {
 
   const fetchPosts = async (groupId: string) => {
     setLoading(true);
-    
+
     const { data: postsData } = await supabase
       .from('posts')
       .select('*')
       .eq('group_id', groupId)
-      .order('is_pinned', { ascending: false })
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: true });
 
     if (postsData) {
-      // Fetch profiles and counts for each post
       const postsWithProfiles = await Promise.all(
         postsData.map(async (post) => {
           const { data: profileData } = await supabase
@@ -72,7 +79,7 @@ export default function Community() {
             supabase.from('reactions').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
             user ? supabase.from('reactions').select('id').eq('post_id', post.id).eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
           ]);
-          
+
           return {
             ...post,
             profiles: profileData as Profile,
@@ -82,22 +89,42 @@ export default function Community() {
           };
         })
       );
-      
+
       setPosts(postsWithProfiles);
     }
-    
+
     setLoading(false);
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !user || !selectedGroup || sending) return;
+
+    setSending(true);
+    const { error } = await supabase.from('posts').insert({
+      group_id: selectedGroup,
+      user_id: user.id,
+      content: newMessage.trim(),
+    });
+
+    if (!error) {
+      setNewMessage('');
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+      fetchPosts(selectedGroup);
+    }
+    setSending(false);
   };
 
   const handleReaction = async (postId: string, hasReacted: boolean) => {
     if (!user) return;
-    
+
     if (hasReacted) {
       await supabase.from('reactions').delete().eq('post_id', postId).eq('user_id', user.id);
     } else {
       await supabase.from('reactions').insert({ post_id: postId, user_id: user.id, emoji: '❤️' });
     }
-    
+
     if (selectedGroup) {
       fetchPosts(selectedGroup);
     }
@@ -108,190 +135,275 @@ export default function Community() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const pinnedPosts = posts.filter(p => p.is_pinned);
-  const regularPosts = posts.filter(p => !p.is_pinned);
+  const getDateLabel = (dateStr: string) => {
+    const date = new Date(dateStr);
+    if (isToday(date)) return 'Today';
+    if (isYesterday(date)) return 'Yesterday';
+    return format(date, 'MMM d, yyyy');
+  };
+
+  const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewMessage(e.target.value);
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  };
+
+  // Group posts by date
+  const groupedPosts: { date: string; posts: PostWithProfile[] }[] = [];
+  let currentDate = '';
+  for (const post of posts) {
+    const label = getDateLabel(post.created_at);
+    if (label !== currentDate) {
+      currentDate = label;
+      groupedPosts.push({ date: label, posts: [post] });
+    } else {
+      groupedPosts[groupedPosts.length - 1].posts.push(post);
+    }
+  }
+
+  const selectedGroupData = groups.find(g => g.id === selectedGroup);
 
   return (
-    <AppLayout title="Community">
-      <div className="max-w-lg mx-auto">
-        {/* Group tabs */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar px-4 py-3 border-b border-border">
-          {groups.map((group) => (
-            <Button
-              key={group.id}
-              variant={selectedGroup === group.id ? 'default' : 'secondary'}
-              size="sm"
-              onClick={() => setSelectedGroup(group.id)}
-              className="whitespace-nowrap"
-            >
-              {group.name}
-            </Button>
-          ))}
+    <AppLayout title="Community" hideHeader>
+      <div className="flex flex-col h-[calc(100vh-5rem)] max-w-lg mx-auto">
+        {/* Chat header */}
+        <div className="bg-primary text-primary-foreground px-4 py-3 flex items-center gap-3 shrink-0">
+          <div className="flex-1 min-w-0">
+            <h1 className="font-semibold text-base truncate">
+              {selectedGroupData?.name || 'Community'}
+            </h1>
+            <p className="text-xs opacity-80">
+              {posts.length} messages
+            </p>
+          </div>
         </div>
 
-        {/* Posts feed */}
-        <div className="p-4 space-y-4">
+        {/* Group tabs - horizontal scroll */}
+        {groups.length > 1 && (
+          <div className="flex gap-1.5 overflow-x-auto hide-scrollbar px-3 py-2 bg-secondary/50 border-b border-border shrink-0">
+            {groups.map((group) => (
+              <button
+                key={group.id}
+                onClick={() => setSelectedGroup(group.id)}
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  selectedGroup === group.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {group.name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Messages area */}
+        <div
+          className="flex-1 overflow-y-auto px-3 py-2"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 20% 50%, hsl(var(--secondary) / 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, hsl(var(--secondary) / 0.2) 0%, transparent 40%)',
+          }}
+        >
           {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="p-4 animate-pulse">
-                  <div className="flex gap-3">
-                    <div className="w-10 h-10 bg-muted rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-muted rounded w-1/3" />
-                      <div className="h-3 bg-muted rounded w-1/4" />
-                    </div>
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    <div className="h-3 bg-muted rounded" />
-                    <div className="h-3 bg-muted rounded w-4/5" />
-                  </div>
-                </Card>
-              ))}
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-muted-foreground">
+                <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">No messages yet. Say hello! 👋</p>
+              </div>
             </div>
           ) : (
-            <>
-              {/* Pinned posts */}
-              {pinnedPosts.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase font-medium">
-                    <Pin className="w-3 h-3" />
-                    Pinned
+            <div className="space-y-1">
+              {groupedPosts.map((group) => (
+                <div key={group.date}>
+                  {/* Date separator */}
+                  <div className="flex justify-center my-3">
+                    <span className="bg-secondary/80 text-muted-foreground text-[11px] font-medium px-3 py-1 rounded-full">
+                      {group.date}
+                    </span>
                   </div>
-                  {pinnedPosts.map((post, index) => (
-                    <PostCard
-                      key={post.id}
-                      post={post}
-                      index={index}
-                      onReaction={() => handleReaction(post.id, post.user_reacted)}
-                      onClick={() => setSelectedPost(post)}
-                      getInitials={getInitials}
-                    />
-                  ))}
-                </div>
-              )}
 
-              {/* Regular posts */}
-              {regularPosts.map((post, index) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  index={index + pinnedPosts.length}
-                  onReaction={() => handleReaction(post.id, post.user_reacted)}
-                  onClick={() => setSelectedPost(post)}
-                  getInitials={getInitials}
-                />
+                  {/* Messages for this date */}
+                  {group.posts.map((post, index) => {
+                    const isOwn = user?.id === post.user_id;
+                    const showAvatar = !isOwn && (
+                      index === 0 ||
+                      group.posts[index - 1]?.user_id !== post.user_id
+                    );
+                    const showName = showAvatar;
+
+                    return (
+                      <MessageBubble
+                        key={post.id}
+                        post={post}
+                        isOwn={isOwn}
+                        showAvatar={showAvatar}
+                        showName={showName}
+                        onReaction={() => handleReaction(post.id, post.user_reacted)}
+                        onOpenThread={() => setSelectedPost(post)}
+                        getInitials={getInitials}
+                      />
+                    );
+                  })}
+                </div>
               ))}
-
-              {posts.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>No posts yet. Be the first to share!</p>
-                </div>
-              )}
-            </>
+              <div ref={messagesEndRef} />
+            </div>
           )}
         </div>
 
-        {/* FAB for new post */}
-        <Button
-          size="icon-lg"
-          className="fixed bottom-24 right-4 rounded-full shadow-lg glow-primary"
-          onClick={() => setCreatePostOpen(true)}
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
-
-        <CreatePostDialog
-          open={createPostOpen}
-          onOpenChange={setCreatePostOpen}
-          groupId={selectedGroup || ''}
-          onSuccess={() => selectedGroup && fetchPosts(selectedGroup)}
-        />
-
-        <PostDetailDialog
-          post={selectedPost}
-          open={!!selectedPost}
-          onOpenChange={(open) => !open && setSelectedPost(null)}
-          onPostUpdated={() => selectedGroup && fetchPosts(selectedGroup)}
-        />
+        {/* Input bar */}
+        {user && (
+          <div className="shrink-0 bg-background border-t border-border px-3 py-2">
+            <div className="flex items-end gap-2">
+              <textarea
+                ref={textareaRef}
+                value={newMessage}
+                onChange={handleTextareaInput}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder="Type a message"
+                rows={1}
+                className="flex-1 resize-none rounded-2xl border border-input bg-card px-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-[120px]"
+              />
+              <Button
+                size="icon"
+                className="rounded-full h-10 w-10 shrink-0"
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim() || sending}
+              >
+                {sending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
+      <PostDetailDialog
+        post={selectedPost}
+        open={!!selectedPost}
+        onOpenChange={(open) => !open && setSelectedPost(null)}
+        onPostUpdated={() => selectedGroup && fetchPosts(selectedGroup)}
+      />
     </AppLayout>
   );
 }
 
-interface PostCardProps {
+interface MessageBubbleProps {
   post: PostWithProfile;
-  index: number;
+  isOwn: boolean;
+  showAvatar: boolean;
+  showName: boolean;
   onReaction: () => void;
-  onClick: () => void;
+  onOpenThread: () => void;
   getInitials: (name: string | null) => string;
 }
 
-function PostCard({ post, index, onReaction, onClick, getInitials }: PostCardProps) {
+function MessageBubble({ post, isOwn, showAvatar, showName, onReaction, onOpenThread, getInitials }: MessageBubbleProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      className={`flex gap-1.5 mb-0.5 ${isOwn ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-2' : ''}`}
     >
-      <Card 
-        className="p-4 bg-card/50 border-border/50 hover:bg-card/70 transition-colors cursor-pointer"
-        onClick={onClick}
-      >
-        <div className="flex gap-3">
-          <Avatar className="w-10 h-10">
-            <AvatarImage src={post.profiles?.avatar_url || undefined} />
-            <AvatarFallback className="bg-primary/20 text-primary text-xs">
-              {getInitials(post.profiles?.full_name)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm truncate">
-                {post.profiles?.full_name || 'Anonymous'}
-              </span>
-              {post.is_pinned && (
-                <Pin className="w-3 h-3 text-primary" />
-              )}
-            </div>
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-            </span>
-          </div>
+      {/* Avatar space */}
+      {!isOwn && (
+        <div className="w-7 shrink-0">
+          {showAvatar && (
+            <Avatar className="w-7 h-7">
+              <AvatarImage src={post.profiles?.avatar_url || undefined} />
+              <AvatarFallback className="bg-primary/15 text-primary text-[10px]">
+                {getInitials(post.profiles?.full_name)}
+              </AvatarFallback>
+            </Avatar>
+          )}
         </div>
+      )}
 
-        <p className="mt-3 text-sm whitespace-pre-wrap">{post.content}</p>
+      {/* Bubble */}
+      <div
+        className={`relative max-w-[75%] group ${
+          isOwn
+            ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-md'
+            : 'bg-card border border-border/50 text-foreground rounded-2xl rounded-bl-md'
+        } px-3 py-2 shadow-sm cursor-pointer`}
+        onClick={onOpenThread}
+      >
+        {/* Sender name */}
+        {showName && !isOwn && (
+          <p className="text-[11px] font-semibold text-primary mb-0.5">
+            {post.profiles?.full_name || 'Anonymous'}
+          </p>
+        )}
 
+        {/* Pinned indicator */}
+        {post.is_pinned && (
+          <div className={`flex items-center gap-1 text-[10px] mb-1 ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+            <Pin className="w-2.5 h-2.5" />
+            <span>Pinned</span>
+          </div>
+        )}
+
+        {/* Content */}
+        <p className="text-sm whitespace-pre-wrap break-words">{post.content}</p>
+
+        {/* Media */}
         {post.media_url && (
           <img
             src={post.media_url}
             alt=""
-            className="mt-3 rounded-lg w-full max-h-80 object-cover"
+            className="mt-1.5 rounded-lg w-full max-h-60 object-cover"
           />
         )}
 
-        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/50">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onReaction();
-            }}
-            className={`flex items-center gap-1.5 text-sm transition-colors ${
-              post.user_reacted ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Heart className={`w-4 h-4 ${post.user_reacted ? 'fill-current' : ''}`} />
-            {post.reaction_count > 0 && <span>{post.reaction_count}</span>}
-          </button>
-          <button 
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            {post.comment_count > 0 && <span>{post.comment_count}</span>}
-          </button>
+        {/* Time + meta */}
+        <div className={`flex items-center gap-2 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+          <span className={`text-[10px] ${isOwn ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+            {format(new Date(post.created_at), 'h:mm a')}
+          </span>
+          {post.comment_count > 0 && (
+            <span className={`flex items-center gap-0.5 text-[10px] ${isOwn ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+              <MessageCircle className="w-2.5 h-2.5" />
+              {post.comment_count}
+            </span>
+          )}
         </div>
-      </Card>
+
+        {/* Reaction badge */}
+        {post.reaction_count > 0 && (
+          <div
+            className={`absolute -bottom-2.5 ${isOwn ? 'left-1' : 'right-1'} bg-card border border-border rounded-full px-1.5 py-0.5 flex items-center gap-0.5 shadow-sm`}
+            onClick={(e) => { e.stopPropagation(); onReaction(); }}
+          >
+            <span className="text-[10px]">❤️</span>
+            <span className="text-[10px] text-muted-foreground">{post.reaction_count}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Double-tap hint for reactions - show on hover */}
+      {!isOwn && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onReaction(); }}
+          className={`self-center opacity-0 group-hover:opacity-100 transition-opacity ${
+            post.user_reacted ? 'text-primary' : 'text-muted-foreground'
+          }`}
+        >
+          <Heart className={`w-3.5 h-3.5 ${post.user_reacted ? 'fill-current' : ''}`} />
+        </button>
+      )}
     </motion.div>
   );
 }
