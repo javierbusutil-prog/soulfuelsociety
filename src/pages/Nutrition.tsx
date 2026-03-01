@@ -18,6 +18,7 @@ import { CyclePhaseGuidance } from '@/components/nutrition/CyclePhaseGuidance';
 import { MealStructureTracker } from '@/components/nutrition/MealStructureTracker';
 import { WeeklyReflection } from '@/components/nutrition/WeeklyReflection';
 import { SmartInsights } from '@/components/nutrition/SmartInsights';
+import { FastingTimer } from '@/components/calendar/FastingTimer';
 import { DEFAULT_RING_HABITS } from '@/types/workoutPrograms';
 
 export default function Nutrition() {
@@ -87,6 +88,9 @@ export default function Nutrition() {
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+
+        {/* Fasting Timer */}
+        <FastingTimer />
 
         {/* Cycle Phase Guidance */}
         <CyclePhaseGuidance
