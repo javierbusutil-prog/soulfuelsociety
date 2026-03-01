@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Pencil, Check, Droplets } from 'lucide-react';
+import { Pencil, Check, Droplets, ChevronUp, ChevronDown } from 'lucide-react';
 import type { DailyNutrition } from '@/hooks/useNutrition';
 
 interface Props {
@@ -19,6 +19,7 @@ const quickAdds = [8, 16, 20];
 export function HydrationTracker({ entry, addWater, toggleHabit, setGoal }: Props) {
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
+  const [customAmount, setCustomAmount] = useState(8);
 
   const goal = entry?.hydration_goal || 64;
   const logged = entry?.hydration_logged || 0;
@@ -72,6 +73,53 @@ export function HydrationTracker({ entry, addWater, toggleHabit, setGoal }: Prop
             <span className="text-muted-foreground">{pct}%</span>
           </div>
           <Progress value={pct} className="h-2.5" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border border-input rounded-xl overflow-hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 px-2 rounded-none"
+              onClick={() => setCustomAmount(a => Math.max(1, a - 1))}
+              aria-label="Decrease amount"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </Button>
+            <Input
+              type="number"
+              value={customAmount}
+              onChange={e => setCustomAmount(Math.max(0, parseInt(e.target.value) || 0))}
+              className="w-14 h-9 text-center text-xs border-0 rounded-none px-1 focus-visible:ring-0 focus-visible:ring-offset-0"
+              aria-label="Custom water amount"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 px-2 rounded-none"
+              onClick={() => setCustomAmount(a => a + 1)}
+              aria-label="Increase amount"
+            >
+              <ChevronUp className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addWater(customAmount)}
+            className="text-xs"
+            disabled={customAmount <= 0}
+          >
+            +{customAmount}oz
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addWater(-Math.min(customAmount, logged))}
+            className="text-xs text-destructive"
+            disabled={customAmount <= 0 || logged <= 0}
+          >
+            −{customAmount}oz
+          </Button>
         </div>
         <div className="flex gap-2">
           {quickAdds.map(oz => (

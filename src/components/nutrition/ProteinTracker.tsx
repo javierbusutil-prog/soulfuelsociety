@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { Pencil, Check } from 'lucide-react';
+import { Pencil, Check, ChevronUp, ChevronDown } from 'lucide-react';
 import { ProteinCalculatorDialog } from './ProteinCalculatorDialog';
 import type { DailyNutrition } from '@/hooks/useNutrition';
 
@@ -18,6 +18,7 @@ const quickAdds = [20, 30, 40];
 export function ProteinTracker({ entry, addProtein, setGoal }: Props) {
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
+  const [customAmount, setCustomAmount] = useState(10);
 
   const goal = entry?.protein_goal || 120;
   const logged = entry?.protein_logged || 0;
@@ -74,6 +75,53 @@ export function ProteinTracker({ entry, addProtein, setGoal }: Props) {
             <span className="text-muted-foreground">{pct}%</span>
           </div>
           <Progress value={pct} className="h-2.5" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center border border-input rounded-xl overflow-hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 px-2 rounded-none"
+              onClick={() => setCustomAmount(a => Math.max(1, a - 1))}
+              aria-label="Decrease amount"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </Button>
+            <Input
+              type="number"
+              value={customAmount}
+              onChange={e => setCustomAmount(Math.max(0, parseInt(e.target.value) || 0))}
+              className="w-14 h-9 text-center text-xs border-0 rounded-none px-1 focus-visible:ring-0 focus-visible:ring-offset-0"
+              aria-label="Custom protein amount"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 px-2 rounded-none"
+              onClick={() => setCustomAmount(a => a + 1)}
+              aria-label="Increase amount"
+            >
+              <ChevronUp className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addProtein(customAmount)}
+            className="text-xs"
+            disabled={customAmount <= 0}
+          >
+            +{customAmount}g
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addProtein(-Math.min(customAmount, logged))}
+            className="text-xs text-destructive"
+            disabled={customAmount <= 0 || logged <= 0}
+          >
+            −{customAmount}g
+          </Button>
         </div>
         <div className="flex gap-2">
           {quickAdds.map(g => (
