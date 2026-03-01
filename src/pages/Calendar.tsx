@@ -28,7 +28,7 @@ import { CalendarEvent } from '@/types/workoutPrograms';
 import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { EditEventDialog } from '@/components/calendar/EditEventDialog';
 import { CalendarEventDetailDialog } from '@/components/calendar/CalendarEventDetailDialog';
-import { FastingTimer } from '@/components/calendar/FastingTimer';
+
 import { FastSessionEntry } from '@/components/calendar/FastSessionEntry';
 import { LogPeriodDialog } from '@/components/calendar/LogPeriodDialog';
 import { CycleSettingsDialog } from '@/components/calendar/CycleSettingsDialog';
