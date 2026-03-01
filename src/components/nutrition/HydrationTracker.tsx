@@ -80,8 +80,12 @@ export function HydrationTracker({ entry, addWater, toggleHabit, setGoal }: Prop
               variant="ghost"
               size="sm"
               className="h-9 px-2 rounded-none"
-              onClick={() => setCustomAmount(a => Math.max(1, a - 1))}
-              aria-label="Decrease amount"
+              onClick={() => {
+                const amt = Math.min(customAmount, logged);
+                if (amt > 0) addWater(-amt);
+              }}
+              disabled={customAmount <= 0 || logged <= 0}
+              aria-label="Remove water"
             >
               <ChevronDown className="w-3.5 h-3.5" />
             </Button>
@@ -96,30 +100,14 @@ export function HydrationTracker({ entry, addWater, toggleHabit, setGoal }: Prop
               variant="ghost"
               size="sm"
               className="h-9 px-2 rounded-none"
-              onClick={() => setCustomAmount(a => a + 1)}
-              aria-label="Increase amount"
+              onClick={() => { if (customAmount > 0) addWater(customAmount); }}
+              disabled={customAmount <= 0}
+              aria-label="Add water"
             >
               <ChevronUp className="w-3.5 h-3.5" />
             </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addWater(customAmount)}
-            className="text-xs"
-            disabled={customAmount <= 0}
-          >
-            +{customAmount}oz
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addWater(-Math.min(customAmount, logged))}
-            className="text-xs text-destructive"
-            disabled={customAmount <= 0 || logged <= 0}
-          >
-            −{customAmount}oz
-          </Button>
+          <span className="text-xs text-muted-foreground">oz</span>
         </div>
         <div className="flex items-center justify-between pt-1">
           <label htmlFor="electrolyte-toggle" className="text-sm text-muted-foreground">Electrolytes taken</label>
