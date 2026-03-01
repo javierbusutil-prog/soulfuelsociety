@@ -121,20 +121,6 @@ export function HydrationTracker({ entry, addWater, toggleHabit, setGoal }: Prop
             −{customAmount}oz
           </Button>
         </div>
-        <div className="flex gap-2">
-          {quickAdds.map(oz => (
-            <Button
-              key={oz}
-              variant="outline"
-              size="sm"
-              onClick={() => addWater(oz)}
-              className="flex-1 text-xs"
-              aria-label={`Add ${oz} ounces of water`}
-            >
-              +{oz}oz
-            </Button>
-          ))}
-        </div>
         <div className="flex items-center justify-between pt-1">
           <label htmlFor="electrolyte-toggle" className="text-sm text-muted-foreground">Electrolytes taken</label>
           <Switch
