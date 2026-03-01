@@ -123,20 +123,6 @@ export function ProteinTracker({ entry, addProtein, setGoal }: Props) {
             −{customAmount}g
           </Button>
         </div>
-        <div className="flex gap-2">
-          {quickAdds.map(g => (
-            <Button
-              key={g}
-              variant="outline"
-              size="sm"
-              onClick={() => addProtein(g)}
-              className="flex-1 text-xs"
-              aria-label={`Add ${g} grams of protein`}
-            >
-              +{g}g
-            </Button>
-          ))}
-        </div>
       </CardContent>
     </Card>
   );
