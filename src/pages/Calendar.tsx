@@ -465,11 +465,6 @@ export default function Calendar() {
               </div>
             )}
 
-            {/* Fasting Timer Module */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Fasting Timer</h3>
-              <FastingTimer onFastEnded={refetchFastingSessions} />
-            </div>
 
             {/* Cycle Analytics - shown when cycle filter active */}
             {calendarFilter === 'cycle' && (
