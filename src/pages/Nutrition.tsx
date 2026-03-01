@@ -89,9 +89,6 @@ export default function Nutrition() {
           </Button>
         </div>
 
-        {/* Fasting Timer */}
-        <FastingTimer />
-
         {/* Cycle Phase Guidance */}
         <CyclePhaseGuidance
           cycleEntries={cycleEntries}
@@ -114,6 +111,9 @@ export default function Nutrition() {
           proteinMet={proteinMet}
           hydrationMet={hydrationMet}
         />
+
+        {/* Fasting Timer */}
+        <FastingTimer />
 
         <ProteinTracker
           entry={nutrition.entry}
