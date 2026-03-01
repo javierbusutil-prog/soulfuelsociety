@@ -76,12 +76,12 @@ export function ProteinTracker({ entry, addProtein, setGoal }: Props) {
           </div>
           <Progress value={pct} className="h-2.5" />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center border border-input rounded-xl overflow-hidden">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center border border-input rounded-xl overflow-hidden flex-1">
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 px-2 rounded-none"
+              className="h-11 w-11 min-w-11 px-0 rounded-none"
               onClick={() => {
                 const amt = Math.min(customAmount, logged);
                 if (amt > 0) addProtein(-amt);
@@ -89,27 +89,27 @@ export function ProteinTracker({ entry, addProtein, setGoal }: Props) {
               disabled={customAmount <= 0 || logged <= 0}
               aria-label="Remove protein"
             >
-              <ChevronDown className="w-3.5 h-3.5" />
+              <ChevronDown className="w-5 h-5" />
             </Button>
             <Input
               type="number"
               value={customAmount}
               onChange={e => setCustomAmount(Math.max(0, parseInt(e.target.value) || 0))}
-              className="w-14 h-9 text-center text-xs border-0 rounded-none px-1 focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="h-11 text-center text-sm border-0 rounded-none px-1 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
               aria-label="Custom protein amount"
             />
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 px-2 rounded-none"
+              className="h-11 w-11 min-w-11 px-0 rounded-none"
               onClick={() => { if (customAmount > 0) addProtein(customAmount); }}
               disabled={customAmount <= 0}
               aria-label="Add protein"
             >
-              <ChevronUp className="w-3.5 h-3.5" />
+              <ChevronUp className="w-5 h-5" />
             </Button>
           </div>
-          <span className="text-xs text-muted-foreground">grams</span>
+          <span className="text-sm text-muted-foreground font-medium">g</span>
         </div>
       </CardContent>
     </Card>
