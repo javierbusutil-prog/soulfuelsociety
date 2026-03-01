@@ -82,8 +82,12 @@ export function ProteinTracker({ entry, addProtein, setGoal }: Props) {
               variant="ghost"
               size="sm"
               className="h-9 px-2 rounded-none"
-              onClick={() => setCustomAmount(a => Math.max(1, a - 1))}
-              aria-label="Decrease amount"
+              onClick={() => {
+                const amt = Math.min(customAmount, logged);
+                if (amt > 0) addProtein(-amt);
+              }}
+              disabled={customAmount <= 0 || logged <= 0}
+              aria-label="Remove protein"
             >
               <ChevronDown className="w-3.5 h-3.5" />
             </Button>
@@ -98,30 +102,14 @@ export function ProteinTracker({ entry, addProtein, setGoal }: Props) {
               variant="ghost"
               size="sm"
               className="h-9 px-2 rounded-none"
-              onClick={() => setCustomAmount(a => a + 1)}
-              aria-label="Increase amount"
+              onClick={() => { if (customAmount > 0) addProtein(customAmount); }}
+              disabled={customAmount <= 0}
+              aria-label="Add protein"
             >
               <ChevronUp className="w-3.5 h-3.5" />
             </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addProtein(customAmount)}
-            className="text-xs"
-            disabled={customAmount <= 0}
-          >
-            +{customAmount}g
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => addProtein(-Math.min(customAmount, logged))}
-            className="text-xs text-destructive"
-            disabled={customAmount <= 0 || logged <= 0}
-          >
-            −{customAmount}g
-          </Button>
+          <span className="text-xs text-muted-foreground">grams</span>
         </div>
       </CardContent>
     </Card>
