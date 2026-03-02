@@ -595,6 +595,54 @@ export type Database = {
         }
         Relationships: []
       }
+      macro_targets: {
+        Row: {
+          activity_level: string
+          calorie_target: number
+          carb_target_g: number
+          created_at: string
+          fat_target_g: number
+          fiber_target_g: number
+          goal: string
+          id: string
+          method_used: string
+          protein_target_g: number
+          updated_at: string
+          user_id: string
+          water_target_oz: number
+        }
+        Insert: {
+          activity_level?: string
+          calorie_target: number
+          carb_target_g: number
+          created_at?: string
+          fat_target_g: number
+          fiber_target_g?: number
+          goal?: string
+          id?: string
+          method_used?: string
+          protein_target_g: number
+          updated_at?: string
+          user_id: string
+          water_target_oz?: number
+        }
+        Update: {
+          activity_level?: string
+          calorie_target?: number
+          carb_target_g?: number
+          created_at?: string
+          fat_target_g?: number
+          fiber_target_g?: number
+          goal?: string
+          id?: string
+          method_used?: string
+          protein_target_g?: number
+          updated_at?: string
+          user_id?: string
+          water_target_oz?: number
+        }
+        Relationships: []
+      }
       meal_logs: {
         Row: {
           created_at: string
