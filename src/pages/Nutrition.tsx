@@ -12,9 +12,7 @@ import { DailyHabits } from '@/components/nutrition/DailyHabits';
 import { ProteinTracker } from '@/components/nutrition/ProteinTracker';
 import { HydrationTracker } from '@/components/nutrition/HydrationTracker';
 import { EnergyMoodCheckin } from '@/components/nutrition/EnergyMoodCheckin';
-import { ConsistencyRing } from '@/components/nutrition/ConsistencyRing';
 import { WeeklyTrends } from '@/components/nutrition/WeeklyTrends';
-import { CyclePhaseGuidance } from '@/components/nutrition/CyclePhaseGuidance';
 import { MealStructureTracker } from '@/components/nutrition/MealStructureTracker';
 import { WeeklyReflection } from '@/components/nutrition/WeeklyReflection';
 import { SmartInsights } from '@/components/nutrition/SmartInsights';
@@ -42,19 +40,6 @@ export default function Nutrition() {
 
   const proteinMet = (nutrition.entry?.protein_logged || 0) >= (nutrition.entry?.protein_goal || 120);
   const hydrationMet = (nutrition.entry?.hydration_logged || 0) >= (nutrition.entry?.hydration_goal || 64);
-
-  // Ring habits from user settings or defaults
-  const ringHabits = userSettings?.ring_habits || DEFAULT_RING_HABITS;
-
-  // Build habit completion status for the ring
-  const habitStatus = {
-    workout: false, // TODO: wire to workout completions for the day
-    protein: proteinMet,
-    hydration: hydrationMet,
-    fasting: fastCompleted,
-    cycle_logging: cycleLogged,
-    whole_foods: nutrition.entry?.whole_foods_focus || false,
-  };
 
   const goBack = () => setSelectedDate(d => subDays(d, 1));
   const goForward = () => setSelectedDate(d => addDays(d, 1));
@@ -93,18 +78,8 @@ export default function Nutrition() {
         {/* Macro Calculator */}
         <MacroCalculator />
 
-        {/* Cycle Phase Guidance */}
-        <CyclePhaseGuidance
-          cycleEntries={cycleEntries}
-          cycleSettings={cycleSettings}
-          selectedDate={selectedDate}
-        />
-
-        <ConsistencyRing
-          habitStatus={habitStatus}
-          ringHabits={ringHabits}
-          streak={nutrition.streak}
-        />
+        {/* Fasting Timer */}
+        <FastingTimer />
 
         <DailyHabits
           entry={nutrition.entry}
@@ -115,9 +90,6 @@ export default function Nutrition() {
           proteinMet={proteinMet}
           hydrationMet={hydrationMet}
         />
-
-        {/* Fasting Timer */}
-        <FastingTimer />
 
         <ProteinTracker
           entry={nutrition.entry}
