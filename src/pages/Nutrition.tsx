@@ -19,6 +19,7 @@ import { MealStructureTracker } from '@/components/nutrition/MealStructureTracke
 import { WeeklyReflection } from '@/components/nutrition/WeeklyReflection';
 import { SmartInsights } from '@/components/nutrition/SmartInsights';
 import { FastingTimer } from '@/components/calendar/FastingTimer';
+import { MacroCalculator } from '@/components/nutrition/MacroCalculator';
 import { DEFAULT_RING_HABITS } from '@/types/workoutPrograms';
 
 export default function Nutrition() {
@@ -88,6 +89,9 @@ export default function Nutrition() {
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+
+        {/* Macro Calculator */}
+        <MacroCalculator />
 
         {/* Cycle Phase Guidance */}
         <CyclePhaseGuidance
