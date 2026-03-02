@@ -14,6 +14,9 @@ export interface MacroTargets {
   goal: string;
   activity_level: string;
   method_used: string;
+  cycle_adjustment_enabled: boolean;
+  current_cycle_phase: string;
+  cycle_adjustment_percentage: number;
   updated_at: string;
 }
 
