@@ -33,10 +33,15 @@ import { FastSessionEntry } from '@/components/calendar/FastSessionEntry';
 import { LogPeriodDialog } from '@/components/calendar/LogPeriodDialog';
 import { CycleSettingsDialog } from '@/components/calendar/CycleSettingsDialog';
 import { CycleAnalytics } from '@/components/calendar/CycleAnalytics';
+import { ConsistencyRing } from '@/components/nutrition/ConsistencyRing';
+import { CyclePhaseGuidance } from '@/components/nutrition/CyclePhaseGuidance';
 import { useEventReminders, requestNotificationPermission } from '@/hooks/useEventReminders';
 import { useCalendarEvents } from '@/hooks/useWorkoutPrograms';
 import { useFastingSessions } from '@/hooks/useFastingSessions';
 import { useCycleTracker } from '@/hooks/useCycleTracker';
+import { useNutrition } from '@/hooks/useNutrition';
+import { useUserSettings } from '@/hooks/useUserSettings';
+import { DEFAULT_RING_HABITS } from '@/types/workoutPrograms';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays, addWeeks, getDay, isAfter, isBefore, startOfDay, endOfDay, parseISO, isToday, isPast, isFuture } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useEffect, useCallback } from 'react';
@@ -149,6 +154,26 @@ export default function Calendar() {
 
   const hideCycleMarkers = cycleSettings?.hide_cycle_markers ?? false;
   const showCycleLegend = !hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle');
+
+  // Nutrition + ring data for selected date
+  const nutrition = useNutrition(selectedDate);
+  const { settings: userSettings } = useUserSettings();
+  const ringHabits = userSettings?.ring_habits || DEFAULT_RING_HABITS;
+
+  const dateStr = format(selectedDate, 'yyyy-MM-dd');
+  const fastCompletedForRing = getSessionsForDate(selectedDate).length > 0;
+  const cycleLoggedForRing = cycleEntries.some(e => e.date === dateStr);
+  const proteinMet = (nutrition.entry?.protein_logged || 0) >= (nutrition.entry?.protein_goal || 120);
+  const hydrationMet = (nutrition.entry?.hydration_logged || 0) >= (nutrition.entry?.hydration_goal || 64);
+
+  const habitStatus = {
+    workout: false,
+    protein: proteinMet,
+    hydration: hydrationMet,
+    fasting: fastCompletedForRing,
+    cycle_logging: cycleLoggedForRing,
+    whole_foods: nutrition.entry?.whole_foods_focus || false,
+  };
 
   const fetchEvents = useCallback(async () => {
     // Fetch events for the entire year to support agenda view
@@ -464,6 +489,20 @@ export default function Calendar() {
                 </span>
               </div>
             )}
+
+            {/* Consistency Ring */}
+            <ConsistencyRing
+              habitStatus={habitStatus}
+              ringHabits={ringHabits}
+              streak={nutrition.streak}
+            />
+
+            {/* Cycle Phase Guidance */}
+            <CyclePhaseGuidance
+              cycleEntries={cycleEntries}
+              cycleSettings={cycleSettings}
+              selectedDate={selectedDate}
+            />
 
 
             {/* Cycle Analytics - shown when cycle filter active */}
