@@ -601,6 +601,9 @@ export type Database = {
           calorie_target: number
           carb_target_g: number
           created_at: string
+          current_cycle_phase: string
+          cycle_adjustment_enabled: boolean
+          cycle_adjustment_percentage: number
           fat_target_g: number
           fiber_target_g: number
           goal: string
@@ -616,6 +619,9 @@ export type Database = {
           calorie_target: number
           carb_target_g: number
           created_at?: string
+          current_cycle_phase?: string
+          cycle_adjustment_enabled?: boolean
+          cycle_adjustment_percentage?: number
           fat_target_g: number
           fiber_target_g?: number
           goal?: string
@@ -631,6 +637,9 @@ export type Database = {
           calorie_target?: number
           carb_target_g?: number
           created_at?: string
+          current_cycle_phase?: string
+          cycle_adjustment_enabled?: boolean
+          cycle_adjustment_percentage?: number
           fat_target_g?: number
           fiber_target_g?: number
           goal?: string
