@@ -316,6 +316,15 @@ export default function Calendar() {
   return (
     <AppLayout title="Calendar">
       <div className="max-w-lg mx-auto p-4">
+        {/* Consistency Ring */}
+        <div className="mb-6">
+          <ConsistencyRing
+            habitStatus={habitStatus}
+            ringHabits={ringHabits}
+            streak={nutrition.streak}
+          />
+        </div>
+
         {/* View Toggle & Month navigation */}
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
@@ -489,13 +498,6 @@ export default function Calendar() {
                 </span>
               </div>
             )}
-
-            {/* Consistency Ring */}
-            <ConsistencyRing
-              habitStatus={habitStatus}
-              ringHabits={ringHabits}
-              streak={nutrition.streak}
-            />
 
             {/* Cycle Phase Guidance */}
             <CyclePhaseGuidance
