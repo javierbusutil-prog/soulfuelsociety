@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Pencil, Check, Droplets, ChevronUp, ChevronDown } from 'lucide-react';
+import { Pencil, Check, Droplets, ChevronUp } from 'lucide-react';
 import type { DailyNutrition } from '@/hooks/useNutrition';
 
 interface Props {
@@ -19,11 +19,25 @@ const quickAdds = [8, 16, 20];
 export function HydrationTracker({ entry, addWater, toggleHabit, setGoal }: Props) {
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
-  const [customAmount, setCustomAmount] = useState(8);
+  const [inputValue, setInputValue] = useState('');
 
   const goal = entry?.hydration_goal || 64;
   const logged = entry?.hydration_logged || 0;
   const pct = Math.min(100, Math.round((logged / goal) * 100));
+
+  const currentInput = inputValue === '' ? 0 : parseInt(inputValue) || 0;
+
+  const handleAdd = () => {
+    if (currentInput > 0) {
+      addWater(currentInput);
+      setInputValue('');
+    }
+  };
+
+  const handleIncrement = () => {
+    const next = currentInput + 1;
+    setInputValue(String(next));
+  };
 
   const saveGoal = () => {
     const val = parseInt(goalInput);
@@ -74,40 +88,36 @@ export function HydrationTracker({ entry, addWater, toggleHabit, setGoal }: Prop
           </div>
           <Progress value={pct} className="h-2.5" />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="flex items-center border border-input rounded-xl overflow-hidden flex-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-11 w-11 min-w-11 px-0 rounded-none"
-              onClick={() => {
-                const amt = Math.min(customAmount, logged);
-                if (amt > 0) addWater(-amt);
-              }}
-              disabled={customAmount <= 0 || logged <= 0}
-              aria-label="Remove water"
-            >
-              <ChevronDown className="w-5 h-5" />
-            </Button>
             <Input
               type="number"
-              value={customAmount}
-              onChange={e => setCustomAmount(Math.max(0, parseInt(e.target.value) || 0))}
-              className="h-11 text-center text-sm border-0 rounded-none px-1 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
-              aria-label="Custom water amount"
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              placeholder="0"
+              className="h-11 text-center text-sm border-0 rounded-none px-2 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
+              aria-label="Water amount in ounces"
+              onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
             />
             <Button
               variant="ghost"
               size="sm"
-              className="h-11 w-11 min-w-11 px-0 rounded-none"
-              onClick={() => { if (customAmount > 0) addWater(customAmount); }}
-              disabled={customAmount <= 0}
-              aria-label="Add water"
+              className="h-11 w-11 min-w-11 px-0 rounded-none border-l border-input"
+              onClick={handleIncrement}
+              aria-label="Increment by 1"
             >
               <ChevronUp className="w-5 h-5" />
             </Button>
           </div>
-          <span className="text-sm text-muted-foreground font-medium">oz</span>
+          <span className="text-xs text-muted-foreground font-medium">oz</span>
+          <Button
+            size="sm"
+            className="h-11 px-4"
+            onClick={handleAdd}
+            disabled={currentInput <= 0}
+          >
+            Add
+          </Button>
         </div>
         <div className="flex items-center justify-between pt-1">
           <label htmlFor="electrolyte-toggle" className="text-sm text-muted-foreground">Electrolytes taken</label>
