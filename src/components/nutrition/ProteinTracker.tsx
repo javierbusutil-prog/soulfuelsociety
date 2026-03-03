@@ -18,11 +18,25 @@ const quickAdds = [20, 30, 40];
 export function ProteinTracker({ entry, addProtein, setGoal }: Props) {
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
-  const [customAmount, setCustomAmount] = useState(10);
+  const [inputValue, setInputValue] = useState('');
 
   const goal = entry?.protein_goal || 120;
   const logged = entry?.protein_logged || 0;
   const pct = Math.min(100, Math.round((logged / goal) * 100));
+
+  const currentInput = inputValue === '' ? 0 : parseInt(inputValue) || 0;
+
+  const handleAdd = () => {
+    if (currentInput > 0) {
+      addProtein(currentInput);
+      setInputValue('');
+    }
+  };
+
+  const handleIncrement = () => {
+    const next = currentInput + 1;
+    setInputValue(String(next));
+  };
 
   const saveGoal = () => {
     const val = parseInt(goalInput);
@@ -76,40 +90,36 @@ export function ProteinTracker({ entry, addProtein, setGoal }: Props) {
           </div>
           <Progress value={pct} className="h-2.5" />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="flex items-center border border-input rounded-xl overflow-hidden flex-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-11 w-11 min-w-11 px-0 rounded-none"
-              onClick={() => {
-                const amt = Math.min(customAmount, logged);
-                if (amt > 0) addProtein(-amt);
-              }}
-              disabled={customAmount <= 0 || logged <= 0}
-              aria-label="Remove protein"
-            >
-              <ChevronDown className="w-5 h-5" />
-            </Button>
             <Input
               type="number"
-              value={customAmount}
-              onChange={e => setCustomAmount(Math.max(0, parseInt(e.target.value) || 0))}
-              className="h-11 text-center text-sm border-0 rounded-none px-1 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
-              aria-label="Custom protein amount"
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              placeholder="0"
+              className="h-11 text-center text-sm border-0 rounded-none px-2 focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
+              aria-label="Protein amount in grams"
+              onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
             />
             <Button
               variant="ghost"
               size="sm"
-              className="h-11 w-11 min-w-11 px-0 rounded-none"
-              onClick={() => { if (customAmount > 0) addProtein(customAmount); }}
-              disabled={customAmount <= 0}
-              aria-label="Add protein"
+              className="h-11 w-11 min-w-11 px-0 rounded-none border-l border-input"
+              onClick={handleIncrement}
+              aria-label="Increment by 1"
             >
               <ChevronUp className="w-5 h-5" />
             </Button>
           </div>
-          <span className="text-sm text-muted-foreground font-medium">g</span>
+          <span className="text-xs text-muted-foreground font-medium">g</span>
+          <Button
+            size="sm"
+            className="h-11 px-4"
+            onClick={handleAdd}
+            disabled={currentInput <= 0}
+          >
+            Add
+          </Button>
         </div>
       </CardContent>
     </Card>
