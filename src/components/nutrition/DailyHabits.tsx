@@ -57,10 +57,10 @@ export function DailyHabits({ entry, toggleHabit, fastCompleted, cycleLogged, cy
       </CardHeader>
       <CardContent className="space-y-2">
         <HabitRow
-          label="Protein Priority"
-          done={entry?.protein_priority || false}
-          onToggle={() => toggleHabit('protein_priority')}
+          label="Protein Goal"
+          done={proteinMet}
           icon={<span className="text-base">🥩</span>}
+          synced
         />
         <HabitRow
           label="Hydration Goal"
