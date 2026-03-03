@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Pencil, Check, Droplets, ChevronUp, ChevronDown } from 'lucide-react';
+import { Pencil, Check, Droplets, ChevronUp } from 'lucide-react';
 import type { DailyNutrition } from '@/hooks/useNutrition';
 
 interface Props {

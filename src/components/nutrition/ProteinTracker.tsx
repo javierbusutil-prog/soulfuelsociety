@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { Pencil, Check, ChevronUp, ChevronDown } from 'lucide-react';
+import { Pencil, Check, ChevronUp } from 'lucide-react';
 import { ProteinCalculatorDialog } from './ProteinCalculatorDialog';
 import type { DailyNutrition } from '@/hooks/useNutrition';
 
