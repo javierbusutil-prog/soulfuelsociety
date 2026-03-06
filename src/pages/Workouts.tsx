@@ -21,7 +21,7 @@ import { ProgramDetailView } from '@/components/workouts/ProgramDetailView';
 import { WorkoutSessionView } from '@/components/workouts/WorkoutSessionView';
 import { WorkoutHistory } from '@/components/workouts/WorkoutHistory';
 import { WorkoutStructureEditor } from '@/components/workouts/WorkoutStructureEditor';
-import {
+import { WeeklyPlanView } from '@/components/workouts/WeeklyPlanView';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
