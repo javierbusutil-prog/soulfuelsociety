@@ -56,7 +56,7 @@ export function WeeklyPlanView() {
   const handleDayClick = (dayIndex: number, day: PlanDay) => {
     const hasWorkout = day.exercises.length > 0 || (day.notes && day.title !== 'Rest Day');
     if (hasWorkout) {
-      setLoggingDay({ dayIndex, day });
+      setExpandedDay(prev => prev === dayIndex ? null : dayIndex);
     }
   };
 
