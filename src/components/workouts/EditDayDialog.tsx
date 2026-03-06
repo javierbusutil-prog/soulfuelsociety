@@ -33,16 +33,21 @@ export function EditDayDialog({ open, onOpenChange, dayLabel, dayDate, dayData, 
       content = dayData.exercises.map(ex => {
         let line = `${ex.label} ${ex.name}`;
         if (ex.details) {
-          // Preserve multi-line details with indentation
           const detailLines = ex.details.split('\n').map(d => `   ${d}`).join('\n');
           line += `\n${detailLines}`;
         }
         return line;
       }).join('\n');
     }
+    // Only append notes if they aren't already contained in exercise details
     if (dayData.notes) {
-      if (content) content += '\n\n';
-      content += dayData.notes;
+      const notesAlreadyInDetails = dayData.exercises.some(ex => 
+        ex.details && ex.details.includes(dayData.notes!)
+      );
+      if (!notesAlreadyInDetails) {
+        if (content) content += '\n\n';
+        content += dayData.notes;
+      }
     }
     return content;
   };
