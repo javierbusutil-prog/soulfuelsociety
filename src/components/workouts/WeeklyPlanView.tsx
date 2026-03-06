@@ -70,8 +70,8 @@ export function WeeklyPlanView() {
             const day = getDayData(i);
             const date = addDays(currentWeekStart, i);
             const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-            const hasWorkout = day.exercises.length > 0;
-            const isRest = !hasWorkout && day.title === 'Rest Day';
+            const hasWorkout = day.exercises.length > 0 || (day.notes && day.title !== 'Rest Day');
+            const isRest = !hasWorkout && (day.title === 'Rest Day' || !day.id);
 
             return (
               <Card
