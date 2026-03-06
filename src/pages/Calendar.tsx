@@ -406,9 +406,6 @@ export default function Calendar() {
                   {filter === 'all' ? 'All' : filter === 'workouts' ? 'Workouts' : 'Cycle'}
                 </Badge>
               ))}
-              <div className="ml-auto">
-                <CycleSettingsDialog settings={cycleSettings} onUpdateSettings={updateCycleSettings} />
-              </div>
             </div>
 
             {/* Calendar grid */}
