@@ -21,6 +21,7 @@ export function WeeklyPlanView() {
   const { days, loading, upsertDay, deleteDay, getDayData } = useWeeklyPlan(currentWeekStart);
 
   const [editingDay, setEditingDay] = useState<number | null>(null);
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [loggingDay, setLoggingDay] = useState<{ dayIndex: number; day: PlanDay } | null>(null);
   const [completedDayIds, setCompletedDayIds] = useState<Set<string>>(new Set());
 
