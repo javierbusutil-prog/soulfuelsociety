@@ -35,7 +35,7 @@ interface DayEventsDialogProps {
   onCalendarEventComplete: (eventId: string) => void;
   onEditEvent: (event: Event) => void;
   onViewCalendarEvent: (event: CalendarEvent) => void;
-  onDeleteFastSession: (id: string) => void;
+  onDeleteFastSession: (id: string) => Promise<boolean>;
   isAdmin: boolean;
   userId?: string;
   cycleEntry?: any;
