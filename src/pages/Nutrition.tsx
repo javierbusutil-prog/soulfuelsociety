@@ -10,7 +10,6 @@ import { useCycleTracker } from '@/hooks/useCycleTracker';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { ProteinTracker } from '@/components/nutrition/ProteinTracker';
 import { HydrationTracker } from '@/components/nutrition/HydrationTracker';
-import { HydrationTracker } from '@/components/nutrition/HydrationTracker';
 import { EnergyMoodCheckin } from '@/components/nutrition/EnergyMoodCheckin';
 import { WeeklyTrends } from '@/components/nutrition/WeeklyTrends';
 import { MealStructureTracker } from '@/components/nutrition/MealStructureTracker';
