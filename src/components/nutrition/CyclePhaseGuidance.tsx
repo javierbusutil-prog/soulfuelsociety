@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { differenceInDays, parseISO } from 'date-fns';
-import { differenceInDays, parseISO, addDays } from 'date-fns';
 import type { CycleEntry, CycleSettings } from '@/hooks/useCycleTracker';
 
 interface Props {
