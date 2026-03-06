@@ -8,7 +8,7 @@ import { useNutrition } from '@/hooks/useNutrition';
 import { useFastingSessions } from '@/hooks/useFastingSessions';
 import { useCycleTracker } from '@/hooks/useCycleTracker';
 import { useUserSettings } from '@/hooks/useUserSettings';
-import { DailyHabits } from '@/components/nutrition/DailyHabits';
+import { ProteinTracker } from '@/components/nutrition/ProteinTracker';
 import { ProteinTracker } from '@/components/nutrition/ProteinTracker';
 import { HydrationTracker } from '@/components/nutrition/HydrationTracker';
 import { EnergyMoodCheckin } from '@/components/nutrition/EnergyMoodCheckin';
@@ -80,16 +80,6 @@ export default function Nutrition() {
 
         {/* Fasting Timer */}
         <FastingTimer />
-
-        <DailyHabits
-          entry={nutrition.entry}
-          toggleHabit={nutrition.toggleHabit}
-          fastCompleted={fastCompleted}
-          cycleLogged={cycleLogged}
-          cycleEnabled={cycleEnabled}
-          proteinMet={proteinMet}
-          hydrationMet={hydrationMet}
-        />
 
         <ProteinTracker
           entry={nutrition.entry}
