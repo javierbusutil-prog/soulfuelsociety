@@ -31,6 +31,7 @@ interface WeeklyWorkoutLogDialogProps {
   onOpenChange: (open: boolean) => void;
   day: PlanDay;
   dateLabel: string;
+  workoutDate: string; // yyyy-MM-dd format
   onLogged: () => void;
 }
 
@@ -39,6 +40,7 @@ export function WeeklyWorkoutLogDialog({
   onOpenChange,
   day,
   dateLabel,
+  workoutDate,
   onLogged,
 }: WeeklyWorkoutLogDialogProps) {
   const { user } = useAuth();
