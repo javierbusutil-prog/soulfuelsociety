@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, startOfWeek, addWeeks, subWeeks, addDays, getISOWeek } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, Dumbbell, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, Dumbbell, CheckCircle, ChevronDown, ChevronUp, ClipboardEdit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
