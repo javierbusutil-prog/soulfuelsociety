@@ -163,8 +163,45 @@ export default function Calendar() {
   const proteinMet = (nutrition.entry?.protein_logged || 0) >= (nutrition.entry?.protein_goal || 120);
   const hydrationMet = (nutrition.entry?.hydration_logged || 0) >= (nutrition.entry?.hydration_goal || 64);
 
+  // Check if user has logged a workout for the selected date
+  const [workoutCompletedForRing, setWorkoutCompletedForRing] = useState(false);
+
+  const checkWorkoutCompletion = useCallback(async () => {
+    if (!user) return;
+    // Check weekly plan logs
+    const { data: planLogs } = await supabase
+      .from('weekly_plan_logs')
+      .select('id')
+      .eq('user_id', user.id)
+      .gte('completed_at', format(selectedDate, 'yyyy-MM-dd') + 'T00:00:00')
+      .lt('completed_at', format(selectedDate, 'yyyy-MM-dd') + 'T23:59:59.999')
+      .limit(1);
+
+    // Also check calendar event completions
+    const calEventsForDay = calendarEvents.filter(e => e.event_date === dateStr && e.completed);
+
+    // Also check workout_completions table
+    const { data: workoutLogs } = await supabase
+      .from('workout_completions')
+      .select('id')
+      .eq('user_id', user.id)
+      .gte('completed_at', format(selectedDate, 'yyyy-MM-dd') + 'T00:00:00')
+      .lt('completed_at', format(selectedDate, 'yyyy-MM-dd') + 'T23:59:59.999')
+      .limit(1);
+
+    setWorkoutCompletedForRing(
+      (planLogs && planLogs.length > 0) ||
+      calEventsForDay.length > 0 ||
+      (workoutLogs && workoutLogs.length > 0)
+    );
+  }, [user, selectedDate, dateStr, calendarEvents]);
+
+  useEffect(() => {
+    checkWorkoutCompletion();
+  }, [checkWorkoutCompletion]);
+
   const habitStatus = {
-    workout: false,
+    workout: workoutCompletedForRing,
     protein: proteinMet,
     hydration: hydrationMet,
     fasting: fastCompletedForRing,
