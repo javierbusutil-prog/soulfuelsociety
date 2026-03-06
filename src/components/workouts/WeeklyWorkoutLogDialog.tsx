@@ -68,7 +68,7 @@ export function WeeklyWorkoutLogDialog({
     if (data) {
       setExistingLogId(data.id);
       setWorkoutNotes(data.notes || '');
-      const savedData = data.exercise_data as ExerciseLog[] | null;
+      const savedData = data.exercise_data as unknown as ExerciseLog[] | null;
       if (savedData && Array.isArray(savedData) && savedData.length > 0) {
         setExerciseLogs(savedData);
         return;
