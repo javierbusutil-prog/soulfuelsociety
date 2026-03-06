@@ -212,7 +212,7 @@ export function WeeklyWorkoutLogDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden p-0 w-[calc(100vw-2rem)]">
         {/* Header */}
         <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3">
           <DialogHeader>
