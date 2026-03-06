@@ -68,8 +68,7 @@ export function useWeeklyPlan(currentWeekStart: Date) {
       week_start: weekStr,
       day_of_week: dayOfWeek,
       title: updates.title ?? existing?.title ?? 'Rest Day',
-      exercises: JSON.stringify(updates.exercises ?? existing?.exercises ?? []),
-      notes: updates.notes ?? existing?.notes ?? null,
+      exercises: updates.exercises ?? existing?.exercises ?? [],
       created_by: user.id,
     };
 
