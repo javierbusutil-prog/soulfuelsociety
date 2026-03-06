@@ -32,7 +32,11 @@ export function EditDayDialog({ open, onOpenChange, dayLabel, dayDate, dayData, 
     if (dayData.exercises.length > 0) {
       content = dayData.exercises.map(ex => {
         let line = `${ex.label} ${ex.name}`;
-        if (ex.details) line += `\n   ${ex.details}`;
+        if (ex.details) {
+          // Preserve multi-line details with indentation
+          const detailLines = ex.details.split('\n').map(d => `   ${d}`).join('\n');
+          line += `\n${detailLines}`;
+        }
         return line;
       }).join('\n');
     }
