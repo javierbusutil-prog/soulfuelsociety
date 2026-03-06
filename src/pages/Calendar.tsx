@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -28,6 +28,7 @@ import { CalendarEvent } from '@/types/workoutPrograms';
 import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { EditEventDialog } from '@/components/calendar/EditEventDialog';
 import { CalendarEventDetailDialog } from '@/components/calendar/CalendarEventDetailDialog';
+import { DayEventsDialog } from '@/components/calendar/DayEventsDialog';
 
 import { FastSessionEntry } from '@/components/calendar/FastSessionEntry';
 import { LogPeriodDialog } from '@/components/calendar/LogPeriodDialog';
@@ -35,6 +36,7 @@ import { CycleSettingsDialog } from '@/components/calendar/CycleSettingsDialog';
 import { CycleAnalytics } from '@/components/calendar/CycleAnalytics';
 import { ConsistencyRing } from '@/components/nutrition/ConsistencyRing';
 import { CyclePhaseGuidance } from '@/components/nutrition/CyclePhaseGuidance';
+import { DailyHabits } from '@/components/nutrition/DailyHabits';
 import { useEventReminders, requestNotificationPermission } from '@/hooks/useEventReminders';
 import { useCalendarEvents } from '@/hooks/useWorkoutPrograms';
 import { useFastingSessions } from '@/hooks/useFastingSessions';
@@ -55,7 +57,6 @@ const expandRecurringEvent = (event: Event, rangeStart: Date, rangeEnd: Date): E
   const occurrences: ExpandedEvent[] = [];
   const eventStart = startOfDay(new Date(event.start_datetime));
   
-  // If no recurrence, just return the single event if it's in range
   if (!event.recurrence_rule) {
     if (!isBefore(eventStart, rangeStart) && !isAfter(eventStart, rangeEnd)) {
       occurrences.push({ ...event, occurrenceDate: eventStart });
@@ -102,14 +103,6 @@ const expandRecurringEvent = (event: Event, rangeStart: Date, rangeEnd: Date): E
   return occurrences;
 };
 
-const eventTypeColors: Record<EventType, string> = {
-  fast: 'bg-success/20 text-success border-success/30',
-  workout: 'bg-primary/20 text-primary border-primary/30',
-  live_session: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  challenge: 'bg-warning/20 text-warning border-warning/30',
-  other: 'bg-muted text-muted-foreground border-border',
-};
-
 export default function Calendar() {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
@@ -123,12 +116,16 @@ export default function Calendar() {
   const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<CalendarEvent | null>(null);
   const [calendarFilter, setCalendarFilter] = useState<'all' | 'workouts' | 'cycle'>('all');
   const [showPeriodLog, setShowPeriodLog] = useState(false);
+  const [showDayEvents, setShowDayEvents] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       return Notification.permission === 'granted';
     }
     return false;
   });
+
+  // Track click timing for double-click detection
+  const lastClickRef = useRef<{ date: string; time: number } | null>(null);
 
   // Workout program calendar events
   const { events: calendarEvents, loading: calendarLoading, toggleComplete, refetch: refetchCalendarEvents } = useCalendarEvents();
@@ -176,7 +173,6 @@ export default function Calendar() {
   };
 
   const fetchEvents = useCallback(async () => {
-    // Fetch events for the entire year to support agenda view
     const start = startOfMonth(subMonths(currentDate, 1));
     const end = endOfMonth(addMonths(currentDate, 2));
 
@@ -263,11 +259,11 @@ export default function Calendar() {
     });
   };
 
-  // Get fast sessions for a specific day
   const getFastSessionsForDay = (day: Date) => {
     return getSessionsForDate(day);
   };
 
+  // Data for the day events dialog
   const selectedDayEvents = getEventsForDay(selectedDate);
   const selectedDayCalendarEvents = getCalendarEventsForDay(selectedDate);
   const selectedDayFastSessions = getFastSessionsForDay(selectedDate);
@@ -311,6 +307,21 @@ export default function Calendar() {
 
   const handleCalendarEventComplete = async (eventId: string) => {
     await toggleComplete(eventId);
+  };
+
+  const handleDayClick = (day: Date) => {
+    const now = Date.now();
+    const dayKey = format(day, 'yyyy-MM-dd');
+    
+    if (lastClickRef.current && lastClickRef.current.date === dayKey && now - lastClickRef.current.time < 400) {
+      // Double click detected
+      setSelectedDate(day);
+      setShowDayEvents(true);
+      lastClickRef.current = null;
+    } else {
+      lastClickRef.current = { date: dayKey, time: now };
+      setSelectedDate(day);
+    }
   };
 
   return (
@@ -415,6 +426,7 @@ export default function Calendar() {
                   const isFertile = isFertileDay(day);
                   const isOvulation = isOvulationDay(day);
                   const showCycle = !hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle');
+                  const hasAnyEvent = dayEvents.length > 0 || dayCalendarEvents.length > 0 || dayFastSessions.length > 0;
 
                   return (
                     <motion.button
@@ -422,7 +434,7 @@ export default function Calendar() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.01 }}
-                      onClick={() => setSelectedDate(day)}
+                      onClick={() => handleDayClick(day)}
                       className={`
                         aspect-square rounded-lg flex flex-col items-center justify-center relative transition-colors
                         ${isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'}
@@ -506,7 +518,6 @@ export default function Calendar() {
               selectedDate={selectedDate}
             />
 
-
             {/* Cycle Analytics - shown when cycle filter active */}
             {calendarFilter === 'cycle' && (
               <div className="mb-6">
@@ -519,213 +530,36 @@ export default function Calendar() {
               </div>
             )}
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">
-                  {format(selectedDate, 'EEEE, MMMM d')}
-                </h3>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => navigate(`/nutrition?date=${format(selectedDate, 'yyyy-MM-dd')}`)}
-                  >
-                    🍎 Nutrition
-                  </Button>
-                  <Button
-                    variant={getEntriesForDate(selectedDate) ? 'default' : 'outline'}
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => setShowPeriodLog(true)}
-                  >
-                    <Droplet className="w-3.5 h-3.5" />
-                    {getEntriesForDate(selectedDate) ? 'Edit Period' : 'Log Period'}
-                  </Button>
-                </div>
-              </div>
+            {/* Selected day header with period log */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">
+                {format(selectedDate, 'EEEE, MMMM d')}
+              </h3>
+              <Button
+                variant={getEntriesForDate(selectedDate) ? 'default' : 'outline'}
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setShowPeriodLog(true)}
+              >
+                <Droplet className="w-3.5 h-3.5" />
+                {getEntriesForDate(selectedDate) ? 'Edit Period' : 'Log Period'}
+              </Button>
+            </div>
 
-              {/* Cycle entry for selected day */}
-              {getEntriesForDate(selectedDate) && !hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle') && (
-                <Card className="p-3 border bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800/30">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
-                      <Droplet className="w-4 h-4 text-rose-500" fill="currentColor" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm">Period Day</h4>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {getEntriesForDate(selectedDate)?.flow_level || 'medium'} flow
-                        {(getEntriesForDate(selectedDate)?.symptoms?.length ?? 0) > 0 && (
-                          <> · {getEntriesForDate(selectedDate)!.symptoms.join(', ')}</>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              )}
+            {/* Hint for double-click */}
+            <p className="text-xs text-muted-foreground mb-4">Double-tap a day to view its events</p>
 
-              {/* Fertile window / Ovulation indicator for selected day */}
-              {!hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle') && (
-                <>
-                  {isOvulationDay(selectedDate) && (
-                    <Card className="p-3 border bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800/30">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
-                          <span className="text-sm">🥚</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm">Estimated Ovulation Day</h4>
-                          <p className="text-xs text-muted-foreground">Peak fertility — highest chance of conception</p>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-                  {isFertileDay(selectedDate) && !isOvulationDay(selectedDate) && (
-                    <Card className="p-3 border bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800/30">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
-                          <span className="text-sm">🌱</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm">Fertile Window</h4>
-                          <p className="text-xs text-muted-foreground">Higher chance of conception during this window</p>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-                </>
-              )}
-
-              {/* Program workout events for selected day */}
-              {selectedDayCalendarEvents.length > 0 && (
-                <div className="space-y-2">
-                  {selectedDayCalendarEvents.map((event, index) => (
-                    <motion.div
-                      key={event.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <Card 
-                        className={`p-4 border cursor-pointer hover:bg-card/70 transition-colors ${
-                          event.completed ? 'bg-success/10 border-success/30' : 'bg-primary/10 border-primary/30'
-                        }`}
-                        onClick={() => setSelectedCalendarEvent(event)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            event.completed ? 'bg-success/20' : 'bg-primary/20'
-                          }`}>
-                            {event.completed ? (
-                              <CheckCircle className="w-5 h-5 text-success" />
-                            ) : (
-                              <Dumbbell className="w-5 h-5 text-primary" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm truncate">{event.title}</h4>
-                            {event.description && (
-                              <p className="text-xs text-muted-foreground truncate">{event.description}</p>
-                            )}
-                          </div>
-                          <Button
-                            variant={event.completed ? 'success' : 'outline'}
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCalendarEventComplete(event.id);
-                            }}
-                          >
-                            <Check className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-
-              {/* Fast session entries for selected day */}
-              {selectedDayFastSessions.length > 0 && (
-                <div className="space-y-2">
-                  {selectedDayFastSessions.map((session, index) => (
-                    <FastSessionEntry
-                      key={session.id}
-                      session={session}
-                      index={index}
-                      onDelete={deleteFastSession}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Regular events */}
-              {selectedDayEvents.length === 0 && selectedDayCalendarEvents.length === 0 && selectedDayFastSessions.length === 0 ? (
-                <Card className="p-6 text-center text-muted-foreground">
-                  <p>No events scheduled for this day</p>
-                </Card>
-              ) : (
-                selectedDayEvents.map((event, index) => {
-                  const isCompleted = completions.some(c => c.event_id === event.id);
-                  const canEdit = user && (event.user_id === user.id || isAdmin);
-
-                  return (
-                    <motion.div
-                      key={event.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: (index + selectedDayCalendarEvents.length) * 0.1 }}
-                    >
-                      <Card className={`p-4 border ${eventTypeColors[event.event_type]}`}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Badge variant="outline" className={eventTypeColors[event.event_type]}>
-                                {event.event_type.replace('_', ' ')}
-                              </Badge>
-                              {event.is_global && (
-                                <Badge variant="secondary" className="text-xs">Global</Badge>
-                              )}
-                            </div>
-                            <h4 className="font-semibold">{event.title}</h4>
-                            {event.description && (
-                              <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {format(new Date(event.start_datetime), 'h:mm a')}
-                              {event.end_datetime && ` - ${format(new Date(event.end_datetime), 'h:mm a')}`}
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {canEdit && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setEditingEvent(event)}
-                                className="h-8 w-8"
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {event.checkoff_enabled && (
-                              <Button
-                                variant={isCompleted ? 'success' : 'outline'}
-                                size="icon"
-                                onClick={() => handleComplete(event.id)}
-                                className={isCompleted ? 'bg-success hover:bg-success/90' : ''}
-                              >
-                                <Check className={`w-5 h-5 ${isCompleted ? 'text-success-foreground' : ''}`} />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  );
-                })
-              )}
+            {/* Today's Habits */}
+            <div className="mb-6">
+              <DailyHabits
+                entry={nutrition.entry}
+                toggleHabit={nutrition.toggleHabit}
+                fastCompleted={fastCompletedForRing}
+                cycleLogged={cycleLoggedForRing}
+                cycleEnabled={!!cycleSettings && !cycleSettings.hide_cycle_markers}
+                proteinMet={proteinMet}
+                hydrationMet={hydrationMet}
+              />
             </div>
           </>
         ) : (
@@ -830,6 +664,26 @@ export default function Calendar() {
           }}
         />
       )}
+
+      {/* Day Events Dialog (double-click) */}
+      <DayEventsDialog
+        open={showDayEvents}
+        onOpenChange={setShowDayEvents}
+        date={selectedDate}
+        events={selectedDayEvents}
+        calendarEvents={selectedDayCalendarEvents}
+        fastSessions={selectedDayFastSessions}
+        completions={completions}
+        onComplete={handleComplete}
+        onCalendarEventComplete={handleCalendarEventComplete}
+        onEditEvent={setEditingEvent}
+        onViewCalendarEvent={setSelectedCalendarEvent}
+        onDeleteFastSession={deleteFastSession}
+        isAdmin={isAdmin}
+        userId={user?.id}
+        cycleEntry={getEntriesForDate(selectedDate)}
+        hideCycleMarkers={hideCycleMarkers}
+      />
 
       <LogPeriodDialog
         open={showPeriodLog}
