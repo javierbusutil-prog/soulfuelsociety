@@ -57,7 +57,7 @@ export function EditDayDialog({ open, onOpenChange, dayLabel, dayDate, dayData, 
     let currentExercise: PlanExercise | null = null;
     
     // Match labels like A), B1), B2), C), a), 1), 1., A., A1), etc.
-    const exerciseLabelRegex = /^([A-Za-z]\d?\)|[A-Za-z]\d?\.|[A-Za-z]\)|\d+[\).]))\s*(.+)/;
+    const exerciseLabelRegex = /^([A-Za-z]\d?[).]|[A-Za-z][)]|\d+[).])\s*(.+)/;
 
     for (const line of lines) {
       const trimmed = line.trimEnd();
