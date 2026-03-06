@@ -197,6 +197,45 @@ export function WeeklyWorkoutLogDialog({
         if (error) throw error;
       }
 
+      // Sync to calendar — upsert a completed workout event for this date
+      const exerciseSummary = exerciseLogs
+        .map(ex => `${ex.label} ${ex.name}`)
+        .join(', ');
+      const calendarDescription = exerciseSummary + (workoutNotes ? `\n\nNotes: ${workoutNotes}` : '');
+
+      // Check if calendar event already exists for this workout on this date
+      const { data: existingEvent } = await supabase
+        .from('calendar_events')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('event_date', workoutDate)
+        .eq('event_type', 'workout')
+        .eq('title', `✅ ${day.title}`)
+        .maybeSingle();
+
+      if (existingEvent) {
+        await supabase
+          .from('calendar_events')
+          .update({
+            description: calendarDescription,
+            completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', existingEvent.id);
+      } else {
+        await supabase
+          .from('calendar_events')
+          .insert({
+            user_id: user.id,
+            event_date: workoutDate,
+            event_type: 'workout',
+            title: `✅ ${day.title}`,
+            description: calendarDescription,
+            completed: true,
+            completed_at: new Date().toISOString(),
+          });
+      }
+
       toast.success('Workout logged! 💪');
       onLogged();
       onOpenChange(false);
