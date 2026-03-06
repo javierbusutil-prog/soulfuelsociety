@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Check, Dumbbell, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Dumbbell, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -268,52 +267,21 @@ export function WeeklyWorkoutLogDialog({
                   {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
                 </button>
 
-                {/* Expanded: set logging */}
+                {/* Expanded: free-text notes */}
                 {isExpanded && (
-                  <div className="px-3 pb-3 space-y-1.5 border-t border-border/50 pt-2">
-                    {/* Set rows */}
-                    {ex.sets.map((set, setIdx) => (
-                      <div
-                        key={setIdx}
-                        className={`flex items-center gap-1.5 ${set.completed ? 'opacity-60' : ''}`}
-                      >
-                        <span className="text-[10px] font-medium text-muted-foreground w-4 text-center shrink-0">
-                          {set.set_number}
-                        </span>
-                        <div className="flex-1 flex gap-1.5">
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            placeholder="lbs"
-                            value={set.weight}
-                            onChange={(e) => updateSet(exIdx, setIdx, 'weight', e.target.value)}
-                            className="h-8 text-xs px-1.5 min-w-0 flex-1"
-                          />
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="reps"
-                            value={set.reps}
-                            onChange={(e) => updateSet(exIdx, setIdx, 'reps', e.target.value)}
-                            className="h-8 text-xs px-1.5 min-w-0 flex-1"
-                          />
-                        </div>
-                        <Checkbox
-                          checked={set.completed}
-                          onCheckedChange={() => toggleSetComplete(exIdx, setIdx)}
-                          className="w-4 h-4 shrink-0"
-                        />
-                      </div>
-                    ))}
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-xs text-muted-foreground"
-                      onClick={() => addSet(exIdx)}
-                    >
-                      + Add Set
-                    </Button>
+                  <div className="px-3 pb-3 border-t border-border/50 pt-2">
+                    <Textarea
+                      placeholder="e.g. 135x10, 155x8, 175x6 — felt strong"
+                      value={ex.notes}
+                      onChange={(e) => {
+                        setExerciseLogs(prev => {
+                          const updated = [...prev];
+                          updated[exIdx] = { ...updated[exIdx], notes: e.target.value };
+                          return updated;
+                        });
+                      }}
+                      className="text-sm min-h-[60px]"
+                    />
                   </div>
                 )}
               </Card>
