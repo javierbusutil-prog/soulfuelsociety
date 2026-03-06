@@ -1496,6 +1496,42 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_plan_days: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          day_of_week: number
+          exercises: Json
+          id: string
+          notes: string | null
+          title: string
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          day_of_week: number
+          exercises?: Json
+          id?: string
+          notes?: string | null
+          title?: string
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          day_of_week?: number
+          exercises?: Json
+          id?: string
+          notes?: string | null
+          title?: string
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       weekly_reflections: {
         Row: {
           cravings_intensity: number
