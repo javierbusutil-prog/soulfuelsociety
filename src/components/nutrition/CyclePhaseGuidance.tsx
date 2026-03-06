@@ -11,6 +11,7 @@ interface Props {
   selectedDate: Date;
   onLogPeriod?: () => void;
   hasPeriodEntry?: boolean;
+  settingsSlot?: React.ReactNode;
 }
 
 type Phase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal';
@@ -85,7 +86,7 @@ function detectPhase(
   return 'luteal';
 }
 
-export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate, onLogPeriod, hasPeriodEntry }: Props) {
+export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate, onLogPeriod, hasPeriodEntry, settingsSlot }: Props) {
   const phase = useMemo(
     () => detectPhase(selectedDate, cycleEntries, cycleSettings),
     [selectedDate, cycleEntries, cycleSettings]
@@ -100,22 +101,23 @@ export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate, 
       <CardContent className="py-4 px-4">
         <div className="flex items-start gap-3">
           <span className="text-xl mt-0.5">{info.emoji}</span>
-          <div className="space-y-1 min-w-0 flex-1">
+          <div className="space-y-2.5 min-w-0 flex-1">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-foreground">{info.label}</p>
-              {onLogPeriod && (
-                <Button
-                  variant={hasPeriodEntry ? 'default' : 'outline'}
-                  size="sm"
-                  className="gap-1.5 h-7 text-xs"
-                  onClick={onLogPeriod}
-                >
-                  <Droplet className="w-3 h-3" />
-                  {hasPeriodEntry ? 'Edit' : 'Log Period'}
-                </Button>
-              )}
+              {settingsSlot}
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">{info.guidance}</p>
+            {onLogPeriod && (
+              <Button
+                variant={hasPeriodEntry ? 'default' : 'outline'}
+                size="sm"
+                className="w-full gap-1.5"
+                onClick={onLogPeriod}
+              >
+                <Droplet className="w-3.5 h-3.5" />
+                {hasPeriodEntry ? 'Edit Period Log' : 'Log Period'}
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>
