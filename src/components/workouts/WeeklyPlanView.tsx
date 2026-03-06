@@ -100,14 +100,15 @@ export function WeeklyPlanView() {
             const hasWorkout = day.exercises.length > 0 || (day.notes && day.title !== 'Rest Day');
             const isRest = !hasWorkout && (day.title === 'Rest Day' || !day.id);
             const isCompleted = day.id ? completedDayIds.has(day.id) : false;
+            const isExpanded = expandedDay === i;
 
             return (
               <Card
                 key={i}
-                className={`overflow-hidden transition-colors ${
+                className={`overflow-hidden transition-all ${
                   isToday ? 'border-primary/50 bg-primary/5' : ''
                 } ${isCompleted ? 'border-success/40 bg-success/5' : ''} ${
-                  hasWorkout ? 'cursor-pointer hover:bg-secondary/50' : ''
+                  hasWorkout ? 'cursor-pointer' : ''
                 }`}
                 onClick={() => handleDayClick(i, day)}
               >
@@ -130,24 +131,31 @@ export function WeeklyPlanView() {
                       </Badge>
                     )}
                   </div>
-                  {isAdmin && (
-                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => setEditingDay(i)}
-                        className="text-muted-foreground hover:text-foreground p-1 transition-colors"
-                      >
-                        {hasWorkout ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                      </button>
-                      {hasWorkout && (
+                  <div className="flex items-center gap-1">
+                    {isAdmin && (
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => handleClearDay(i)}
-                          className="text-muted-foreground hover:text-destructive p-1 transition-colors"
+                          onClick={() => setEditingDay(i)}
+                          className="text-muted-foreground hover:text-foreground p-1 transition-colors"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          {hasWorkout ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                         </button>
-                      )}
-                    </div>
-                  )}
+                        {hasWorkout && (
+                          <button
+                            onClick={() => handleClearDay(i)}
+                            className="text-muted-foreground hover:text-destructive p-1 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {hasWorkout && (
+                      isExpanded
+                        ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                        : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
                 </div>
 
                 {/* Day content */}
@@ -158,23 +166,46 @@ export function WeeklyPlanView() {
                         <Dumbbell className="w-3.5 h-3.5 text-primary" />
                         {day.title}
                       </p>
-                      <div className="space-y-1">
-                        {day.exercises.map((ex, j) => (
-                          <div key={j} className="flex gap-2 text-xs">
-                            <span className="text-primary font-semibold shrink-0 w-7">{ex.label}</span>
-                            <div className="min-w-0">
-                              <span className="font-medium">{ex.name}</span>
-                              {ex.details && (
-                                <span className="text-muted-foreground ml-1 block sm:inline truncate">
-                                  {ex.details}
-                                </span>
-                              )}
+
+                      {/* Collapsed: compact preview */}
+                      {!isExpanded && (
+                        <p className="text-xs text-muted-foreground">
+                          {day.exercises.length} exercise{day.exercises.length !== 1 ? 's' : ''} — tap to view
+                        </p>
+                      )}
+
+                      {/* Expanded: full exercise list */}
+                      {isExpanded && (
+                        <div className="space-y-2 mt-1">
+                          {day.exercises.map((ex, j) => (
+                            <div key={j} className="flex gap-2 text-xs">
+                              <span className="text-primary font-semibold shrink-0 w-7">{ex.label}</span>
+                              <div className="min-w-0">
+                                <span className="font-medium">{ex.name}</span>
+                                {ex.details && (
+                                  <span className="text-muted-foreground block mt-0.5">
+                                    {ex.details}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                      {day.notes && (
-                        <p className="text-xs text-muted-foreground mt-2 italic">{day.notes}</p>
+                          ))}
+                          {day.notes && (
+                            <p className="text-xs text-muted-foreground mt-2 italic border-t border-border/50 pt-2">{day.notes}</p>
+                          )}
+                          {/* Log Workout button */}
+                          <Button
+                            size="sm"
+                            className="w-full mt-2 gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLoggingDay({ dayIndex: i, day });
+                            }}
+                          >
+                            <ClipboardEdit className="w-4 h-4" />
+                            {isCompleted ? 'Update Workout Log' : 'Log Workout'}
+                          </Button>
+                        </div>
                       )}
                     </div>
                   ) : (
