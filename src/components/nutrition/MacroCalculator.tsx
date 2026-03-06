@@ -220,6 +220,20 @@ export function MacroCalculator() {
   };
 
   const recalculate = () => setShowResults(false);
+
+  const handleAdjust = () => {
+    // Pre-fill from saved targets so user can tweak
+    if (savedTargets) {
+      setGoal(savedTargets.goal || 'maintain');
+      setActivity(savedTargets.activity_level || 'moderate');
+      setCycleEnabled(savedTargets.cycle_adjustment_enabled || false);
+      setCyclePhase(savedTargets.current_cycle_phase || 'follicular');
+      setCycleAdjPct(savedTargets.cycle_adjustment_percentage || 0);
+      setAdvanced(savedTargets.method_used === 'advanced');
+    }
+    setShowResults(false);
+  };
+
   const canCalculate = weightLbs > 0 && (!advanced || (parseFloat(age) > 0 && heightCm > 0));
 
   return (
@@ -259,6 +273,9 @@ export function MacroCalculator() {
                   Cycle adjusted {savedTargets.cycle_adjustment_percentage > 0 ? '+' : ''}{savedTargets.cycle_adjustment_percentage}% for {phaseObj(savedTargets.current_cycle_phase).label} Phase
                 </div>
               )}
+              <Button variant="outline" size="sm" onClick={handleAdjust} className="w-full mt-3 gap-1.5 text-xs">
+                <RefreshCw className="w-3 h-3" /> Adjust Targets
+              </Button>
             </CardContent>
           )}
         </Card>
