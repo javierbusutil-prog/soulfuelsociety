@@ -212,7 +212,7 @@ export function WeeklyWorkoutLogDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden p-0 w-[calc(100vw-2rem)]">
         {/* Header */}
         <div className="sticky top-0 bg-background z-10 border-b border-border px-4 py-3">
           <DialogHeader>
@@ -272,9 +272,9 @@ export function WeeklyWorkoutLogDialog({
                 {isExpanded && (
                   <div className="px-3 pb-3 space-y-2 border-t border-border/50 pt-2">
                     {/* Set headers */}
-                    <div className="grid grid-cols-[2rem_1fr_1fr_2rem] gap-2 text-[10px] text-muted-foreground uppercase font-medium px-1">
+                    <div className="grid grid-cols-[1.5rem_1fr_1fr_1.5rem] gap-1.5 text-[10px] text-muted-foreground uppercase font-medium">
                       <span>Set</span>
-                      <span>Weight</span>
+                      <span>Wt</span>
                       <span>Reps</span>
                       <span></span>
                     </div>
@@ -282,7 +282,7 @@ export function WeeklyWorkoutLogDialog({
                     {ex.sets.map((set, setIdx) => (
                       <div
                         key={setIdx}
-                        className={`grid grid-cols-[2rem_1fr_1fr_2rem] gap-2 items-center ${set.completed ? 'opacity-60' : ''}`}
+                        className={`grid grid-cols-[1.5rem_1fr_1fr_1.5rem] gap-1.5 items-center ${set.completed ? 'opacity-60' : ''}`}
                       >
                         <span className="text-xs font-medium text-center text-muted-foreground">{set.set_number}</span>
                         <Input
@@ -291,7 +291,7 @@ export function WeeklyWorkoutLogDialog({
                           placeholder="lbs"
                           value={set.weight}
                           onChange={(e) => updateSet(exIdx, setIdx, 'weight', e.target.value)}
-                          className="h-9 text-sm px-2"
+                          className="h-8 text-xs px-1.5 min-w-0"
                         />
                         <Input
                           type="text"
@@ -299,11 +299,12 @@ export function WeeklyWorkoutLogDialog({
                           placeholder="reps"
                           value={set.reps}
                           onChange={(e) => updateSet(exIdx, setIdx, 'reps', e.target.value)}
-                          className="h-9 text-sm px-2"
+                          className="h-8 text-xs px-1.5 min-w-0"
                         />
                         <Checkbox
                           checked={set.completed}
                           onCheckedChange={() => toggleSetComplete(exIdx, setIdx)}
+                          className="w-4 h-4"
                         />
                       </div>
                     ))}
