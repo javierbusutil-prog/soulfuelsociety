@@ -92,7 +92,41 @@ export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate, 
     [selectedDate, cycleEntries, cycleSettings]
   );
 
-  if (!phase || !cycleSettings || cycleSettings.hide_cycle_markers) return null;
+  // Hide only if user explicitly toggled off cycle markers
+  if (cycleSettings?.hide_cycle_markers) return null;
+
+  // If no phase detected (no entries yet or no settings), show a starter card
+  if (!phase) {
+    return (
+      <Card className="border bg-muted/30 border-border transition-colors duration-300">
+        <CardContent className="py-4 px-4">
+          <div className="flex items-start gap-3">
+            <span className="text-xl mt-0.5">🌸</span>
+            <div className="space-y-2.5 min-w-0 flex-1">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-foreground">Cycle Tracker</p>
+                {settingsSlot}
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Log your first period to unlock cycle phase insights, nutrition guidance, and predictions.
+              </p>
+              {onLogPeriod && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5"
+                  onClick={onLogPeriod}
+                >
+                  <Droplet className="w-3.5 h-3.5" />
+                  Log Period
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const info = phaseInfo[phase];
 
