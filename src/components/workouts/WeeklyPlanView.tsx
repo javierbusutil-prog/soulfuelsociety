@@ -190,9 +190,20 @@ export function WeeklyPlanView() {
                               </div>
                             </div>
                           ))}
-                          {day.notes && (
-                            <p className="text-xs text-muted-foreground mt-2 italic border-t border-border/50 pt-2">{day.notes}</p>
-                          )}
+                          {day.notes && (() => {
+                            const normalizedNotes = day.notes.replace(/\s+/g, ' ').trim().toLowerCase();
+                            const duplicateInDetails =
+                              normalizedNotes.length > 0 &&
+                              day.exercises.some(
+                                (ex) =>
+                                  !!ex.details &&
+                                  ex.details.replace(/\s+/g, ' ').trim().toLowerCase().includes(normalizedNotes)
+                              );
+
+                            return !duplicateInDetails ? (
+                              <p className="text-xs text-muted-foreground mt-2 italic border-t border-border/50 pt-2">{day.notes}</p>
+                            ) : null;
+                          })()}
                           {/* Log Workout button */}
                           <Button
                             size="sm"

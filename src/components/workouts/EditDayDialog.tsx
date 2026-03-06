@@ -28,6 +28,8 @@ export function EditDayDialog({ open, onOpenChange, dayLabel, dayDate, dayData, 
   
   // Build initial content from existing exercises + notes
   const buildInitialContent = () => {
+    const normalizeText = (value: string) => value.replace(/\s+/g, ' ').trim().toLowerCase();
+
     let content = '';
     if (dayData.exercises.length > 0) {
       content = dayData.exercises.map(ex => {
@@ -39,16 +41,18 @@ export function EditDayDialog({ open, onOpenChange, dayLabel, dayDate, dayData, 
         return line;
       }).join('\n');
     }
-    // Only append notes if they aren't already contained in exercise details
+
     if (dayData.notes) {
-      const notesAlreadyInDetails = dayData.exercises.some(ex => 
-        ex.details && ex.details.includes(dayData.notes!)
-      );
+      const normalizedNotes = normalizeText(dayData.notes);
+      const normalizedDetails = normalizeText(dayData.exercises.map(ex => ex.details || '').join('\n'));
+      const notesAlreadyInDetails = normalizedNotes.length > 0 && normalizedDetails.includes(normalizedNotes);
+
       if (!notesAlreadyInDetails) {
         if (content) content += '\n\n';
         content += dayData.notes;
       }
     }
+
     return content;
   };
 
