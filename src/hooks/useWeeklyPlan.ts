@@ -35,10 +35,25 @@ export function useWeeklyPlan(currentWeekStart: Date) {
       .order('day_of_week');
 
     if (!error && data) {
-      setDays((data as any[]).map(d => ({
-        ...d,
-        exercises: Array.isArray(d.exercises) ? d.exercises : [],
-      })));
+      setDays((data as any[]).map(d => {
+        let parsedExercises: PlanExercise[] = [];
+
+        if (Array.isArray(d.exercises)) {
+          parsedExercises = d.exercises;
+        } else if (typeof d.exercises === 'string') {
+          try {
+            const parsed = JSON.parse(d.exercises);
+            parsedExercises = Array.isArray(parsed) ? parsed : [];
+          } catch {
+            parsedExercises = [];
+          }
+        }
+
+        return {
+          ...d,
+          exercises: parsedExercises,
+        };
+      }));
     }
     setLoading(false);
   }, [weekStr]);
@@ -53,7 +68,7 @@ export function useWeeklyPlan(currentWeekStart: Date) {
       week_start: weekStr,
       day_of_week: dayOfWeek,
       title: updates.title ?? existing?.title ?? 'Rest Day',
-      exercises: JSON.stringify(updates.exercises ?? existing?.exercises ?? []),
+      exercises: updates.exercises ?? existing?.exercises ?? [],
       notes: updates.notes ?? existing?.notes ?? null,
       created_by: user.id,
     };
