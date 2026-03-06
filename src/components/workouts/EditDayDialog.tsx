@@ -55,6 +55,7 @@ export function EditDayDialog({ open, onOpenChange, dayLabel, dayDate, dayData, 
     const exercises: PlanExercise[] = [];
     const noteLines: string[] = [];
     let currentExercise: PlanExercise | null = null;
+    let blankLineAfterExercise = false;
     
     // Match labels like A), B1), B2), C), a), 1), 1., A., A1), etc.
     const exerciseLabelRegex = /^([A-Za-z]\d?[).]|[A-Za-z][)]|\d+[).])\s*(.+)/;
@@ -64,20 +65,23 @@ export function EditDayDialog({ open, onOpenChange, dayLabel, dayDate, dayData, 
       const match = trimmed.match(exerciseLabelRegex);
       
       if (match) {
-        // New exercise found
+        // New exercise found — push previous
         if (currentExercise) exercises.push(currentExercise);
         currentExercise = { label: match[1], name: match[2].trim(), details: '' };
-      } else if (currentExercise && trimmed.trim()) {
-        // Any non-empty line after an exercise label is a detail line
+        blankLineAfterExercise = false;
+      } else if (trimmed.trim() === '') {
+        // Blank line — mark separator
+        if (currentExercise) blankLineAfterExercise = true;
+      } else if (currentExercise && !blankLineAfterExercise) {
+        // Detail line for current exercise (no blank separator yet)
         const detail = trimmed.trim();
         currentExercise.details = currentExercise.details 
           ? `${currentExercise.details}\n${detail}` 
           : detail;
-      } else if (!currentExercise && trimmed.trim()) {
-        // Line before any exercise label → treat as note
+      } else {
+        // Line before any exercise, or after blank separator → treat as note
         noteLines.push(trimmed.trim());
       }
-      // Empty lines are separators — don't break the current exercise
     }
     if (currentExercise) exercises.push(currentExercise);
 
