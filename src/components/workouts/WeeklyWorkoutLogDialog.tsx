@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Check, Dumbbell, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Dumbbell, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
