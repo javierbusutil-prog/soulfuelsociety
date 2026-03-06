@@ -232,6 +232,13 @@ export function WeeklyWorkoutLogDialog({
         </div>
 
         <div className="px-4 py-3 space-y-3">
+          {/* Instructional note */}
+          <div className="rounded-lg bg-primary/10 border border-primary/20 px-3 py-2.5">
+            <p className="text-xs font-medium text-primary">📝 Log your results</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Record weight used, rounds, reps, or time for each exercise. Tap a set checkbox when complete.
+            </p>
+          </div>
           {exerciseLogs.map((ex, exIdx) => {
             const isExpanded = expandedIdx === exIdx;
             return (
