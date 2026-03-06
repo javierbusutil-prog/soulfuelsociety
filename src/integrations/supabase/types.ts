@@ -1532,6 +1532,50 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_plan_logs: {
+        Row: {
+          completed_at: string
+          created_at: string
+          day_of_week: number
+          exercise_data: Json
+          id: string
+          notes: string | null
+          plan_day_id: string | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          day_of_week: number
+          exercise_data?: Json
+          id?: string
+          notes?: string | null
+          plan_day_id?: string | null
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          day_of_week?: number
+          exercise_data?: Json
+          id?: string
+          notes?: string | null
+          plan_day_id?: string | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_plan_logs_plan_day_id_fkey"
+            columns: ["plan_day_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_plan_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_reflections: {
         Row: {
           cravings_intensity: number
