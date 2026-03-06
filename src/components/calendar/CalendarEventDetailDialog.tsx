@@ -83,7 +83,7 @@ export function CalendarEventDetailDialog({
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden w-[calc(100vw-2rem)]">
         <DialogHeader>
           <div className="flex items-start gap-3">
-            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${
               event.completed ? 'bg-success/20' : 'bg-primary/20'
             }`}>
               {event.completed ? (
@@ -92,8 +92,8 @@ export function CalendarEventDetailDialog({
                 <Dumbbell className="w-6 h-6 text-primary" />
               )}
             </div>
-            <div className="flex-1">
-              <DialogTitle className="text-left">{event.title}</DialogTitle>
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-left break-words">{event.title}</DialogTitle>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="outline" className="text-xs">
                   <Calendar className="w-3 h-3 mr-1" />
