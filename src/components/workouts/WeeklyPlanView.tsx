@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { format, startOfWeek, addWeeks, subWeeks, addDays, getISOWeek } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus, Pencil, Trash2, Dumbbell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWeeklyPlan, PlanDay, PlanExercise } from '@/hooks/useWeeklyPlan';
 import { EditDayDialog } from './EditDayDialog';
@@ -54,103 +54,103 @@ export function WeeklyPlanView() {
         </Button>
       </div>
 
-      {/* Day cards */}
-      {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <Card key={i} className="p-3 animate-pulse">
-              <div className="h-4 bg-muted rounded w-1/3 mb-2" />
-              <div className="h-3 bg-muted rounded w-2/3" />
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {DAY_LABELS.map((label, i) => {
-            const day = getDayData(i);
-            const date = addDays(currentWeekStart, i);
-            const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-            const hasWorkout = day.exercises.length > 0 || (day.notes && day.title !== 'Rest Day');
-            const isRest = !hasWorkout && (day.title === 'Rest Day' || !day.id);
-
-            return (
-              <Card
-                key={i}
-                className={`overflow-hidden transition-colors ${
-                  isToday ? 'border-primary/50 bg-primary/5' : ''
-                }`}
-              >
-                {/* Day header */}
-                <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold uppercase ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
-                      {label}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(date, 'MMM d')}
-                    </span>
-                    {isToday && (
-                      <Badge variant="default" className="text-[10px] px-1.5 py-0">Today</Badge>
-                    )}
-                  </div>
-                  {isAdmin && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setEditingDay(i)}
-                        className="text-muted-foreground hover:text-foreground p-1 transition-colors"
-                      >
-                        {hasWorkout ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                      </button>
-                      {hasWorkout && (
-                        <button
-                          onClick={() => handleClearDay(i)}
-                          className="text-muted-foreground hover:text-destructive p-1 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  )}
+      {/* Horizontal day columns */}
+      <ScrollArea className="w-full">
+        <div className="flex gap-2 pb-4" style={{ minWidth: 'max-content' }}>
+          {loading
+            ? Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="w-[160px] shrink-0 rounded-lg border border-border bg-card p-3 animate-pulse">
+                  <div className="h-4 bg-muted rounded w-2/3 mb-2" />
+                  <div className="h-3 bg-muted rounded w-full mb-1" />
+                  <div className="h-3 bg-muted rounded w-1/2" />
                 </div>
+              ))
+            : DAY_LABELS.map((label, i) => {
+                const day = getDayData(i);
+                const date = addDays(currentWeekStart, i);
+                const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                const hasWorkout = day.exercises.length > 0 || (day.notes && day.title !== 'Rest Day');
+                const isRest = !hasWorkout && (day.title === 'Rest Day' || !day.id);
 
-                {/* Day content */}
-                <div className="px-3 py-2">
-                  {hasWorkout ? (
-                    <div>
-                      <p className="text-sm font-semibold mb-1.5 flex items-center gap-1.5">
-                        <Dumbbell className="w-3.5 h-3.5 text-primary" />
-                        {day.title}
-                      </p>
-                      <div className="space-y-1">
-                        {day.exercises.map((ex, j) => (
-                          <div key={j} className="flex gap-2 text-xs">
-                            <span className="text-primary font-semibold shrink-0 w-7">{ex.label}</span>
-                            <div className="min-w-0">
-                              <span className="font-medium">{ex.name}</span>
-                              {ex.details && (
-                                <span className="text-muted-foreground ml-1 block sm:inline truncate">
-                                  {ex.details}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                return (
+                  <div
+                    key={i}
+                    className={`w-[160px] shrink-0 rounded-lg border bg-card flex flex-col overflow-hidden transition-colors ${
+                      isToday ? 'border-primary/50 bg-primary/5' : 'border-border'
+                    }`}
+                  >
+                    {/* Day header */}
+                    <div className="flex items-center justify-between px-2.5 py-2 border-b border-border/50">
+                      <div className="flex flex-col">
+                        <span className={`text-xs font-bold uppercase ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
+                          {label}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {format(date, 'MMM d')}
+                        </span>
                       </div>
-                      {day.notes && (
-                        <p className="text-xs text-muted-foreground mt-2 italic">{day.notes}</p>
+                      <div className="flex items-center gap-0.5">
+                        {isToday && (
+                          <Badge variant="default" className="text-[9px] px-1 py-0 mr-1">Today</Badge>
+                        )}
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => setEditingDay(i)}
+                              className="text-muted-foreground hover:text-foreground p-1 transition-colors"
+                            >
+                              {hasWorkout ? <Pencil className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                            </button>
+                            {hasWorkout && (
+                              <button
+                                onClick={() => handleClearDay(i)}
+                                className="text-muted-foreground hover:text-destructive p-1 transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Day content */}
+                    <div className="px-2.5 py-2 flex-1 min-h-[100px]">
+                      {hasWorkout ? (
+                        <div>
+                          <p className="text-xs font-semibold mb-1.5 flex items-center gap-1">
+                            <Dumbbell className="w-3 h-3 text-primary" />
+                            <span className="truncate">{day.title}</span>
+                          </p>
+                          <div className="space-y-0.5">
+                            {day.exercises.map((ex, j) => (
+                              <div key={j} className="text-[10px] leading-tight">
+                                <span className="text-primary font-semibold">{ex.label}</span>{' '}
+                                <span className="font-medium">{ex.name}</span>
+                                {ex.details && (
+                                  <span className="text-muted-foreground block truncate">
+                                    {ex.details}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          {day.notes && (
+                            <p className="text-[10px] text-muted-foreground mt-1.5 italic line-clamp-2">{day.notes}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground py-1">
+                          {isRest ? '🌙 Rest' : day.title}
+                        </p>
                       )}
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground py-1">
-                      {isRest ? '🌙 Rest Day' : day.title}
-                    </p>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
+                  </div>
+                );
+              })}
         </div>
-      )}
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
 
       {/* Edit Day Dialog */}
       {editingDay !== null && (
