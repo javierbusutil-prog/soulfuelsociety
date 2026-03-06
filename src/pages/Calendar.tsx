@@ -327,13 +327,27 @@ export default function Calendar() {
   return (
     <AppLayout title="Calendar">
       <div className="max-w-lg mx-auto p-4">
-        {/* Consistency Ring */}
+        {/* Cycle Phase Guidance + Period Log at top */}
         <div className="mb-6">
-          <ConsistencyRing
-            habitStatus={habitStatus}
-            ringHabits={ringHabits}
-            streak={nutrition.streak}
+          <CyclePhaseGuidance
+            cycleEntries={cycleEntries}
+            cycleSettings={cycleSettings}
+            selectedDate={selectedDate}
           />
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2">
+              <CycleSettingsDialog settings={cycleSettings} onUpdateSettings={updateCycleSettings} />
+            </div>
+            <Button
+              variant={getEntriesForDate(selectedDate) ? 'default' : 'outline'}
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setShowPeriodLog(true)}
+            >
+              <Droplet className="w-3.5 h-3.5" />
+              {getEntriesForDate(selectedDate) ? 'Edit Period' : 'Log Period'}
+            </Button>
+          </div>
         </div>
 
         {/* View Toggle & Month navigation */}
