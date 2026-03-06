@@ -9,8 +9,6 @@ interface Props {
   cycleEntries: CycleEntry[];
   cycleSettings: CycleSettings | null;
   selectedDate: Date;
-  onLogPeriod?: () => void;
-  hasPeriodEntry?: boolean;
   settingsSlot?: React.ReactNode;
 }
 
@@ -86,7 +84,7 @@ function detectPhase(
   return 'luteal';
 }
 
-export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate, onLogPeriod, hasPeriodEntry, settingsSlot }: Props) {
+export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate, settingsSlot }: Props) {
   const phase = useMemo(
     () => detectPhase(selectedDate, cycleEntries, cycleSettings),
     [selectedDate, cycleEntries, cycleSettings]
@@ -110,17 +108,6 @@ export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate, 
               <p className="text-xs leading-relaxed text-muted-foreground">
                 Log your first period to unlock cycle phase insights, nutrition guidance, and predictions.
               </p>
-              {onLogPeriod && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-1.5"
-                  onClick={onLogPeriod}
-                >
-                  <Droplet className="w-3.5 h-3.5" />
-                  Log Period
-                </Button>
-              )}
             </div>
           </div>
         </CardContent>
@@ -141,17 +128,6 @@ export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate, 
               {settingsSlot}
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">{info.guidance}</p>
-            {onLogPeriod && (
-              <Button
-                variant={hasPeriodEntry ? 'default' : 'outline'}
-                size="sm"
-                className="w-full gap-1.5"
-                onClick={onLogPeriod}
-              >
-                <Droplet className="w-3.5 h-3.5" />
-                {hasPeriodEntry ? 'Edit Period Log' : 'Log Period'}
-              </Button>
-            )}
           </div>
         </div>
       </CardContent>

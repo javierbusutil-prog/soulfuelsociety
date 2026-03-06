@@ -327,16 +327,22 @@ export default function Calendar() {
   return (
     <AppLayout title="Calendar">
       <div className="max-w-lg mx-auto p-4">
-        {/* Cycle Phase Guidance with integrated Period Log & Settings */}
-        <div className="mb-6">
+        {/* Cycle Phase Guidance + Log Period below */}
+        <div className="mb-6 space-y-3">
           <CyclePhaseGuidance
             cycleEntries={cycleEntries}
             cycleSettings={cycleSettings}
             selectedDate={selectedDate}
-            onLogPeriod={() => setShowPeriodLog(true)}
-            hasPeriodEntry={!!getEntriesForDate(selectedDate)}
             settingsSlot={<CycleSettingsDialog settings={cycleSettings} onUpdateSettings={updateCycleSettings} />}
           />
+          <Button
+            variant={getEntriesForDate(selectedDate) ? 'default' : 'outline'}
+            className="w-full gap-2"
+            onClick={() => setShowPeriodLog(true)}
+          >
+            <Droplet className="w-4 h-4" />
+            {getEntriesForDate(selectedDate) ? 'Edit Period Log' : 'Log Period'}
+          </Button>
         </div>
 
         {/* View Toggle & Month navigation */}
