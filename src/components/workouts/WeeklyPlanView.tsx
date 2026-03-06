@@ -183,7 +183,7 @@ export function WeeklyPlanView() {
                               <div className="min-w-0">
                                 <span className="font-medium">{ex.name}</span>
                                 {ex.details && (
-                                  <span className="text-muted-foreground block mt-0.5">
+                                  <span className="text-muted-foreground block mt-0.5 whitespace-pre-wrap">
                                     {ex.details}
                                   </span>
                                 )}
