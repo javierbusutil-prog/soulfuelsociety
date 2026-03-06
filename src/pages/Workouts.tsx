@@ -219,10 +219,14 @@ export default function Workouts() {
     <AppLayout title="Workouts">
       <div className="max-w-lg mx-auto p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="weekly" className="flex items-center gap-1.5 text-xs">
+              <CalendarDays className="w-3.5 h-3.5" />
+              Weekly
+            </TabsTrigger>
             <TabsTrigger value="workouts" className="flex items-center gap-1.5 text-xs">
               <Dumbbell className="w-3.5 h-3.5" />
-              Workouts
+              Library
             </TabsTrigger>
             <TabsTrigger value="programs" className="flex items-center gap-1.5 text-xs">
               <Calendar className="w-3.5 h-3.5" />
@@ -233,6 +237,11 @@ export default function Workouts() {
               Movements
             </TabsTrigger>
           </TabsList>
+
+          {/* Weekly Plan Tab */}
+          <TabsContent value="weekly" className="mt-4">
+            <WeeklyPlanView />
+          </TabsContent>
 
           {/* Workouts Tab */}
           <TabsContent value="workouts" className="mt-4">
