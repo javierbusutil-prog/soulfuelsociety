@@ -69,7 +69,7 @@ export default function Workouts() {
   const [levelFilter, setLevelFilter] = useState<WorkoutLevel[]>([]);
   const [typeFilter, setTypeFilter] = useState<WorkoutType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('workouts');
+  const [activeTab, setActiveTab] = useState('weekly');
   const [selectedProgram, setSelectedProgram] = useState<WorkoutProgram | null>(null);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [deletingWorkout, setDeletingWorkout] = useState<Workout | null>(null);
