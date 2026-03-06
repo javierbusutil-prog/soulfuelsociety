@@ -246,7 +246,7 @@ export function WeeklyWorkoutLogDialog({
                 {/* Exercise header */}
                 <button
                   onClick={() => setExpandedIdx(isExpanded ? -1 : exIdx)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-left"
                 >
                   <Checkbox
                     checked={ex.completed}
@@ -254,15 +254,15 @@ export function WeeklyWorkoutLogDialog({
                     onClick={(e) => e.stopPropagation()}
                     className="shrink-0"
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-primary">{ex.label}</span>
-                      <span className={`text-sm font-medium truncate ${ex.completed ? 'line-through text-muted-foreground' : ''}`}>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-xs font-bold text-primary shrink-0">{ex.label}</span>
+                      <span className={`text-sm font-medium break-words ${ex.completed ? 'line-through text-muted-foreground' : ''}`}>
                         {ex.name}
                       </span>
                     </div>
                     {ex.details && (
-                      <p className="text-xs text-muted-foreground truncate">{ex.details}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap break-words">{ex.details}</p>
                     )}
                   </div>
                   {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -270,41 +270,38 @@ export function WeeklyWorkoutLogDialog({
 
                 {/* Expanded: set logging */}
                 {isExpanded && (
-                  <div className="px-3 pb-3 space-y-2 border-t border-border/50 pt-2">
-                    {/* Set headers */}
-                    <div className="grid grid-cols-[1.5rem_1fr_1fr_1.5rem] gap-1.5 text-[10px] text-muted-foreground uppercase font-medium">
-                      <span>Set</span>
-                      <span>Wt</span>
-                      <span>Reps</span>
-                      <span></span>
-                    </div>
-
+                  <div className="px-3 pb-3 space-y-1.5 border-t border-border/50 pt-2">
+                    {/* Set rows */}
                     {ex.sets.map((set, setIdx) => (
                       <div
                         key={setIdx}
-                        className={`grid grid-cols-[1.5rem_1fr_1fr_1.5rem] gap-1.5 items-center ${set.completed ? 'opacity-60' : ''}`}
+                        className={`flex items-center gap-1.5 ${set.completed ? 'opacity-60' : ''}`}
                       >
-                        <span className="text-xs font-medium text-center text-muted-foreground">{set.set_number}</span>
-                        <Input
-                          type="number"
-                          inputMode="decimal"
-                          placeholder="lbs"
-                          value={set.weight}
-                          onChange={(e) => updateSet(exIdx, setIdx, 'weight', e.target.value)}
-                          className="h-8 text-xs px-1.5 min-w-0"
-                        />
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="reps"
-                          value={set.reps}
-                          onChange={(e) => updateSet(exIdx, setIdx, 'reps', e.target.value)}
-                          className="h-8 text-xs px-1.5 min-w-0"
-                        />
+                        <span className="text-[10px] font-medium text-muted-foreground w-4 text-center shrink-0">
+                          {set.set_number}
+                        </span>
+                        <div className="flex-1 flex gap-1.5">
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            placeholder="lbs"
+                            value={set.weight}
+                            onChange={(e) => updateSet(exIdx, setIdx, 'weight', e.target.value)}
+                            className="h-8 text-xs px-1.5 min-w-0 flex-1"
+                          />
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="reps"
+                            value={set.reps}
+                            onChange={(e) => updateSet(exIdx, setIdx, 'reps', e.target.value)}
+                            className="h-8 text-xs px-1.5 min-w-0 flex-1"
+                          />
+                        </div>
                         <Checkbox
                           checked={set.completed}
                           onCheckedChange={() => toggleSetComplete(exIdx, setIdx)}
-                          className="w-4 h-4"
+                          className="w-4 h-4 shrink-0"
                         />
                       </div>
                     ))}
