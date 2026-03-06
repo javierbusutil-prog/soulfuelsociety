@@ -327,13 +327,27 @@ export default function Calendar() {
   return (
     <AppLayout title="Calendar">
       <div className="max-w-lg mx-auto p-4">
-        {/* Consistency Ring */}
+        {/* Cycle Phase Guidance + Period Log at top */}
         <div className="mb-6">
-          <ConsistencyRing
-            habitStatus={habitStatus}
-            ringHabits={ringHabits}
-            streak={nutrition.streak}
+          <CyclePhaseGuidance
+            cycleEntries={cycleEntries}
+            cycleSettings={cycleSettings}
+            selectedDate={selectedDate}
           />
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2">
+              <CycleSettingsDialog settings={cycleSettings} onUpdateSettings={updateCycleSettings} />
+            </div>
+            <Button
+              variant={getEntriesForDate(selectedDate) ? 'default' : 'outline'}
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setShowPeriodLog(true)}
+            >
+              <Droplet className="w-3.5 h-3.5" />
+              {getEntriesForDate(selectedDate) ? 'Edit Period' : 'Log Period'}
+            </Button>
+          </div>
         </div>
 
         {/* View Toggle & Month navigation */}
@@ -392,9 +406,6 @@ export default function Calendar() {
                   {filter === 'all' ? 'All' : filter === 'workouts' ? 'Workouts' : 'Cycle'}
                 </Badge>
               ))}
-              <div className="ml-auto">
-                <CycleSettingsDialog settings={cycleSettings} onUpdateSettings={updateCycleSettings} />
-              </div>
             </div>
 
             {/* Calendar grid */}
@@ -511,12 +522,14 @@ export default function Calendar() {
               </div>
             )}
 
-            {/* Cycle Phase Guidance */}
-            <CyclePhaseGuidance
-              cycleEntries={cycleEntries}
-              cycleSettings={cycleSettings}
-              selectedDate={selectedDate}
-            />
+            {/* Consistency Ring - below calendar */}
+            <div className="mb-6">
+              <ConsistencyRing
+                habitStatus={habitStatus}
+                ringHabits={ringHabits}
+                streak={nutrition.streak}
+              />
+            </div>
 
             {/* Cycle Analytics - shown when cycle filter active */}
             {calendarFilter === 'cycle' && (
@@ -529,22 +542,6 @@ export default function Calendar() {
                 />
               </div>
             )}
-
-            {/* Selected day header with period log */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">
-                {format(selectedDate, 'EEEE, MMMM d')}
-              </h3>
-              <Button
-                variant={getEntriesForDate(selectedDate) ? 'default' : 'outline'}
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setShowPeriodLog(true)}
-              >
-                <Droplet className="w-3.5 h-3.5" />
-                {getEntriesForDate(selectedDate) ? 'Edit Period' : 'Log Period'}
-              </Button>
-            </div>
 
             {/* Hint for double-click */}
             <p className="text-xs text-muted-foreground mb-4">Double-tap a day to view its events</p>
