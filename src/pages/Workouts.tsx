@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Heart, Clock, Dumbbell, Check, Calendar, BookOpen, Pencil, Trash2, Play, History, ListChecks } from 'lucide-react';
+import { Search, Filter, Heart, Clock, Dumbbell, Check, Calendar, BookOpen, Pencil, Trash2, Play, History, ListChecks, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
