@@ -273,6 +273,9 @@ export function MacroCalculator() {
                   Cycle adjusted {savedTargets.cycle_adjustment_percentage > 0 ? '+' : ''}{savedTargets.cycle_adjustment_percentage}% for {phaseObj(savedTargets.current_cycle_phase).label} Phase
                 </div>
               )}
+              <Button variant="outline" size="sm" onClick={handleAdjust} className="w-full mt-3 gap-1.5 text-xs">
+                <RefreshCw className="w-3 h-3" /> Adjust Targets
+              </Button>
             </CardContent>
           )}
         </Card>
