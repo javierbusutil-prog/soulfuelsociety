@@ -115,9 +115,9 @@ export function DayEventsDialog({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm truncate">{event.title}</h4>
+                    <h4 className="font-medium text-sm break-words">{event.title}</h4>
                     {event.description && (
-                      <p className="text-xs text-muted-foreground truncate">{event.description}</p>
+                      <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words mt-0.5">{event.description}</p>
                     )}
                   </div>
                   <Button

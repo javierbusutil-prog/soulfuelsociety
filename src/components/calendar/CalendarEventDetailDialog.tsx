@@ -80,7 +80,7 @@ export function CalendarEventDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden w-[calc(100vw-2rem)]">
         <DialogHeader>
           <div className="flex items-start gap-3">
             <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
