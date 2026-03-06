@@ -237,6 +237,7 @@ export function WeeklyPlanView() {
           onOpenChange={(open) => !open && setLoggingDay(null)}
           day={loggingDay.day}
           dateLabel={`${DAY_LABELS[loggingDay.dayIndex]}, ${format(addDays(currentWeekStart, loggingDay.dayIndex), 'MMM d')}`}
+          workoutDate={format(addDays(currentWeekStart, loggingDay.dayIndex), 'yyyy-MM-dd')}
           onLogged={() => {
             fetchCompletions();
             setLoggingDay(null);
