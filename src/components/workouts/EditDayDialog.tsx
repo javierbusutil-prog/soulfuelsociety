@@ -52,27 +52,28 @@ export function EditDayDialog({ open, onOpenChange, dayLabel, dayDate, dayData, 
     const noteLines: string[] = [];
     let currentExercise: PlanExercise | null = null;
     
-    const exerciseLabelRegex = /^([A-Z]\d?\))\s*(.+)/;
+    // Match labels like A), B1), B2), C), a), 1), 1., A., A1), etc.
+    const exerciseLabelRegex = /^([A-Za-z]\d?\)|[A-Za-z]\d?\.|[A-Za-z]\)|\d+[\).]))\s*(.+)/;
 
     for (const line of lines) {
-      const match = line.match(exerciseLabelRegex);
+      const trimmed = line.trimEnd();
+      const match = trimmed.match(exerciseLabelRegex);
+      
       if (match) {
+        // New exercise found
         if (currentExercise) exercises.push(currentExercise);
         currentExercise = { label: match[1], name: match[2].trim(), details: '' };
-      } else if (currentExercise && line.trim().startsWith('@')) {
-        currentExercise.details = line.trim();
-      } else if (currentExercise && line.trim() && !line.trim().startsWith('@') && line.startsWith('   ')) {
-        // Indented detail line
+      } else if (currentExercise && trimmed.trim()) {
+        // Any non-empty line after an exercise label is a detail line
+        const detail = trimmed.trim();
         currentExercise.details = currentExercise.details 
-          ? `${currentExercise.details}; ${line.trim()}` 
-          : line.trim();
-      } else {
-        if (currentExercise) {
-          exercises.push(currentExercise);
-          currentExercise = null;
-        }
-        if (line.trim()) noteLines.push(line.trim());
+          ? `${currentExercise.details}\n${detail}` 
+          : detail;
+      } else if (!currentExercise && trimmed.trim()) {
+        // Line before any exercise label → treat as note
+        noteLines.push(trimmed.trim());
       }
+      // Empty lines are separators — don't break the current exercise
     }
     if (currentExercise) exercises.push(currentExercise);
 
