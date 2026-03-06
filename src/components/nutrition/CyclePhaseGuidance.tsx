@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Droplet } from 'lucide-react';
 import { differenceInDays, parseISO, addDays } from 'date-fns';
 import type { CycleEntry, CycleSettings } from '@/hooks/useCycleTracker';
 
@@ -7,6 +9,8 @@ interface Props {
   cycleEntries: CycleEntry[];
   cycleSettings: CycleSettings | null;
   selectedDate: Date;
+  onLogPeriod?: () => void;
+  hasPeriodEntry?: boolean;
 }
 
 type Phase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal';
@@ -45,7 +49,6 @@ function detectPhase(
 ): Phase | null {
   if (!settings || entries.length === 0) return null;
 
-  // Find the most recent period start
   const periodDates = entries
     .filter(e => e.is_period)
     .map(e => e.date)
@@ -53,7 +56,6 @@ function detectPhase(
 
   if (periodDates.length === 0) return null;
 
-  // Cluster period dates to find period starts
   const clusters: string[][] = [];
   let current = [periodDates[0]];
   for (let i = 1; i < periodDates.length; i++) {
@@ -67,31 +69,23 @@ function detectPhase(
   }
   clusters.push(current);
 
-  // Use last cluster start as reference
   const lastPeriodStart = parseISO(clusters[clusters.length - 1][0]);
   const cycleLength = settings.cycle_length_days || 28;
   const periodLength = settings.period_length_days || 5;
 
-  // Calculate day in cycle relative to selected date
   let dayInCycle = differenceInDays(selectedDate, lastPeriodStart);
 
-  // If negative or way past, try projecting forward
-  if (dayInCycle < 0) {
-    // Before the last period — can't determine phase
-    return null;
-  }
+  if (dayInCycle < 0) return null;
 
-  // Normalize to within a cycle
   dayInCycle = dayInCycle % cycleLength;
 
-  // Phase windows (approximate)
   if (dayInCycle < periodLength) return 'menstrual';
   if (dayInCycle < cycleLength - 17) return 'follicular';
   if (dayInCycle < cycleLength - 12) return 'ovulatory';
   return 'luteal';
 }
 
-export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate }: Props) {
+export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate, onLogPeriod, hasPeriodEntry }: Props) {
   const phase = useMemo(
     () => detectPhase(selectedDate, cycleEntries, cycleSettings),
     [selectedDate, cycleEntries, cycleSettings]
@@ -106,8 +100,21 @@ export function CyclePhaseGuidance({ cycleEntries, cycleSettings, selectedDate }
       <CardContent className="py-4 px-4">
         <div className="flex items-start gap-3">
           <span className="text-xl mt-0.5">{info.emoji}</span>
-          <div className="space-y-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">{info.label}</p>
+          <div className="space-y-1 min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-foreground">{info.label}</p>
+              {onLogPeriod && (
+                <Button
+                  variant={hasPeriodEntry ? 'default' : 'outline'}
+                  size="sm"
+                  className="gap-1.5 h-7 text-xs"
+                  onClick={onLogPeriod}
+                >
+                  <Droplet className="w-3 h-3" />
+                  {hasPeriodEntry ? 'Edit' : 'Log Period'}
+                </Button>
+              )}
+            </div>
             <p className="text-xs leading-relaxed text-muted-foreground">{info.guidance}</p>
           </div>
         </div>

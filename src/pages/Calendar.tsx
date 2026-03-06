@@ -327,26 +327,19 @@ export default function Calendar() {
   return (
     <AppLayout title="Calendar">
       <div className="max-w-lg mx-auto p-4">
-        {/* Cycle Phase Guidance + Period Log at top */}
-        <div className="mb-6">
-          <CyclePhaseGuidance
-            cycleEntries={cycleEntries}
-            cycleSettings={cycleSettings}
-            selectedDate={selectedDate}
-          />
-          <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center gap-2">
-              <CycleSettingsDialog settings={cycleSettings} onUpdateSettings={updateCycleSettings} />
-            </div>
-            <Button
-              variant={getEntriesForDate(selectedDate) ? 'default' : 'outline'}
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setShowPeriodLog(true)}
-            >
-              <Droplet className="w-3.5 h-3.5" />
-              {getEntriesForDate(selectedDate) ? 'Edit Period' : 'Log Period'}
-            </Button>
+        {/* Cycle Phase Guidance with integrated Period Log */}
+        <div className="mb-6 flex items-start gap-2">
+          <div className="flex-1">
+            <CyclePhaseGuidance
+              cycleEntries={cycleEntries}
+              cycleSettings={cycleSettings}
+              selectedDate={selectedDate}
+              onLogPeriod={() => setShowPeriodLog(true)}
+              hasPeriodEntry={!!getEntriesForDate(selectedDate)}
+            />
+          </div>
+          <div className="pt-1">
+            <CycleSettingsDialog settings={cycleSettings} onUpdateSettings={updateCycleSettings} />
           </div>
         </div>
 
