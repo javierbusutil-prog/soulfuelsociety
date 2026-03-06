@@ -11,6 +11,7 @@ interface Props {
   selectedDate: Date;
   onLogPeriod?: () => void;
   hasPeriodEntry?: boolean;
+  settingsSlot?: React.ReactNode;
 }
 
 type Phase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal';

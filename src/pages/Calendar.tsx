@@ -327,20 +327,16 @@ export default function Calendar() {
   return (
     <AppLayout title="Calendar">
       <div className="max-w-lg mx-auto p-4">
-        {/* Cycle Phase Guidance with integrated Period Log */}
-        <div className="mb-6 flex items-start gap-2">
-          <div className="flex-1">
-            <CyclePhaseGuidance
-              cycleEntries={cycleEntries}
-              cycleSettings={cycleSettings}
-              selectedDate={selectedDate}
-              onLogPeriod={() => setShowPeriodLog(true)}
-              hasPeriodEntry={!!getEntriesForDate(selectedDate)}
-            />
-          </div>
-          <div className="pt-1">
-            <CycleSettingsDialog settings={cycleSettings} onUpdateSettings={updateCycleSettings} />
-          </div>
+        {/* Cycle Phase Guidance with integrated Period Log & Settings */}
+        <div className="mb-6">
+          <CyclePhaseGuidance
+            cycleEntries={cycleEntries}
+            cycleSettings={cycleSettings}
+            selectedDate={selectedDate}
+            onLogPeriod={() => setShowPeriodLog(true)}
+            hasPeriodEntry={!!getEntriesForDate(selectedDate)}
+            settingsSlot={<CycleSettingsDialog settings={cycleSettings} onUpdateSettings={updateCycleSettings} />}
+          />
         </div>
 
         {/* View Toggle & Month navigation */}
