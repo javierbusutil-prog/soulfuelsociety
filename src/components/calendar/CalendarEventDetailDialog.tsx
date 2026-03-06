@@ -44,7 +44,6 @@ export function CalendarEventDetailDialog({
   const fetchDetails = async () => {
     setLoading(true);
     
-    // Fetch session template if linked
     if (event.linked_session_id) {
       const { data: sessionData } = await supabase
         .from('workout_session_templates')
@@ -60,7 +59,6 @@ export function CalendarEventDetailDialog({
       }
     }
 
-    // Fetch program if linked
     if (event.linked_program_id) {
       const { data: programData } = await supabase
         .from('workout_programs')
@@ -94,7 +92,7 @@ export function CalendarEventDetailDialog({
             </div>
             <div className="flex-1 min-w-0">
               <DialogTitle className="text-left break-words">{event.title}</DialogTitle>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <Badge variant="outline" className="text-xs">
                   <Calendar className="w-3 h-3 mr-1" />
                   {format(eventDate, 'EEEE, MMM d, yyyy')}
@@ -110,12 +108,22 @@ export function CalendarEventDetailDialog({
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
+          {/* Description (for workout logs without linked program) */}
+          {event.description && !program && (
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm">Workout Details</h4>
+              <div className="p-3 bg-card border border-border rounded-lg">
+                <p className="text-sm whitespace-pre-wrap break-words">{event.description}</p>
+              </div>
+            </div>
+          )}
+
           {/* Program Info */}
           {program && (
             <div className="p-3 bg-secondary/50 rounded-lg">
-              <p className="text-sm font-medium">{program.title}</p>
+              <p className="text-sm font-medium break-words">{program.title}</p>
               {event.description && (
-                <p className="text-xs text-muted-foreground mt-1">{event.description}</p>
+                <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap break-words">{event.description}</p>
               )}
             </div>
           )}
@@ -128,16 +136,16 @@ export function CalendarEventDetailDialog({
             </div>
           ) : session?.content_json?.notes ? (
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Workout Details</h4>
+              <h4 className="font-medium text-sm">Session Notes</h4>
               <div className="p-3 bg-card border border-border rounded-lg">
-                <p className="text-sm whitespace-pre-wrap">{session.content_json.notes}</p>
+                <p className="text-sm whitespace-pre-wrap break-words">{session.content_json.notes}</p>
               </div>
             </div>
-          ) : (
+          ) : !event.description && !program ? (
             <p className="text-sm text-muted-foreground">
               No additional workout details available.
             </p>
-          )}
+          ) : null}
 
           {/* Completed timestamp */}
           {event.completed && event.completed_at && (
