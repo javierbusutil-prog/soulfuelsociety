@@ -121,7 +121,7 @@ export function useNutrition(date?: Date) {
     await upsert({ hydration_logged: current + oz });
   };
 
-  const toggleHabit = async (field: 'protein_priority' | 'whole_foods_focus' | 'electrolyte_taken') => {
+  const toggleHabit = async (field: 'protein_priority' | 'whole_foods_focus' | 'electrolyte_taken' | 'protein_goal_checked' | 'hydration_goal_checked' | 'fast_checked' | 'cycle_checked') => {
     const current = entry?.[field] || false;
     await upsert({ [field]: !current });
   };
