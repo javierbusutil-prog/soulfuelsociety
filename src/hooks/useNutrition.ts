@@ -16,6 +16,10 @@ export interface DailyNutrition {
   whole_foods_focus: boolean;
   energy_level: number | null;
   mood_level: number | null;
+  protein_goal_checked: boolean;
+  hydration_goal_checked: boolean;
+  fast_checked: boolean;
+  cycle_checked: boolean;
   created_at: string;
   updated_at: string;
 }
