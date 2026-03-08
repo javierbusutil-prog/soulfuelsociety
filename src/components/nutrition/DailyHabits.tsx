@@ -3,9 +3,11 @@ import { Check, Droplets, Flame, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyNutrition } from '@/hooks/useNutrition';
 
+type ManualHabitField = 'protein_priority' | 'whole_foods_focus' | 'electrolyte_taken' | 'protein_goal_checked' | 'hydration_goal_checked' | 'fast_checked' | 'cycle_checked';
+
 interface Props {
   entry: DailyNutrition | null;
-  toggleHabit: (field: 'protein_priority' | 'whole_foods_focus' | 'electrolyte_taken') => void;
+  toggleHabit: (field: ManualHabitField) => void;
   fastCompleted: boolean;
   cycleLogged: boolean;
   cycleEnabled: boolean;
@@ -16,22 +18,19 @@ interface Props {
 interface HabitRowProps {
   label: string;
   done: boolean;
-  onToggle?: () => void;
+  onToggle: () => void;
   icon: React.ReactNode;
-  synced?: boolean;
 }
 
-function HabitRow({ label, done, onToggle, icon, synced }: HabitRowProps) {
+function HabitRow({ label, done, onToggle, icon }: HabitRowProps) {
   return (
     <button
       onClick={onToggle}
-      disabled={synced}
       aria-pressed={done}
       aria-label={`${label}: ${done ? 'complete' : 'incomplete'}`}
       className={cn(
         'flex items-center gap-3 w-full px-3 py-3 rounded-xl transition-colors duration-200',
         done ? 'bg-success/10' : 'bg-secondary/50 hover:bg-secondary',
-        synced && 'cursor-default opacity-80'
       )}
     >
       <div className={cn(
@@ -44,7 +43,6 @@ function HabitRow({ label, done, onToggle, icon, synced }: HabitRowProps) {
         {icon}
         {label}
       </span>
-      {synced && <span className="ml-auto text-[10px] text-muted-foreground uppercase tracking-wide">Auto</span>}
     </button>
   );
 }
@@ -58,15 +56,15 @@ export function DailyHabits({ entry, toggleHabit, fastCompleted, cycleLogged, cy
       <CardContent className="space-y-2">
         <HabitRow
           label="Protein Goal"
-          done={proteinMet}
+          done={proteinMet || (entry?.protein_goal_checked ?? false)}
+          onToggle={() => toggleHabit('protein_goal_checked')}
           icon={<span className="text-base">🥩</span>}
-          synced
         />
         <HabitRow
           label="Hydration Goal"
-          done={hydrationMet}
+          done={hydrationMet || (entry?.hydration_goal_checked ?? false)}
+          onToggle={() => toggleHabit('hydration_goal_checked')}
           icon={<Droplets className="w-4 h-4 text-sky-500" />}
-          synced
         />
         <HabitRow
           label="Whole Foods Focus"
@@ -76,16 +74,16 @@ export function DailyHabits({ entry, toggleHabit, fastCompleted, cycleLogged, cy
         />
         <HabitRow
           label="Fast Completed"
-          done={fastCompleted}
+          done={fastCompleted || (entry?.fast_checked ?? false)}
+          onToggle={() => toggleHabit('fast_checked')}
           icon={<Flame className="w-4 h-4 text-accent" />}
-          synced
         />
         {cycleEnabled && (
           <HabitRow
             label="Cycle Logged"
-            done={cycleLogged}
+            done={cycleLogged || (entry?.cycle_checked ?? false)}
+            onToggle={() => toggleHabit('cycle_checked')}
             icon={<Moon className="w-4 h-4 text-pink-400" />}
-            synced
           />
         )}
       </CardContent>

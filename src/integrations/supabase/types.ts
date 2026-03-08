@@ -194,14 +194,18 @@ export type Database = {
       daily_nutrition: {
         Row: {
           created_at: string
+          cycle_checked: boolean
           date: string
           electrolyte_taken: boolean
           energy_level: number | null
+          fast_checked: boolean
           hydration_goal: number
+          hydration_goal_checked: boolean
           hydration_logged: number
           id: string
           mood_level: number | null
           protein_goal: number
+          protein_goal_checked: boolean
           protein_logged: number
           protein_priority: boolean
           updated_at: string
@@ -210,14 +214,18 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cycle_checked?: boolean
           date?: string
           electrolyte_taken?: boolean
           energy_level?: number | null
+          fast_checked?: boolean
           hydration_goal?: number
+          hydration_goal_checked?: boolean
           hydration_logged?: number
           id?: string
           mood_level?: number | null
           protein_goal?: number
+          protein_goal_checked?: boolean
           protein_logged?: number
           protein_priority?: boolean
           updated_at?: string
@@ -226,14 +234,18 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cycle_checked?: boolean
           date?: string
           electrolyte_taken?: boolean
           energy_level?: number | null
+          fast_checked?: boolean
           hydration_goal?: number
+          hydration_goal_checked?: boolean
           hydration_logged?: number
           id?: string
           mood_level?: number | null
           protein_goal?: number
+          protein_goal_checked?: boolean
           protein_logged?: number
           protein_priority?: boolean
           updated_at?: string

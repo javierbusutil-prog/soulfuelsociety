@@ -16,6 +16,10 @@ export interface DailyNutrition {
   whole_foods_focus: boolean;
   energy_level: number | null;
   mood_level: number | null;
+  protein_goal_checked: boolean;
+  hydration_goal_checked: boolean;
+  fast_checked: boolean;
+  cycle_checked: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -117,7 +121,7 @@ export function useNutrition(date?: Date) {
     await upsert({ hydration_logged: current + oz });
   };
 
-  const toggleHabit = async (field: 'protein_priority' | 'whole_foods_focus' | 'electrolyte_taken') => {
+  const toggleHabit = async (field: 'protein_priority' | 'whole_foods_focus' | 'electrolyte_taken' | 'protein_goal_checked' | 'hydration_goal_checked' | 'fast_checked' | 'cycle_checked') => {
     const current = entry?.[field] || false;
     await upsert({ [field]: !current });
   };
