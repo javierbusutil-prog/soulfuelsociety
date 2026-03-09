@@ -22,6 +22,7 @@ import { WorkoutSessionView } from '@/components/workouts/WorkoutSessionView';
 import { WorkoutHistory } from '@/components/workouts/WorkoutHistory';
 import { WorkoutStructureEditor } from '@/components/workouts/WorkoutStructureEditor';
 import { WeeklyPlanView } from '@/components/workouts/WeeklyPlanView';
+import { EnrollProgramDialog } from '@/components/workouts/EnrollProgramDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,6 +77,7 @@ export default function Workouts() {
   const [activeSession, setActiveSession] = useState<Workout | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [structureWorkout, setStructureWorkout] = useState<Workout | null>(null);
+  const [enrollingProgram, setEnrollingProgram] = useState<WorkoutProgram | null>(null);
   const { 
     programs, 
     loading: programsLoading, 
@@ -239,7 +241,6 @@ export default function Workouts() {
             <WeeklyPlanView />
           </TabsContent>
 
-
           {/* Programs Tab */}
           <TabsContent value="programs" className="mt-4">
             {isAdmin && (
@@ -274,6 +275,7 @@ export default function Workouts() {
                     isAdmin={isAdmin}
                     onView={() => setSelectedProgram(program)}
                     onEdit={() => setSelectedProgram(program)}
+                    onAddToCalendar={() => setEnrollingProgram(program)}
                     index={index}
                   />
                 ))
@@ -286,6 +288,19 @@ export default function Workouts() {
             <MovementLibrary />
           </TabsContent>
         </Tabs>
+
+        {/* Enroll Program Dialog (triggered from card's Add Program button) */}
+        {enrollingProgram && (
+          <EnrollProgramDialog
+            program={enrollingProgram}
+            open={!!enrollingProgram}
+            onOpenChange={(open) => !open && setEnrollingProgram(null)}
+            onEnrolled={() => {
+              refetchEnrollments();
+              setEnrollingProgram(null);
+            }}
+          />
+        )}
 
         {/* Edit Workout Dialog */}
         {editingWorkout && (

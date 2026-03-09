@@ -369,12 +369,27 @@ export function useEnrollProgram() {
         const adjustedOffset = dayOffset >= 0 ? dayOffset : dayOffset + 7;
         const eventDate = addDays(weekStart, adjustedOffset);
 
+        // Build description with exercise details
+        let description = `Week ${week} - ${program.title}`;
+        const content = session.content_json;
+        if (content?.exercises && content.exercises.length > 0) {
+          const exerciseLines = content.exercises.map(ex => {
+            let line = ex.name;
+            if (ex.sets && ex.reps) line += ` — ${ex.sets}×${ex.reps}`;
+            return line;
+          });
+          description += '\n\n' + exerciseLines.join('\n');
+        }
+        if (content?.notes) {
+          description += '\n\n' + content.notes;
+        }
+
         calendarEvents.push({
           user_id: user.id,
           event_date: format(eventDate, 'yyyy-MM-dd'),
           event_type: 'workout',
           title: session.title,
-          description: `Week ${week} - ${program.title}`,
+          description,
           linked_program_id: program.id,
           linked_session_id: session.id,
           enrollment_id: enrollment.id,
