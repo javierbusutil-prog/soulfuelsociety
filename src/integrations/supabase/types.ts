@@ -29,6 +29,7 @@ export type Database = {
           reminder_enabled: boolean
           title: string
           user_id: string
+          user_notes: string | null
         }
         Insert: {
           completed?: boolean
@@ -44,6 +45,7 @@ export type Database = {
           reminder_enabled?: boolean
           title: string
           user_id: string
+          user_notes?: string | null
         }
         Update: {
           completed?: boolean
@@ -59,6 +61,7 @@ export type Database = {
           reminder_enabled?: boolean
           title?: string
           user_id?: string
+          user_notes?: string | null
         }
         Relationships: [
           {
