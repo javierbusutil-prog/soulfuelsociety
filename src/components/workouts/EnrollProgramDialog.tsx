@@ -47,7 +47,7 @@ export function EnrollProgramDialog({ program, sessions: sessionsProp, onEnrolle
   const open = isControlled ? externalOpen : internalOpen;
   const setOpen = isControlled ? (v: boolean) => externalOnOpenChange?.(v) : setInternalOpen;
 
-  const needsUserDays = program.schedule_mode === 'user_selected';
+  const needsUserDays = true; // Always let users choose their days
 
   const toggleDay = (day: number) => {
     if (selectedDays.includes(day)) {
