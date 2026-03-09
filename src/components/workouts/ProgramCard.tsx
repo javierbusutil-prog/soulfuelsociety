@@ -119,19 +119,35 @@ export function ProgramCard({
             )}
           </div>
 
-          {/* Add to Calendar button for non-enrolled, non-ebook programs */}
-          {!isEnrolled && !program.ebook_url && onAddToCalendar && (
-            <Button
-              size="sm"
-              className="w-full gap-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddToCalendar();
-              }}
-            >
-              <CalendarPlus className="w-4 h-4" />
-              Add Program
-            </Button>
+          {/* Action buttons for non-ebook programs */}
+          {!program.ebook_url && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onView();
+                }}
+              >
+                <FileText className="w-4 h-4" />
+                View Details
+              </Button>
+              {!isEnrolled && onAddToCalendar && (
+                <Button
+                  size="sm"
+                  className="flex-1 gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddToCalendar();
+                  }}
+                >
+                  <CalendarPlus className="w-4 h-4" />
+                  Add Program
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </Card>
