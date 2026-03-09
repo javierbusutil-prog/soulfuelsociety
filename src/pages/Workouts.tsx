@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Workout, WorkoutLevel, WorkoutType } from '@/types/database';
 import { WorkoutProgram } from '@/types/workoutPrograms';
-import { useWorkoutPrograms, useSessionTemplates } from '@/hooks/useWorkoutPrograms';
+import { useWorkoutPrograms } from '@/hooks/useWorkoutPrograms';
 import { ProgramCard } from '@/components/workouts/ProgramCard';
 import { CreateProgramDialog } from '@/components/workouts/CreateProgramDialog';
 import { UploadEbookDialog } from '@/components/workouts/UploadEbookDialog';
@@ -46,18 +46,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-
-// Helper component to fetch sessions and render EnrollProgramDialog
-function EnrollProgramWrapper({ program, onEnrolled }: { program: WorkoutProgram; onEnrolled: () => void }) {
-  const { sessions } = useSessionTemplates(program.id);
-  return (
-    <EnrollProgramDialog
-      program={program}
-      sessions={sessions}
-      onEnrolled={onEnrolled}
-    />
-  );
-}
 
 const levelColors: Record<WorkoutLevel, string> = {
   beginner: 'bg-success/20 text-success border-success/30',
@@ -253,7 +241,6 @@ export default function Workouts() {
             <WeeklyPlanView />
           </TabsContent>
 
-
           {/* Programs Tab */}
           <TabsContent value="programs" className="mt-4">
             {isAdmin && (
@@ -302,22 +289,17 @@ export default function Workouts() {
           </TabsContent>
         </Tabs>
 
-        {/* Enroll Program Dialog (triggered from card) */}
+        {/* Enroll Program Dialog (triggered from card's Add Program button) */}
         {enrollingProgram && (
-          <Dialog open={!!enrollingProgram} onOpenChange={(open) => !open && setEnrollingProgram(null)}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add Program to Calendar</DialogTitle>
-              </DialogHeader>
-              <EnrollProgramWrapper
-                program={enrollingProgram}
-                onEnrolled={() => {
-                  refetchEnrollments();
-                  setEnrollingProgram(null);
-                }}
-              />
-            </DialogContent>
-          </Dialog>
+          <EnrollProgramDialog
+            program={enrollingProgram}
+            open={!!enrollingProgram}
+            onOpenChange={(open) => !open && setEnrollingProgram(null)}
+            onEnrolled={() => {
+              refetchEnrollments();
+              setEnrollingProgram(null);
+            }}
+          />
         )}
 
         {/* Edit Workout Dialog */}
