@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Workout, WorkoutLevel, WorkoutType } from '@/types/database';
 import { WorkoutProgram } from '@/types/workoutPrograms';
-import { useWorkoutPrograms } from '@/hooks/useWorkoutPrograms';
+import { useWorkoutPrograms, useSessionTemplates } from '@/hooks/useWorkoutPrograms';
 import { ProgramCard } from '@/components/workouts/ProgramCard';
 import { CreateProgramDialog } from '@/components/workouts/CreateProgramDialog';
 import { UploadEbookDialog } from '@/components/workouts/UploadEbookDialog';
@@ -22,6 +22,7 @@ import { WorkoutSessionView } from '@/components/workouts/WorkoutSessionView';
 import { WorkoutHistory } from '@/components/workouts/WorkoutHistory';
 import { WorkoutStructureEditor } from '@/components/workouts/WorkoutStructureEditor';
 import { WeeklyPlanView } from '@/components/workouts/WeeklyPlanView';
+import { EnrollProgramDialog } from '@/components/workouts/EnrollProgramDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +46,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+
+// Helper component to fetch sessions and render EnrollProgramDialog
+function EnrollProgramWrapper({ program, onEnrolled }: { program: WorkoutProgram; onEnrolled: () => void }) {
+  const { sessions } = useSessionTemplates(program.id);
+  return (
+    <EnrollProgramDialog
+      program={program}
+      sessions={sessions}
+      onEnrolled={onEnrolled}
+    />
+  );
+}
 
 const levelColors: Record<WorkoutLevel, string> = {
   beginner: 'bg-success/20 text-success border-success/30',
@@ -76,6 +89,7 @@ export default function Workouts() {
   const [activeSession, setActiveSession] = useState<Workout | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [structureWorkout, setStructureWorkout] = useState<Workout | null>(null);
+  const [enrollingProgram, setEnrollingProgram] = useState<WorkoutProgram | null>(null);
   const { 
     programs, 
     loading: programsLoading, 
@@ -274,6 +288,7 @@ export default function Workouts() {
                     isAdmin={isAdmin}
                     onView={() => setSelectedProgram(program)}
                     onEdit={() => setSelectedProgram(program)}
+                    onAddToCalendar={() => setEnrollingProgram(program)}
                     index={index}
                   />
                 ))
@@ -286,6 +301,24 @@ export default function Workouts() {
             <MovementLibrary />
           </TabsContent>
         </Tabs>
+
+        {/* Enroll Program Dialog (triggered from card) */}
+        {enrollingProgram && (
+          <Dialog open={!!enrollingProgram} onOpenChange={(open) => !open && setEnrollingProgram(null)}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add Program to Calendar</DialogTitle>
+              </DialogHeader>
+              <EnrollProgramWrapper
+                program={enrollingProgram}
+                onEnrolled={() => {
+                  refetchEnrollments();
+                  setEnrollingProgram(null);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
 
         {/* Edit Workout Dialog */}
         {editingWorkout && (
