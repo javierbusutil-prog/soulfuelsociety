@@ -58,7 +58,7 @@ export function EnrollProgramDialog({ program, sessions: sessionsProp, onEnrolle
   };
 
   const handleEnroll = async () => {
-    if (needsUserDays && selectedDays.length !== program.frequency_per_week) {
+    if (selectedDays.length !== program.frequency_per_week) {
       toast({
         title: `Please select exactly ${program.frequency_per_week} days`,
         variant: 'destructive',
