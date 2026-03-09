@@ -47,7 +47,7 @@ export function EnrollProgramDialog({ program, sessions: sessionsProp, onEnrolle
   const open = isControlled ? externalOpen : internalOpen;
   const setOpen = isControlled ? (v: boolean) => externalOnOpenChange?.(v) : setInternalOpen;
 
-  const needsUserDays = program.schedule_mode === 'user_selected';
+  const needsUserDays = true; // Always let users choose their days
 
   const toggleDay = (day: number) => {
     if (selectedDays.includes(day)) {
@@ -58,7 +58,7 @@ export function EnrollProgramDialog({ program, sessions: sessionsProp, onEnrolle
   };
 
   const handleEnroll = async () => {
-    if (needsUserDays && selectedDays.length !== program.frequency_per_week) {
+    if (selectedDays.length !== program.frequency_per_week) {
       toast({
         title: `Please select exactly ${program.frequency_per_week} days`,
         variant: 'destructive',
@@ -72,7 +72,7 @@ export function EnrollProgramDialog({ program, sessions: sessionsProp, onEnrolle
         program,
         sessions,
         startDate,
-        needsUserDays ? selectedDays : undefined
+        selectedDays
       );
 
       toast({
