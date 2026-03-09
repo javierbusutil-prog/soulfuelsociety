@@ -72,7 +72,7 @@ export function EnrollProgramDialog({ program, sessions: sessionsProp, onEnrolle
         program,
         sessions,
         startDate,
-        needsUserDays ? selectedDays : undefined
+        selectedDays
       );
 
       toast({
