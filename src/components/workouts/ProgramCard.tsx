@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Calendar, Clock, Users, CheckCircle, Settings, FileText } from 'lucide-react';
+import { Calendar, Clock, Users, CheckCircle, Settings, FileText, CalendarPlus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ interface ProgramCardProps {
   isAdmin?: boolean;
   onView: () => void;
   onEdit?: () => void;
+  onAddToCalendar?: () => void;
   index?: number;
 }
 
@@ -21,6 +22,7 @@ export function ProgramCard({
   isAdmin, 
   onView, 
   onEdit,
+  onAddToCalendar,
   index = 0 
 }: ProgramCardProps) {
   const daysLabel = program.admin_days_of_week
@@ -86,7 +88,7 @@ export function ProgramCard({
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-3">
             {program.ebook_url ? (
               <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
                 <FileText className="w-3 h-3 mr-1" />
@@ -116,6 +118,21 @@ export function ProgramCard({
               </>
             )}
           </div>
+
+          {/* Add to Calendar button for non-enrolled, non-ebook programs */}
+          {!isEnrolled && !program.ebook_url && onAddToCalendar && (
+            <Button
+              size="sm"
+              className="w-full gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCalendar();
+              }}
+            >
+              <CalendarPlus className="w-4 h-4" />
+              Add Program
+            </Button>
+          )}
         </div>
       </Card>
     </motion.div>
