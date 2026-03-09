@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { 
   Dumbbell, 
   Calendar, 
   CheckCircle, 
-  X
+  X,
+  Save
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarEvent, WorkoutSessionTemplate, WorkoutProgram, SessionContent } from '@/types/workoutPrograms';
 import { format, parseISO } from 'date-fns';
+import { toast } from '@/hooks/use-toast';
 
 interface CalendarEventDetailDialogProps {
   event: CalendarEvent;
@@ -34,10 +36,13 @@ export function CalendarEventDetailDialog({
   const [session, setSession] = useState<WorkoutSessionTemplate | null>(null);
   const [program, setProgram] = useState<WorkoutProgram | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userNotes, setUserNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open && event) {
       fetchDetails();
+      setUserNotes((event as any).user_notes || '');
     }
   }, [open, event]);
 
@@ -72,6 +77,23 @@ export function CalendarEventDetailDialog({
     }
 
     setLoading(false);
+  };
+
+  const handleSaveNotes = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('calendar_events')
+        .update({ user_notes: userNotes.trim() || null } as any)
+        .eq('id', event.id);
+      
+      if (error) throw error;
+      toast({ title: 'Results saved! ✅' });
+    } catch {
+      toast({ title: 'Failed to save', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const eventDate = parseISO(event.event_date);
@@ -146,6 +168,28 @@ export function CalendarEventDetailDialog({
               No additional workout details available.
             </p>
           ) : null}
+
+          {/* User Results / Notes */}
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm">My Results</h4>
+            <Textarea
+              value={userNotes}
+              onChange={(e) => setUserNotes(e.target.value)}
+              placeholder="Log your weights, reps, how you felt..."
+              rows={3}
+              className="resize-none"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full gap-2"
+              onClick={handleSaveNotes}
+              disabled={saving}
+            >
+              <Save className="w-4 h-4" />
+              {saving ? 'Saving...' : 'Save Results'}
+            </Button>
+          </div>
 
           {/* Completed timestamp */}
           {event.completed && event.completed_at && (
