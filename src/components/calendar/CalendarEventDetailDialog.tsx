@@ -156,17 +156,6 @@ export function CalendarEventDetailDialog({
               <div className="h-4 bg-muted rounded w-3/4" />
               <div className="h-4 bg-muted rounded w-1/2" />
             </div>
-          ) : session?.content_json?.notes ? (
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm">Session Notes</h4>
-              <div className="p-3 bg-card border border-border rounded-lg">
-                <p className="text-sm whitespace-pre-wrap break-words">{session.content_json.notes}</p>
-              </div>
-            </div>
-          ) : !event.description && !program ? (
-            <p className="text-sm text-muted-foreground">
-              No additional workout details available.
-            </p>
           ) : null}
 
           {/* User Results / Notes */}
