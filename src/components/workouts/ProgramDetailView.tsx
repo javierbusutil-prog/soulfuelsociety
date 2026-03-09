@@ -39,6 +39,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { WorkoutProgram, WorkoutSessionTemplate, DAYS_OF_WEEK, SessionContent } from '@/types/workoutPrograms';
 import { useSessionTemplates } from '@/hooks/useWorkoutPrograms';
 import { EnrollProgramDialog } from './EnrollProgramDialog';
