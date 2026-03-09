@@ -200,7 +200,7 @@ export function ProgramDetailView({
       ) : (
         <>
           {/* Enrollment Status / Button */}
-          {!isAdmin && (
+          {(
             <div className="mb-6">
               {isEnrolled ? (
                 <Card className="p-4 bg-success/10 border-success/30">
