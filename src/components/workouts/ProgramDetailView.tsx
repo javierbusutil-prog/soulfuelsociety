@@ -12,7 +12,8 @@ import {
   EyeOff,
   Save,
   Download,
-  FileText
+  FileText,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -38,6 +39,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { WorkoutProgram, WorkoutSessionTemplate, DAYS_OF_WEEK, SessionContent } from '@/types/workoutPrograms';
 import { useSessionTemplates } from '@/hooks/useWorkoutPrograms';
 import { EnrollProgramDialog } from './EnrollProgramDialog';
@@ -211,6 +213,32 @@ export function ProgramDetailView({
                       </p>
                     </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full mt-3 text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+                    onClick={async () => {
+                      try {
+                        // Delete calendar events for this program
+                        await supabase
+                          .from('calendar_events')
+                          .delete()
+                          .eq('linked_program_id', program.id);
+                        // Delete enrollment
+                        await supabase
+                          .from('user_program_enrollments')
+                          .delete()
+                          .eq('program_id', program.id);
+                        onEnrollmentChange();
+                        toast({ title: 'Unenrolled from program' });
+                      } catch {
+                        toast({ title: 'Failed to unenroll', variant: 'destructive' });
+                      }
+                    }}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Unenroll
+                  </Button>
                 </Card>
               ) : (
                 <EnrollProgramDialog 
