@@ -12,7 +12,8 @@ import {
   EyeOff,
   Save,
   Download,
-  FileText
+  FileText,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
