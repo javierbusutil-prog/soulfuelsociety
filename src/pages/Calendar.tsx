@@ -128,7 +128,7 @@ export default function Calendar() {
   const lastClickRef = useRef<{ date: string; time: number } | null>(null);
 
   // Workout program calendar events
-  const { events: calendarEvents, loading: calendarLoading, toggleComplete, refetch: refetchCalendarEvents } = useCalendarEvents();
+  const { events: calendarEvents, loading: calendarLoading, toggleComplete, rescheduleEvent, refetch: refetchCalendarEvents } = useCalendarEvents();
 
   // Fasting sessions
   const { getSessionsForDate, deleteFastSession, completedSessions, refetch: refetchFastingSessions } = useFastingSessions();
