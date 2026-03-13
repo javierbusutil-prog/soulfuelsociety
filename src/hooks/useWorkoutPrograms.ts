@@ -8,7 +8,7 @@ import {
   CalendarEvent,
   SessionContent
 } from '@/types/workoutPrograms';
-import { addDays, format, getDay } from 'date-fns';
+import { addDays, format, getDay, startOfWeek } from 'date-fns';
 import { Json } from '@/integrations/supabase/types';
 
 export function useWorkoutPrograms() {
@@ -350,9 +350,12 @@ export function useEnrollProgram() {
       a.week_number - b.week_number || a.session_index - b.session_index
     );
 
+    // Anchor to the start of the week containing startDate so day-of-week math is consistent
+    const weekAnchor = startOfWeek(startDate, { weekStartsOn: 0 });
+
     // For each week of the program
     for (let week = 1; week <= program.weeks; week++) {
-      const weekStart = addDays(startDate, (week - 1) * 7);
+      const weekStart = addDays(weekAnchor, (week - 1) * 7);
       
       // Get sessions for this week
       const weekSessions = sortedSessions.filter(s => s.week_number === week);
@@ -364,10 +367,8 @@ export function useEnrollProgram() {
         const session = weekSessions[index];
         if (!session) return;
 
-        // Calculate the date for this day
-        const dayOffset = day - getDay(weekStart);
-        const adjustedOffset = dayOffset >= 0 ? dayOffset : dayOffset + 7;
-        const eventDate = addDays(weekStart, adjustedOffset);
+        // Calculate the date for this day of week within this week
+        const eventDate = addDays(weekStart, day);
 
         // Build description with exercise details
         let description = `Week ${week} - ${program.title}`;
