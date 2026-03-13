@@ -8,7 +8,7 @@ import {
   CalendarEvent,
   SessionContent
 } from '@/types/workoutPrograms';
-import { addDays, format, getDay } from 'date-fns';
+import { addDays, format, getDay, startOfWeek } from 'date-fns';
 import { Json } from '@/integrations/supabase/types';
 
 export function useWorkoutPrograms() {
