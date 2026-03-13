@@ -287,11 +287,27 @@ export function useCalendarEvents() {
     setEvents(prev => prev.filter(e => e.enrollment_id !== enrollmentId));
   };
 
+  const rescheduleEvent = async (eventId: string, newDate: string) => {
+    const { data, error } = await supabase
+      .from('calendar_events')
+      .update({ event_date: newDate })
+      .eq('id', eventId)
+      .select()
+      .single();
+
+    if (data && !error) {
+      setEvents(prev => prev.map(e => e.id === eventId ? data as CalendarEvent : e));
+      return data as CalendarEvent;
+    }
+    throw error;
+  };
+
   return {
     events,
     loading,
     toggleComplete,
     deleteEnrollmentEvents,
+    rescheduleEvent,
     refetch: fetchEvents,
   };
 }

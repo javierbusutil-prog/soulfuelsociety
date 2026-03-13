@@ -1,20 +1,27 @@
 import { useState, useEffect } from 'react';
 import { 
   Dumbbell, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   CheckCircle, 
   X,
-  Save
+  Save,
+  ArrowRightLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarEvent, WorkoutSessionTemplate, WorkoutProgram, SessionContent } from '@/types/workoutPrograms';
 import { format, parseISO } from 'date-fns';
@@ -25,24 +32,29 @@ interface CalendarEventDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete: () => void;
+  onReschedule?: (eventId: string, newDate: string) => Promise<void>;
 }
 
 export function CalendarEventDetailDialog({ 
   event, 
   open, 
   onOpenChange, 
-  onComplete 
+  onComplete,
+  onReschedule,
 }: CalendarEventDetailDialogProps) {
   const [session, setSession] = useState<WorkoutSessionTemplate | null>(null);
   const [program, setProgram] = useState<WorkoutProgram | null>(null);
   const [loading, setLoading] = useState(true);
   const [userNotes, setUserNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
 
   useEffect(() => {
     if (open && event) {
       fetchDetails();
       setUserNotes((event as any).user_notes || '');
+      setRescheduleOpen(false);
     }
   }, [open, event]);
 
@@ -96,6 +108,24 @@ export function CalendarEventDetailDialog({
     }
   };
 
+  const handleReschedule = async (newDate: Date | undefined) => {
+    if (!newDate || !onReschedule) return;
+    const newDateStr = format(newDate, 'yyyy-MM-dd');
+    if (newDateStr === event.event_date) return;
+
+    setRescheduling(true);
+    try {
+      await onReschedule(event.id, newDateStr);
+      toast({ title: `Moved to ${format(newDate, 'EEEE, MMM d')} ✅` });
+      setRescheduleOpen(false);
+      onOpenChange(false);
+    } catch {
+      toast({ title: 'Failed to reschedule', variant: 'destructive' });
+    } finally {
+      setRescheduling(false);
+    }
+  };
+
   const eventDate = parseISO(event.event_date);
 
   return (
@@ -116,7 +146,7 @@ export function CalendarEventDetailDialog({
               <DialogTitle className="text-left break-words">{event.title}</DialogTitle>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <Badge variant="outline" className="text-xs">
-                  <Calendar className="w-3 h-3 mr-1" />
+                  <CalendarIcon className="w-3 h-3 mr-1" />
                   {format(eventDate, 'EEEE, MMM d, yyyy')}
                 </Badge>
                 {event.completed && (
@@ -130,6 +160,27 @@ export function CalendarEventDetailDialog({
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
+          {/* Reschedule */}
+          {onReschedule && !event.completed && (
+            <Popover open={rescheduleOpen} onOpenChange={setRescheduleOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full gap-2">
+                  <ArrowRightLeft className="w-4 h-4" />
+                  Reschedule to Another Day
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  selected={eventDate}
+                  onSelect={handleReschedule}
+                  disabled={rescheduling}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+
           {/* Description (for workout logs without linked program) */}
           {event.description && !program && (
             <div className="space-y-2">

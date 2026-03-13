@@ -691,6 +691,11 @@ export default function Calendar() {
             handleCalendarEventComplete(selectedCalendarEvent.id);
             refetchCalendarEvents();
           }}
+          onReschedule={async (eventId, newDate) => {
+            await rescheduleEvent(eventId, newDate);
+            refetchCalendarEvents();
+            setSelectedCalendarEvent(null);
+          }}
         />
       )}
 
