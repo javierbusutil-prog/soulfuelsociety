@@ -84,7 +84,11 @@ export default function Community() {
       setGroups(data as Group[]);
       if (data.length > 0 && !selectedGroup) {
         setSelectedGroup(data[0].id);
+      } else if (!data.length) {
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
   };
 
