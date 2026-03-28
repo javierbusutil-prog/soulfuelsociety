@@ -17,7 +17,7 @@ import Coach from "./pages/Coach";
 import Store from "./pages/Store";
 import Upgrade from "./pages/Upgrade";
 import Profile from "./pages/Profile";
-import Waitlist from "./pages/Waitlist";
+
 import Nutrition from "./pages/Nutrition";
 
 const queryClient = new QueryClient();
@@ -34,7 +34,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (!user) {
-    return <Navigate to="/waitlist" replace />;
+    return <Navigate to="/login" replace />;
   }
   
   return <>{children}</>;
@@ -67,7 +67,7 @@ function SmartRedirect() {
       </div>
     );
   }
-  return <Navigate to={user ? "/community" : "/waitlist"} replace />;
+  return <Navigate to={user ? "/community" : "/login"} replace />;
 }
 
 function AppRoutes() {
@@ -77,8 +77,7 @@ function AppRoutes() {
       <Route path="/" element={<SmartRedirect />} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
-      <Route path="/waitlist" element={<Waitlist />} />
-      <Route path="/admin-login" element={<PublicRoute><Login /></PublicRoute>} />
+      
       
       {/* Protected routes */}
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
