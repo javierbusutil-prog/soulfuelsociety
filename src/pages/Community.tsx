@@ -97,31 +97,45 @@ export default function Community() {
       .eq('group_id', groupId)
       .order('created_at', { ascending: true });
 
-    if (postsData) {
-      const postsWithProfiles = await Promise.all(
-        postsData.map(async (post) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', post.user_id)
-            .single();
-          const [commentsResult, reactionsResult, userReactionResult] = await Promise.all([
-            supabase.from('comments').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-            supabase.from('reactions').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-            user ? supabase.from('reactions').select('id').eq('post_id', post.id).eq('user_id', user.id).maybeSingle() : Promise.resolve({ data: null }),
-          ]);
+    if (postsData && postsData.length > 0) {
+      // Batch fetch all unique profiles
+      const userIds = [...new Set(postsData.map(p => p.user_id))];
+      const postIds = postsData.map(p => p.id);
 
-          return {
-            ...post,
-            profiles: profileData as Profile,
-            comment_count: commentsResult.count || 0,
-            reaction_count: reactionsResult.count || 0,
-            user_reacted: !!userReactionResult.data,
-          };
-        })
-      );
+      const [profilesResult, commentsResult, reactionsResult, userReactionsResult] = await Promise.all([
+        supabase.from('profiles').select('*').in('id', userIds),
+        supabase.from('comments').select('post_id').in('post_id', postIds),
+        supabase.from('reactions').select('post_id').in('post_id', postIds),
+        user
+          ? supabase.from('reactions').select('post_id').in('post_id', postIds).eq('user_id', user.id)
+          : Promise.resolve({ data: [] as { post_id: string }[] }),
+      ]);
+
+      const profileMap = new Map((profilesResult.data || []).map(p => [p.id, p]));
+
+      const commentCounts = new Map<string, number>();
+      (commentsResult.data || []).forEach(c => {
+        commentCounts.set(c.post_id, (commentCounts.get(c.post_id) || 0) + 1);
+      });
+
+      const reactionCounts = new Map<string, number>();
+      (reactionsResult.data || []).forEach(r => {
+        reactionCounts.set(r.post_id, (reactionCounts.get(r.post_id) || 0) + 1);
+      });
+
+      const userReactedSet = new Set((userReactionsResult.data || []).map(r => r.post_id));
+
+      const postsWithProfiles = postsData.map(post => ({
+        ...post,
+        profiles: profileMap.get(post.user_id) as Profile,
+        comment_count: commentCounts.get(post.id) || 0,
+        reaction_count: reactionCounts.get(post.id) || 0,
+        user_reacted: userReactedSet.has(post.id),
+      }));
 
       setPosts(postsWithProfiles);
+    } else {
+      setPosts([]);
     }
 
     setLoading(false);
