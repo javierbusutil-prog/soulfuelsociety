@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, D
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
 import {
   ArrowLeft, Plus, Trash2, Dumbbell, Heart, Bike,
   Apple, Eye, Send, ChevronDown, ChevronRight, AlertTriangle,
@@ -534,12 +535,15 @@ function BlockEditor({
       {block.type === 'cardio' && <CardioEditor block={block} onUpdate={(b) => onUpdate(() => b)} />}
       {block.type === 'mobility' && <MobilityEditor block={block} onUpdate={(b) => onUpdate(() => b)} />}
       {block.type === 'nutrition' && (
-        <Textarea
-          placeholder="Nutrition guidance, macro targets, meal timing notes..."
-          value={block.content}
-          onChange={e => onUpdate(() => ({ type: 'nutrition', content: e.target.value }))}
-          className="min-h-[80px]"
-        />
+        <div>
+          <Textarea
+            placeholder="Nutrition guidance, macro targets, meal timing notes..."
+            value={block.content}
+            onChange={e => onUpdate(() => ({ type: 'nutrition', content: e.target.value }))}
+            className="min-h-[80px]"
+          />
+          <NutritionDisclaimerLabel variant="coach-reminder" />
+        </div>
       )}
     </div>
   );

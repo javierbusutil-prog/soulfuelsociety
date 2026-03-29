@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfWeek, differenceInWeeks } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -123,7 +124,12 @@ export function SupplementalProgramCard() {
                           <span className="text-[11px] text-muted-foreground">{ex.duration}</span>
                         </div>
                       ))}
-                      {block.type === 'nutrition' && <p className="text-xs whitespace-pre-wrap">{block.content}</p>}
+                      {block.type === 'nutrition' && (
+                        <>
+                          <p className="text-xs whitespace-pre-wrap">{block.content}</p>
+                          <NutritionDisclaimerLabel variant="coach-note" />
+                        </>
+                      )}
                     </div>
                   ))
                 )}

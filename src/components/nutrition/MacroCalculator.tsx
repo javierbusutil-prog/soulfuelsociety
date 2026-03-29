@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calculator, Save, RefreshCw, ChevronDown, ChevronUp, Droplets, Flame, Beef, Wheat, Salad, Info } from 'lucide-react';
 import { useMacroTargets } from '@/hooks/useMacroTargets';
+import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
 
 /* ── Constants ────────────────────────────────── */
 
@@ -486,6 +487,7 @@ export function MacroCalculator() {
           ) : null}
         </CardContent>
       </Card>
+      <NutritionDisclaimerLabel />
     </div>
   );
 }
