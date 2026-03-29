@@ -121,6 +121,7 @@ function WaiverRoute() {
   return <Waiver />;
 }
 
+function SmartRedirect() {
   const { user, isAdmin, isPTAdmin, loading } = useAuth();
   if (loading) {
     return (
