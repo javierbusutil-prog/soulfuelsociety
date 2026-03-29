@@ -10,6 +10,7 @@ import {
   DollarSign,
   LogOut,
   ArrowLeftCircle,
+  Clock,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import logoWordmark from '@/assets/logo-wordmark.svg';
