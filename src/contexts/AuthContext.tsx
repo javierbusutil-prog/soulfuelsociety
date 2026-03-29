@@ -77,27 +77,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // Await profile fetch before setting loading to false
           // Use setTimeout to avoid potential deadlock with Supabase client
-          setTimeout(() => {
-            fetchProfile(session.user.id);
+          setTimeout(async () => {
+            await fetchProfile(session.user.id);
             checkSubscription();
+            setLoading(false);
           }, 0);
         } else {
           setProfile(null);
           setRoles([]);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id);
+        await fetchProfile(session.user.id);
         checkSubscription();
       }
       
