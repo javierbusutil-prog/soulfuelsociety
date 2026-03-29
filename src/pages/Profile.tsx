@@ -19,7 +19,6 @@ export default function Profile() {
   const { settings, updateSettings } = useCycleTracker();
   const { toast } = useToast();
   const [portalLoading, setPortalLoading] = useState(false);
-  const { settings, updateSettings } = useCycleTracker();
 
   const cycleTrackingEnabled = settings?.prediction_enabled !== false;
 
