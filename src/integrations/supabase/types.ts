@@ -703,6 +703,48 @@ export type Database = {
         }
         Relationships: []
       }
+      member_profiles: {
+        Row: {
+          created_at: string
+          fitness_level: string
+          gym_location: string | null
+          id: string
+          injuries_limitations: string | null
+          preferred_days: string[] | null
+          preferred_time: string | null
+          primary_goal: string
+          training_days_per_week: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fitness_level?: string
+          gym_location?: string | null
+          id?: string
+          injuries_limitations?: string | null
+          preferred_days?: string[] | null
+          preferred_time?: string | null
+          primary_goal?: string
+          training_days_per_week?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fitness_level?: string
+          gym_location?: string | null
+          id?: string
+          injuries_limitations?: string | null
+          preferred_days?: string[] | null
+          preferred_time?: string | null
+          primary_goal?: string
+          training_days_per_week?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -1136,6 +1178,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           group_size: string | null
+          has_completed_onboarding: boolean
           id: string
           phone: string | null
           selected_plan: string | null
@@ -1154,6 +1197,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           group_size?: string | null
+          has_completed_onboarding?: boolean
           id: string
           phone?: string | null
           selected_plan?: string | null
@@ -1172,6 +1216,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           group_size?: string | null
+          has_completed_onboarding?: boolean
           id?: string
           phone?: string | null
           selected_plan?: string | null
