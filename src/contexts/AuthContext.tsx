@@ -54,6 +54,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const checkSubscription = async () => {
+    try {
+      const { data } = await supabase.functions.invoke('check-subscription');
+      if (data?.subscribed) {
+        // Refresh profile to pick up updated subscription_status and role
+        const currentUser = (await supabase.auth.getUser()).data.user;
+        if (currentUser) {
+          await fetchProfile(currentUser.id);
+        }
+      }
+    } catch (e) {
+      console.error('Subscription check failed:', e);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -63,7 +78,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (session?.user) {
           // Use setTimeout to avoid potential deadlock with Supabase client
-          setTimeout(() => fetchProfile(session.user.id), 0);
+          setTimeout(() => {
+            fetchProfile(session.user.id);
+            checkSubscription();
+          }, 0);
         } else {
           setProfile(null);
           setRoles([]);
@@ -80,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (session?.user) {
         fetchProfile(session.user.id);
+        checkSubscription();
       }
       
       setLoading(false);

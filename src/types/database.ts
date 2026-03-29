@@ -18,6 +18,10 @@ export interface Profile {
   phone: string | null;
   subscription_status: SubscriptionStatus;
   stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  selected_plan: string | null;
+  session_count: number | null;
+  group_size: string | null;
   assigned_coach_id: string | null;
   assigned_pt_id: string | null;
   created_at: string;
