@@ -23,6 +23,7 @@ import TrainWithUs from "./pages/TrainWithUs";
 import Onboarding from "./pages/Onboarding";
 import Invite from "./pages/Invite";
 import JoinGroup from "./pages/JoinGroup";
+import Waiver from "./pages/Waiver";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -42,7 +43,7 @@ import BookConfirm from "./pages/BookConfirm";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   
   if (loading) {
     return (
@@ -54,6 +55,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (profile && !profile.waiver_accepted) {
+    return <Navigate to="/waiver" replace />;
   }
   
   return <>{children}</>;
@@ -137,6 +142,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
       <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
       <Route path="/join/:token" element={<JoinGroup />} />
+      <Route path="/waiver" element={<ProtectedRoute><Waiver /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/book" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
       <Route path="/book/confirm/:bookingId" element={<ProtectedRoute><BookConfirm /></ProtectedRoute>} />
