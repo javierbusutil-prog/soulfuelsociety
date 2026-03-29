@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet, Users, Download, UserPlus, Trash2, Copy, Check } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet } from 'lucide-react';
+
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCycleTracker } from '@/hooks/useCycleTracker';
@@ -17,12 +17,6 @@ import { supabase } from '@/integrations/supabase/client';
 export default function Profile() {
   const { user, profile, roles, isPaidMember, isAdmin, signOut } = useAuth();
   const { settings, updateSettings } = useCycleTracker();
-  const [waitlistEntries, setWaitlistEntries] = useState<{ id: string; name: string; email: string; created_at: string }[]>([]);
-  const [waitlistLoading, setWaitlistLoading] = useState(false);
-  const [invitedEmails, setInvitedEmails] = useState<{ id: string; email: string; created_at: string }[]>([]);
-  const [newInviteEmail, setNewInviteEmail] = useState('');
-  const [inviteLoading, setInviteLoading] = useState(false);
-  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
 
   const cycleTrackingEnabled = settings?.prediction_enabled !== false;
 
