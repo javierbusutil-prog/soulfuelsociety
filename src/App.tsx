@@ -42,6 +42,12 @@ import BookConfirm from "./pages/BookConfirm";
 
 const queryClient = new QueryClient();
 
+const CURRENT_WAIVER_VERSION = 'March 2026 v2';
+
+function needsWaiver(profile: any): boolean {
+  return !profile?.waiver_accepted || profile?.waiver_version !== CURRENT_WAIVER_VERSION;
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
   
@@ -57,7 +63,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (profile && !profile.waiver_accepted) {
+  if (profile && needsWaiver(profile)) {
     return <Navigate to="/waiver" replace />;
   }
   
@@ -79,7 +85,7 @@ function CoachRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (profile && !profile.waiver_accepted) {
+  if (profile && needsWaiver(profile)) {
     return <Navigate to="/waiver" replace />;
   }
   
