@@ -291,20 +291,32 @@ export default function AdminMemberDetail() {
           </CardContent>
         </Card>
 
-        {/* SECTION 2 — Current Program */}
+        {/* SECTION 2 — Current Program / Sessions */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Dumbbell className="w-4 h-4 text-muted-foreground" /> Current program
+              <Dumbbell className="w-4 h-4 text-muted-foreground" />
+              {profile.selected_plan === 'in-person' ? 'Session bookings' : 'Current program'}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {enrolledProgram && memberProfile?.program_delivered ? (
+            {profile.selected_plan === 'in-person' ? (
+              <div className="text-center py-6 space-y-3">
+                <Calendar className="w-8 h-8 text-muted-foreground mx-auto" />
+                <p className="text-sm text-muted-foreground">Manage in-person sessions from the Sessions tab.</p>
+                <Button onClick={() => navigate('/admin/sessions')} variant="outline" className="gap-1.5">
+                  Go to sessions
+                </Button>
+              </div>
+            ) : enrolledProgram && memberProfile?.program_delivered ? (
               <div className="space-y-2">
                 <p className="font-medium">{enrolledProgram.title}</p>
                 <p className="text-sm text-muted-foreground">
                   {enrolledProgram.weeks} weeks · Started {format(new Date(enrolledProgram.start_date), 'MMM d, yyyy')}
                 </p>
+                <Button size="sm" variant="outline" onClick={() => navigate(`/admin/members/${id}/program`)} className="gap-1.5 mt-2">
+                  Update program
+                </Button>
               </div>
             ) : (
               <div className="text-center py-6 space-y-3">

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,18 +6,20 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
 import {
-  ArrowLeft, Plus, Trash2, GripVertical, Dumbbell, Heart, Bike,
-  Apple, Eye, Send, ChevronDown, ChevronUp, AlertTriangle
+  ArrowLeft, Plus, Trash2, Dumbbell, Heart, Bike,
+  Apple, Eye, Send, ChevronDown, ChevronRight, AlertTriangle,
+  Copy, CopyPlus
 } from 'lucide-react';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const WEEK_LABELS = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
 
 type BlockType = 'strength' | 'cardio' | 'mobility' | 'nutrition';
 
@@ -29,34 +31,22 @@ interface StrengthExercise {
   note: string;
 }
 
-interface StrengthBlock {
-  type: 'strength';
-  exercises: StrengthExercise[];
-}
-
-interface CardioBlock {
-  type: 'cardio';
-  activity: string;
-  duration: string;
-  intensity: string;
-  note: string;
-}
-
-interface MobilityBlock {
-  type: 'mobility';
-  exercises: { name: string; duration: string; note: string }[];
-}
-
-interface NutritionBlock {
-  type: 'nutrition';
-  content: string;
-}
-
+interface StrengthBlock { type: 'strength'; exercises: StrengthExercise[]; }
+interface CardioBlock { type: 'cardio'; activity: string; duration: string; intensity: string; note: string; }
+interface MobilityExercise { name: string; duration: string; side: string; note: string; }
+interface MobilityBlock { type: 'mobility'; exercises: MobilityExercise[]; }
+interface NutritionBlock { type: 'nutrition'; content: string; }
 type Block = StrengthBlock | CardioBlock | MobilityBlock | NutritionBlock;
 
 interface DayPlan {
   isRest: boolean;
+  restNote: string;
   blocks: Block[];
+}
+
+interface WeekPlan {
+  days: DayPlan[];
+  nutritionNote: string; // week-level nutrition
 }
 
 interface MemberContext {
@@ -66,20 +56,23 @@ interface MemberContext {
   training_days_per_week: number;
   injuries_limitations: string | null;
   preferred_days: string[] | null;
+  selected_plan: string | null;
 }
+
+const emptyDay = (): DayPlan => ({ isRest: true, restNote: '', blocks: [] });
+const emptyWeek = (): WeekPlan => ({ days: DAY_NAMES.map(() => emptyDay()), nutritionNote: '' });
 
 export default function AdminProgramBuilder() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [context, setContext] = useState<MemberContext | null>(null);
-  const [days, setDays] = useState<DayPlan[]>(
-    DAY_NAMES.map(() => ({ isRest: true, blocks: [] }))
-  );
+  const [weeks, setWeeks] = useState<WeekPlan[]>(WEEK_LABELS.map(() => emptyWeek()));
   const [loading, setLoading] = useState(true);
   const [delivering, setDelivering] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set());
+  const [openWeeks, setOpenWeeks] = useState<Set<number>>(new Set([0]));
+  const [openDays, setOpenDays] = useState<Set<string>>(new Set());
   const [existingVersion, setExistingVersion] = useState(0);
   const [isUpdate, setIsUpdate] = useState(false);
 
@@ -90,87 +83,114 @@ export default function AdminProgramBuilder() {
   const fetchContext = async (userId: string) => {
     setLoading(true);
     const [{ data: prof }, { data: mp }, { data: existing }] = await Promise.all([
-      supabase.from('profiles').select('full_name').eq('id', userId).single(),
+      supabase.from('profiles').select('full_name, selected_plan').eq('id', userId).single(),
       supabase.from('member_profiles').select('fitness_level, primary_goal, training_days_per_week, injuries_limitations, preferred_days').eq('user_id', userId).single(),
       supabase.from('coaching_programs').select('version, program_data').eq('user_id', userId).eq('is_active', true).order('version', { ascending: false }).limit(1).maybeSingle(),
     ]);
 
     if (prof && mp) {
-      setContext({ full_name: prof.full_name, ...(mp as any) });
+      setContext({ full_name: prof.full_name, selected_plan: prof.selected_plan, ...(mp as any) });
+    }
+
+    // Redirect in-person members
+    if (prof?.selected_plan === 'in-person') {
+      navigate(`/admin/members/${userId}`);
+      return;
     }
 
     if (existing) {
       setExistingVersion(existing.version);
       setIsUpdate(true);
-      // Load existing program data
       const pd = existing.program_data as any;
-      if (pd?.days && Array.isArray(pd.days)) {
-        setDays(pd.days);
-        // Expand non-rest days
-        const expanded = new Set<number>();
-        pd.days.forEach((d: DayPlan, i: number) => { if (!d.isRest) expanded.add(i); });
-        setExpandedDays(expanded);
+      if (pd?.weeks && Array.isArray(pd.weeks)) {
+        setWeeks(pd.weeks);
+        setOpenWeeks(new Set([0]));
       }
     }
-
     setLoading(false);
   };
 
-  const toggleDay = (idx: number) => {
-    setExpandedDays(prev => {
-      const next = new Set(prev);
-      next.has(idx) ? next.delete(idx) : next.add(idx);
-      return next;
+  const toggleWeek = (wi: number) => {
+    setOpenWeeks(prev => {
+      const n = new Set(prev);
+      n.has(wi) ? n.delete(wi) : n.add(wi);
+      return n;
     });
   };
 
-  const setDayRest = (idx: number, isRest: boolean) => {
-    setDays(prev => prev.map((d, i) => i === idx ? { isRest, blocks: isRest ? [] : d.blocks } : d));
-    if (!isRest) setExpandedDays(prev => new Set(prev).add(idx));
+  const dayKey = (wi: number, di: number) => `${wi}-${di}`;
+  const toggleDay = (wi: number, di: number) => {
+    const k = dayKey(wi, di);
+    setOpenDays(prev => {
+      const n = new Set(prev);
+      n.has(k) ? n.delete(k) : n.add(k);
+      return n;
+    });
   };
 
-  const addBlock = (dayIdx: number, type: BlockType) => {
+  const updateDay = (wi: number, di: number, updater: (d: DayPlan) => DayPlan) => {
+    setWeeks(prev => prev.map((w, i) => i !== wi ? w : {
+      ...w,
+      days: w.days.map((d, j) => j !== di ? d : updater(d))
+    }));
+  };
+
+  const setDayRest = (wi: number, di: number, isRest: boolean) => {
+    updateDay(wi, di, d => ({ ...d, isRest, blocks: isRest ? [] : d.blocks }));
+    if (!isRest) setOpenDays(prev => new Set(prev).add(dayKey(wi, di)));
+  };
+
+  const addBlock = (wi: number, di: number, type: BlockType) => {
     const newBlock: Block = type === 'strength'
       ? { type: 'strength', exercises: [{ name: '', sets: '3', reps: '10', weight: '', note: '' }] }
       : type === 'cardio'
       ? { type: 'cardio', activity: '', duration: '', intensity: '', note: '' }
       : type === 'mobility'
-      ? { type: 'mobility', exercises: [{ name: '', duration: '', note: '' }] }
+      ? { type: 'mobility', exercises: [{ name: '', duration: '', side: 'both', note: '' }] }
       : { type: 'nutrition', content: '' };
-
-    setDays(prev => prev.map((d, i) => i === dayIdx ? { ...d, blocks: [...d.blocks, newBlock] } : d));
+    updateDay(wi, di, d => ({ ...d, blocks: [...d.blocks, newBlock] }));
   };
 
-  const removeBlock = (dayIdx: number, blockIdx: number) => {
-    setDays(prev => prev.map((d, i) => i === dayIdx ? { ...d, blocks: d.blocks.filter((_, bi) => bi !== blockIdx) } : d));
+  const removeBlock = (wi: number, di: number, bi: number) => {
+    updateDay(wi, di, d => ({ ...d, blocks: d.blocks.filter((_, i) => i !== bi) }));
   };
 
-  const moveBlock = (dayIdx: number, blockIdx: number, dir: -1 | 1) => {
-    setDays(prev => prev.map((d, i) => {
-      if (i !== dayIdx) return d;
+  const moveBlock = (wi: number, di: number, bi: number, dir: -1 | 1) => {
+    updateDay(wi, di, d => {
       const blocks = [...d.blocks];
-      const target = blockIdx + dir;
+      const target = bi + dir;
       if (target < 0 || target >= blocks.length) return d;
-      [blocks[blockIdx], blocks[target]] = [blocks[target], blocks[blockIdx]];
+      [blocks[bi], blocks[target]] = [blocks[target], blocks[bi]];
       return { ...d, blocks };
+    });
+  };
+
+  const updateBlock = (wi: number, di: number, bi: number, updater: (b: Block) => Block) => {
+    updateDay(wi, di, d => ({
+      ...d,
+      blocks: d.blocks.map((b, i) => i === bi ? updater(b) : b)
     }));
   };
 
-  const updateBlock = (dayIdx: number, blockIdx: number, updater: (b: Block) => Block) => {
-    setDays(prev => prev.map((d, i) => i === dayIdx ? {
-      ...d,
-      blocks: d.blocks.map((b, bi) => bi === blockIdx ? updater(b) : b)
-    } : d));
+  // Copy day to another day
+  const copyDayTo = (srcWi: number, srcDi: number, tgtWi: number, tgtDi: number) => {
+    const srcDay = JSON.parse(JSON.stringify(weeks[srcWi].days[srcDi]));
+    updateDay(tgtWi, tgtDi, () => srcDay);
+    toast.success(`Copied ${DAY_NAMES[srcDi]} to ${WEEK_LABELS[tgtWi]} ${DAY_NAMES[tgtDi]}`);
+  };
+
+  // Copy week to another week
+  const copyWeekTo = (srcWi: number, tgtWi: number) => {
+    const srcWeek = JSON.parse(JSON.stringify(weeks[srcWi]));
+    setWeeks(prev => prev.map((w, i) => i === tgtWi ? srcWeek : w));
+    toast.success(`Copied ${WEEK_LABELS[srcWi]} to ${WEEK_LABELS[tgtWi]}`);
   };
 
   const handleDeliver = async () => {
     if (!user || !id) return;
     setDelivering(true);
-
     try {
       const newVersion = existingVersion + 1;
-
-      // Deactivate previous versions
       if (isUpdate) {
         await supabase
           .from('coaching_programs')
@@ -179,7 +199,6 @@ export default function AdminProgramBuilder() {
           .eq('is_active', true);
       }
 
-      // Insert new program
       const { error: insertError } = await supabase
         .from('coaching_programs')
         .insert({
@@ -187,22 +206,18 @@ export default function AdminProgramBuilder() {
           coach_id: user.id,
           version: newVersion,
           is_active: true,
-          program_data: { days } as any,
+          program_data: { weeks } as any,
         } as any);
-
       if (insertError) throw insertError;
 
-      // Mark program as delivered
       await supabase
         .from('member_profiles')
         .update({ program_delivered: true } as any)
         .eq('user_id', id);
 
-      // Send notification
       const notifTitle = isUpdate
         ? 'Your coach has updated your program.'
-        : 'Your personalized program is ready. Open it in your dashboard.';
-
+        : 'Your personalized program is ready — open it in your dashboard.';
       await supabase.from('notifications').insert({
         user_id: id,
         type: 'program_delivered',
@@ -223,7 +238,7 @@ export default function AdminProgramBuilder() {
 
   const formatGoal = (g: string) => g.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-  const hasContent = days.some(d => !d.isRest && d.blocks.length > 0);
+  const hasContent = weeks.some(w => w.days.some(d => !d.isRest && d.blocks.length > 0));
 
   if (loading) {
     return (
@@ -270,75 +285,141 @@ export default function AdminProgramBuilder() {
           </Card>
         )}
 
-        {/* Day-by-day builder */}
-        {DAY_NAMES.map((dayName, dayIdx) => (
-          <Card key={dayName} className={days[dayIdx].isRest ? 'opacity-60' : ''}>
-            <CardHeader className="p-3 md:p-4 pb-0">
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={() => toggleDay(dayIdx)}
-                  className="flex items-center gap-2 text-left flex-1"
-                >
-                  {expandedDays.has(dayIdx) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  <CardTitle className="text-sm font-semibold">{dayName}</CardTitle>
-                  {days[dayIdx].isRest && <Badge variant="secondary" className="text-[10px]">Rest</Badge>}
-                  {!days[dayIdx].isRest && days[dayIdx].blocks.length > 0 && (
-                    <Badge variant="outline" className="text-[10px]">{days[dayIdx].blocks.length} block{days[dayIdx].blocks.length > 1 ? 's' : ''}</Badge>
-                  )}
-                </button>
-                <Button
-                  size="sm"
-                  variant={days[dayIdx].isRest ? 'default' : 'outline'}
-                  className="text-xs h-7"
-                  onClick={() => setDayRest(dayIdx, !days[dayIdx].isRest)}
-                >
-                  {days[dayIdx].isRest ? 'Add workout' : 'Set as rest'}
-                </Button>
-              </div>
-            </CardHeader>
-
-            {expandedDays.has(dayIdx) && !days[dayIdx].isRest && (
-              <CardContent className="p-3 md:p-4 space-y-3">
-                {days[dayIdx].blocks.map((block, blockIdx) => (
-                  <BlockEditor
-                    key={blockIdx}
-                    block={block}
-                    blockIdx={blockIdx}
-                    totalBlocks={days[dayIdx].blocks.length}
-                    onUpdate={(updater) => updateBlock(dayIdx, blockIdx, updater)}
-                    onRemove={() => removeBlock(dayIdx, blockIdx)}
-                    onMove={(dir) => moveBlock(dayIdx, blockIdx, dir)}
-                  />
-                ))}
-
-                {/* Add block buttons */}
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => addBlock(dayIdx, 'strength')}>
-                    <Dumbbell className="w-3 h-3" /> Strength
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => addBlock(dayIdx, 'cardio')}>
-                    <Bike className="w-3 h-3" /> Cardio
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => addBlock(dayIdx, 'mobility')}>
-                    <Heart className="w-3 h-3" /> Mobility
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => addBlock(dayIdx, 'nutrition')}>
-                    <Apple className="w-3 h-3" /> Nutrition
-                  </Button>
+        {/* 4-week builder */}
+        {WEEK_LABELS.map((weekLabel, wi) => (
+          <Collapsible key={wi} open={openWeeks.has(wi)} onOpenChange={() => toggleWeek(wi)}>
+            <Card>
+              <CardHeader className="p-3 md:p-4 pb-0">
+                <div className="flex items-center justify-between">
+                  <CollapsibleTrigger className="flex items-center gap-2 text-left flex-1">
+                    {openWeeks.has(wi) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    <CardTitle className="text-sm font-semibold">{weekLabel}</CardTitle>
+                    <Badge variant="outline" className="text-[10px]">
+                      {weeks[wi].days.filter(d => !d.isRest).length} active days
+                    </Badge>
+                  </CollapsibleTrigger>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" className="text-xs gap-1 h-7">
+                        <CopyPlus className="w-3 h-3" /> Copy week
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {WEEK_LABELS.map((lbl, ti) => ti !== wi && (
+                        <DropdownMenuItem key={ti} onClick={() => copyWeekTo(wi, ti)}>
+                          Copy to {lbl}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-              </CardContent>
-            )}
-          </Card>
+              </CardHeader>
+
+              <CollapsibleContent>
+                <CardContent className="p-3 md:p-4 space-y-3">
+                  {DAY_NAMES.map((dayName, di) => {
+                    const day = weeks[wi].days[di];
+                    const isDayOpen = openDays.has(dayKey(wi, di));
+
+                    return (
+                      <Collapsible key={di} open={isDayOpen} onOpenChange={() => toggleDay(wi, di)}>
+                        <div className={`border border-border rounded-lg ${day.isRest ? 'opacity-60' : ''}`}>
+                          <div className="flex items-center justify-between p-2.5">
+                            <CollapsibleTrigger className="flex items-center gap-2 text-left flex-1">
+                              {isDayOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                              <span className="text-sm font-medium">{dayName}</span>
+                              {day.isRest && <Badge variant="secondary" className="text-[10px]">Rest</Badge>}
+                              {!day.isRest && day.blocks.length > 0 && (
+                                <Badge variant="outline" className="text-[10px]">{day.blocks.length} block{day.blocks.length > 1 ? 's' : ''}</Badge>
+                              )}
+                            </CollapsibleTrigger>
+                            <div className="flex items-center gap-1">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="h-6 w-6">
+                                    <Copy className="w-3 h-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {WEEK_LABELS.map((wl, twi) => (
+                                    <DropdownMenuSub key={twi}>
+                                      <DropdownMenuSubTrigger className="text-xs">{wl}</DropdownMenuSubTrigger>
+                                      <DropdownMenuSubContent>
+                                        {DAY_NAMES.map((dn, tdi) => (twi !== wi || tdi !== di) && (
+                                          <DropdownMenuItem key={tdi} onClick={() => copyDayTo(wi, di, twi, tdi)} className="text-xs">
+                                            {dn}
+                                          </DropdownMenuItem>
+                                        ))}
+                                      </DropdownMenuSubContent>
+                                    </DropdownMenuSub>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                              <Button
+                                size="sm"
+                                variant={day.isRest ? 'default' : 'outline'}
+                                className="text-xs h-6 px-2"
+                                onClick={() => setDayRest(wi, di, !day.isRest)}
+                              >
+                                {day.isRest ? 'Add workout' : 'Rest'}
+                              </Button>
+                            </div>
+                          </div>
+
+                          <CollapsibleContent>
+                            {day.isRest ? (
+                              <div className="px-2.5 pb-2.5">
+                                <Input
+                                  placeholder="Recovery note (optional)"
+                                  value={day.restNote}
+                                  onChange={e => updateDay(wi, di, d => ({ ...d, restNote: e.target.value }))}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                            ) : (
+                              <div className="px-2.5 pb-2.5 space-y-3">
+                                {day.blocks.map((block, bi) => (
+                                  <BlockEditor
+                                    key={bi}
+                                    block={block}
+                                    blockIdx={bi}
+                                    totalBlocks={day.blocks.length}
+                                    onUpdate={(updater) => updateBlock(wi, di, bi, updater)}
+                                    onRemove={() => removeBlock(wi, di, bi)}
+                                    onMove={(dir) => moveBlock(wi, di, bi, dir)}
+                                  />
+                                ))}
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'strength')}>
+                                    <Dumbbell className="w-3 h-3" /> Strength
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'cardio')}>
+                                    <Bike className="w-3 h-3" /> Cardio
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'mobility')}>
+                                    <Heart className="w-3 h-3" /> Mobility
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'nutrition')}>
+                                    <Apple className="w-3 h-3" /> Nutrition
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    );
+                  })}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         ))}
 
-        {/* Preview & deliver */}
+        {/* Bottom bar */}
         <div className="fixed bottom-0 left-0 right-0 md:left-64 p-4 bg-background/95 backdrop-blur border-t border-border z-10">
           <div className="max-w-4xl mx-auto flex gap-3">
-            <Button
-              className="flex-1 gap-1.5"
-              disabled={!hasContent}
-              onClick={() => setPreviewOpen(true)}
-            >
+            <Button className="flex-1 gap-1.5" disabled={!hasContent} onClick={() => setPreviewOpen(true)}>
               <Eye className="w-4 h-4" /> Preview & deliver
             </Button>
           </div>
@@ -348,32 +429,40 @@ export default function AdminProgramBuilder() {
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Program Preview</DialogTitle>
+              <DialogTitle>Program Preview — {context?.full_name}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              {DAY_NAMES.map((dayName, dayIdx) => {
-                const day = days[dayIdx];
-                if (day.isRest) {
-                  return (
-                    <div key={dayName} className="flex items-center gap-2 py-2 opacity-50">
-                      <p className="text-sm font-medium">{dayName}</p>
-                      <Badge variant="secondary" className="text-[10px]">Rest</Badge>
-                    </div>
-                  );
-                }
-                return (
-                  <Card key={dayName}>
-                    <CardHeader className="p-3 pb-1">
-                      <CardTitle className="text-sm">{dayName}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-3 pt-0 space-y-2">
-                      {day.blocks.map((block, bi) => (
-                        <PreviewBlock key={bi} block={block} />
-                      ))}
-                    </CardContent>
-                  </Card>
-                );
-              })}
+            <div className="space-y-6">
+              {WEEK_LABELS.map((weekLabel, wi) => (
+                <div key={wi}>
+                  <h3 className="text-sm font-bold mb-3 border-b border-border pb-1">{weekLabel}</h3>
+                  <div className="space-y-2">
+                    {DAY_NAMES.map((dayName, di) => {
+                      const day = weeks[wi].days[di];
+                      if (day.isRest) {
+                        return (
+                          <div key={di} className="flex items-center gap-2 py-1.5 opacity-50">
+                            <p className="text-sm font-medium">{dayName}</p>
+                            <Badge variant="secondary" className="text-[10px]">Rest</Badge>
+                            {day.restNote && <span className="text-xs text-muted-foreground italic">— {day.restNote}</span>}
+                          </div>
+                        );
+                      }
+                      return (
+                        <Card key={di} className="border-border/50">
+                          <CardHeader className="p-2.5 pb-1">
+                            <CardTitle className="text-xs font-semibold">{dayName}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-2.5 pt-0 space-y-1.5">
+                            {day.blocks.map((block, bi) => (
+                              <PreviewBlock key={bi} block={block} />
+                            ))}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setPreviewOpen(false)}>Back to edit</Button>
@@ -413,7 +502,7 @@ function BlockEditor({
         <div className="flex items-center gap-1">
           {blockIdx > 0 && (
             <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => onMove(-1)}>
-              <ChevronUp className="w-3 h-3" />
+              <ChevronDown className="w-3 h-3 rotate-180" />
             </Button>
           )}
           {blockIdx < totalBlocks - 1 && (
@@ -427,27 +516,9 @@ function BlockEditor({
         </div>
       </div>
 
-      {block.type === 'strength' && (
-        <StrengthEditor
-          block={block}
-          onUpdate={(b) => onUpdate(() => b)}
-        />
-      )}
-
-      {block.type === 'cardio' && (
-        <CardioEditor
-          block={block}
-          onUpdate={(b) => onUpdate(() => b)}
-        />
-      )}
-
-      {block.type === 'mobility' && (
-        <MobilityEditor
-          block={block}
-          onUpdate={(b) => onUpdate(() => b)}
-        />
-      )}
-
+      {block.type === 'strength' && <StrengthEditor block={block} onUpdate={(b) => onUpdate(() => b)} />}
+      {block.type === 'cardio' && <CardioEditor block={block} onUpdate={(b) => onUpdate(() => b)} />}
+      {block.type === 'mobility' && <MobilityEditor block={block} onUpdate={(b) => onUpdate(() => b)} />}
       {block.type === 'nutrition' && (
         <Textarea
           placeholder="Nutrition guidance, macro targets, meal timing notes..."
@@ -466,11 +537,7 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
     const exercises = block.exercises.map((e, i) => i === idx ? { ...e, [field]: value } : e);
     onUpdate({ ...block, exercises });
   };
-
-  const addExercise = () => {
-    onUpdate({ ...block, exercises: [...block.exercises, { name: '', sets: '3', reps: '10', weight: '', note: '' }] });
-  };
-
+  const addExercise = () => onUpdate({ ...block, exercises: [...block.exercises, { name: '', sets: '3', reps: '10', weight: '', note: '' }] });
   const removeExercise = (idx: number) => {
     if (block.exercises.length <= 1) return;
     onUpdate({ ...block, exercises: block.exercises.filter((_, i) => i !== idx) });
@@ -481,12 +548,7 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
       {block.exercises.map((ex, idx) => (
         <div key={idx} className="space-y-2 pb-2 border-b border-border/50 last:border-0 last:pb-0">
           <div className="flex gap-2">
-            <Input
-              placeholder="Exercise name"
-              value={ex.name}
-              onChange={e => updateExercise(idx, 'name', e.target.value)}
-              className="flex-1 h-8 text-sm"
-            />
+            <Input placeholder="Exercise name" value={ex.name} onChange={e => updateExercise(idx, 'name', e.target.value)} className="flex-1 h-8 text-sm" />
             {block.exercises.length > 1 && (
               <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeExercise(idx)}>
                 <Trash2 className="w-3 h-3" />
@@ -528,11 +590,7 @@ function MobilityEditor({ block, onUpdate }: { block: MobilityBlock; onUpdate: (
     const exercises = block.exercises.map((e, i) => i === idx ? { ...e, [field]: value } : e);
     onUpdate({ ...block, exercises });
   };
-
-  const addExercise = () => {
-    onUpdate({ ...block, exercises: [...block.exercises, { name: '', duration: '', note: '' }] });
-  };
-
+  const addExercise = () => onUpdate({ ...block, exercises: [...block.exercises, { name: '', duration: '', side: 'both', note: '' }] });
   const removeExercise = (idx: number) => {
     if (block.exercises.length <= 1) return;
     onUpdate({ ...block, exercises: block.exercises.filter((_, i) => i !== idx) });
@@ -541,9 +599,18 @@ function MobilityEditor({ block, onUpdate }: { block: MobilityBlock; onUpdate: (
   return (
     <div className="space-y-3">
       {block.exercises.map((ex, idx) => (
-        <div key={idx} className="flex gap-2">
+        <div key={idx} className="flex gap-2 items-start">
           <Input placeholder="Exercise/stretch" value={ex.name} onChange={e => updateExercise(idx, 'name', e.target.value)} className="flex-1 h-8 text-sm" />
-          <Input placeholder="Duration/reps" value={ex.duration} onChange={e => updateExercise(idx, 'duration', e.target.value)} className="w-28 h-8 text-sm" />
+          <Input placeholder="Duration/reps" value={ex.duration} onChange={e => updateExercise(idx, 'duration', e.target.value)} className="w-24 h-8 text-sm" />
+          <select
+            value={ex.side}
+            onChange={e => updateExercise(idx, 'side', e.target.value)}
+            className="h-8 text-sm rounded-md border border-input bg-background px-2"
+          >
+            <option value="both">Both</option>
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+          </select>
           {block.exercises.length > 1 && (
             <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeExercise(idx)}>
               <Trash2 className="w-3 h-3" />
@@ -576,7 +643,6 @@ function PreviewBlock({ block }: { block: Block }) {
       </div>
     );
   }
-
   if (block.type === 'cardio') {
     return (
       <div className="space-y-1">
@@ -591,7 +657,6 @@ function PreviewBlock({ block }: { block: Block }) {
       </div>
     );
   }
-
   if (block.type === 'mobility') {
     return (
       <div className="space-y-1">
@@ -602,13 +667,13 @@ function PreviewBlock({ block }: { block: Block }) {
           <div key={i} className="text-sm pl-4">
             <span className="font-medium">{ex.name || 'Unnamed'}</span>
             {ex.duration && <span className="text-muted-foreground"> — {ex.duration}</span>}
+            {ex.side && ex.side !== 'both' && <span className="text-muted-foreground"> ({ex.side})</span>}
             {ex.note && <p className="text-xs text-muted-foreground italic">{ex.note}</p>}
           </div>
         ))}
       </div>
     );
   }
-
   return (
     <div className="space-y-1">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium flex items-center gap-1">
