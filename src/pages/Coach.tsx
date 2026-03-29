@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, MessageCircle, Send, User } from 'lucide-react';
+import { MessageCircle, Send, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { CoachingProgramCard } from '@/components/community/CoachingProgramCard';
 import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -131,27 +132,12 @@ export default function Coach() {
     }
   };
 
-  // Free user - locked state
+  // Free user - show coaching program card
   if (!isPaidMember) {
     return (
       <AppLayout title="Coach">
-        <div className="max-w-lg mx-auto p-4 flex flex-col items-center justify-center min-h-[60vh]">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center"
-          >
-            <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
-              <Lock className="w-10 h-10 text-muted-foreground" />
-            </div>
-            <h2 className="text-xl font-bold mb-2">Unlock 1:1 Coaching 🔒</h2>
-            <p className="text-muted-foreground mb-6 max-w-xs mx-auto">
-              Message your coach directly, receive personalized guidance, and stay accountable with 1:1 support.
-            </p>
-            <Button asChild variant="accent" size="lg">
-              <Link to="/upgrade">Upgrade Now</Link>
-            </Button>
-          </motion.div>
+        <div className="max-w-lg mx-auto p-4">
+          <CoachingProgramCard />
         </div>
       </AppLayout>
     );
