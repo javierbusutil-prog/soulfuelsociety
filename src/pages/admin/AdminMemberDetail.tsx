@@ -345,6 +345,36 @@ export default function AdminMemberDetail() {
           </CardContent>
         </Card>
 
+        {/* Supplemental program section — in-person members only */}
+        {profile.selected_plan === 'in-person' && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-muted-foreground" /> Supplemental program
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {hasSupplementalProgram ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">A supplemental between-session program has been delivered.</p>
+                  <Button size="sm" variant="outline" onClick={() => navigate(`/admin/members/${id}/program`)} className="gap-1.5 mt-1">
+                    Update supplemental program
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-6 space-y-3">
+                  <BookOpen className="w-8 h-8 text-muted-foreground mx-auto" />
+                  <p className="text-sm text-muted-foreground">No supplemental program delivered. Add one if this member would benefit from structured between-session work.</p>
+                  <Button onClick={() => navigate(`/admin/members/${id}/program`)} className="gap-1.5">
+                    Build supplemental program
+                    <BookOpen className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* SECTION 3 — Progress & Stats */}
         <Card>
           <CardHeader className="pb-3">
