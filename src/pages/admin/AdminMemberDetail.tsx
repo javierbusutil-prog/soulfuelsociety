@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ProfileData {
@@ -63,6 +63,7 @@ export default function AdminMemberDetail() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolledProgram, setEnrolledProgram] = useState<{ title: string; weeks: number; start_date: string } | null>(null);
+  const [hasSupplementalProgram, setHasSupplementalProgram] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
