@@ -399,6 +399,30 @@ export type Database = {
         }
         Relationships: []
       }
+      disclaimer_acceptances: {
+        Row: {
+          accepted_at: string
+          disclaimer_type: string
+          id: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          disclaimer_type: string
+          id?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          disclaimer_type?: string
+          id?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_completions: {
         Row: {
           completed_at: string
@@ -1364,6 +1388,7 @@ export type Database = {
           group_size: string | null
           has_completed_onboarding: boolean
           id: string
+          nutrition_disclaimer_accepted: boolean
           phone: string | null
           selected_plan: string | null
           session_count: number | null
@@ -1384,6 +1409,7 @@ export type Database = {
           group_size?: string | null
           has_completed_onboarding?: boolean
           id: string
+          nutrition_disclaimer_accepted?: boolean
           phone?: string | null
           selected_plan?: string | null
           session_count?: number | null
@@ -1404,6 +1430,7 @@ export type Database = {
           group_size?: string | null
           has_completed_onboarding?: boolean
           id?: string
+          nutrition_disclaimer_accepted?: boolean
           phone?: string | null
           selected_plan?: string | null
           session_count?: number | null

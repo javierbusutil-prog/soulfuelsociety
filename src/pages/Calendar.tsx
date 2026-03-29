@@ -47,6 +47,8 @@ import { DEFAULT_RING_HABITS } from '@/types/workoutPrograms';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays, addWeeks, getDay, isAfter, isBefore, startOfDay, endOfDay, parseISO, isToday, isPast, isFuture } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useEffect, useCallback } from 'react';
+import { useNutritionDisclaimer } from '@/hooks/useNutritionDisclaimer';
+import { NutritionDisclaimerDialog } from '@/components/nutrition/NutritionDisclaimerDialog';
 
 export interface ExpandedEvent extends Event {
   occurrenceDate: Date;
@@ -156,6 +158,8 @@ export default function Calendar() {
   const nutrition = useNutrition(selectedDate);
   const { settings: userSettings } = useUserSettings();
   const ringHabits = userSettings?.ring_habits || DEFAULT_RING_HABITS;
+  const { needsDisclaimer } = useNutritionDisclaimer();
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState(false);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const fastCompletedForRing = getSessionsForDate(selectedDate).length > 0;
@@ -363,6 +367,10 @@ export default function Calendar() {
 
   return (
     <AppLayout title="Calendar">
+      <NutritionDisclaimerDialog
+        open={needsDisclaimer && !disclaimerDismissed}
+        onAccepted={() => setDisclaimerDismissed(true)}
+      />
       <div className="max-w-lg mx-auto p-4">
         {/* Cycle Phase Guidance + Log Period below */}
         <div className="mb-6 space-y-3">

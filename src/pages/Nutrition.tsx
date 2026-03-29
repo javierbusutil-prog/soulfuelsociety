@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format, subDays, addDays, isToday, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -18,6 +18,8 @@ import { SmartInsights } from '@/components/nutrition/SmartInsights';
 import { FastingTimer } from '@/components/calendar/FastingTimer';
 import { MacroCalculator } from '@/components/nutrition/MacroCalculator';
 import { DEFAULT_RING_HABITS } from '@/types/workoutPrograms';
+import { useNutritionDisclaimer } from '@/hooks/useNutritionDisclaimer';
+import { NutritionDisclaimerDialog } from '@/components/nutrition/NutritionDisclaimerDialog';
 
 export default function Nutrition() {
   const [searchParams] = useSearchParams();
@@ -31,6 +33,8 @@ export default function Nutrition() {
   const { getSessionsForDate } = useFastingSessions();
   const { entries: cycleEntries, settings: cycleSettings } = useCycleTracker();
   const { settings: userSettings } = useUserSettings();
+  const { needsDisclaimer } = useNutritionDisclaimer();
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState(false);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const fastCompleted = getSessionsForDate(selectedDate).length > 0;
@@ -46,6 +50,10 @@ export default function Nutrition() {
 
   return (
     <AppLayout title="Nutrition">
+      <NutritionDisclaimerDialog
+        open={needsDisclaimer && !disclaimerDismissed}
+        onAccepted={() => setDisclaimerDismissed(true)}
+      />
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6 animate-fade-in">
         {/* Date navigation */}
         <div className="flex items-center justify-between">
