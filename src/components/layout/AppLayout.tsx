@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
+import { UpgradeBanner } from './UpgradeBanner';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ export function AppLayout({ children, title, hideNav, hideHeader }: AppLayoutPro
         Skip to main content
       </a>
       {!hideHeader && <Header title={title} />}
+      <UpgradeBanner />
       <main id="main-content" className="flex-1 pb-20" aria-label={title || 'Main content'}>
         {children}
       </main>
