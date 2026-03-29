@@ -367,6 +367,10 @@ export default function Calendar() {
 
   return (
     <AppLayout title="Calendar">
+      <NutritionDisclaimerDialog
+        open={needsDisclaimer && !disclaimerDismissed}
+        onAccepted={() => setDisclaimerDismissed(true)}
+      />
       <div className="max-w-lg mx-auto p-4">
         {/* Cycle Phase Guidance + Log Period below */}
         <div className="mb-6 space-y-3">
