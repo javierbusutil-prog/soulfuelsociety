@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useFastingSessions, formatTimerDisplay } from '@/hooks/useFastingSessions';
 import { useAuth } from '@/contexts/AuthContext';
+import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
 
 interface FastingTimerProps {
   onFastStarted?: () => void;
@@ -108,6 +109,7 @@ export function FastingTimer({ onFastStarted, onFastEnded }: FastingTimerProps) 
             </Button>
           )}
         </div>
+        <NutritionDisclaimerLabel />
       </Card>
 
       <AlertDialog open={showEndConfirmation} onOpenChange={setShowEndConfirmation}>

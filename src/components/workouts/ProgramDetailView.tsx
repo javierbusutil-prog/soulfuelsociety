@@ -15,6 +15,7 @@ import {
   FileText,
   LogOut
 } from 'lucide-react';
+import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -177,6 +178,7 @@ export function ProgramDetailView({
       {/* E-Book Program */}
       {program.ebook_url ? (
         <Card className="p-6 bg-card/50 text-center">
+          <NutritionDisclaimerLabel variant="ebook-banner" />
           <FileText className="w-16 h-16 mx-auto mb-4 text-primary/60" />
           <h2 className="font-semibold text-lg mb-2">E-Book Program</h2>
           {program.description && (
