@@ -7,19 +7,40 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet } from 'lucide-react';
+import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCycleTracker } from '@/hooks/useCycleTracker';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Profile() {
   const { user, profile, roles, isPaidMember, isAdmin, signOut } = useAuth();
   const { settings, updateSettings } = useCycleTracker();
+  const { toast } = useToast();
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const cycleTrackingEnabled = settings?.prediction_enabled !== false;
 
   const handleCycleToggle = async (enabled: boolean) => {
     await updateSettings({ prediction_enabled: enabled });
+  };
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      if (error) throw error;
+      if (data?.url) window.open(data.url, '_blank');
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Could not open subscription management',
+        variant: 'destructive',
+      });
+    } finally {
+      setPortalLoading(false);
+    }
   };
 
   const getInitials = (name: string | null) => {
@@ -78,6 +99,23 @@ export default function Profile() {
               </div>
               <Button asChild size="sm">
                 <Link to="/upgrade">Upgrade</Link>
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {isPaidMember && (
+          <Card className="p-4 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
+                <CreditCard className="w-6 h-6 text-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold">Manage Subscription</p>
+                <p className="text-sm text-muted-foreground">Update payment, cancel, or change plan</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={handleManageSubscription} disabled={portalLoading}>
+                {portalLoading ? '…' : 'Manage'}
               </Button>
             </div>
           </Card>
