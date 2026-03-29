@@ -82,10 +82,9 @@ export default function AdminProgramBuilder() {
 
   const fetchContext = async (userId: string) => {
     setLoading(true);
-    const [{ data: prof }, { data: mp }, { data: existing }] = await Promise.all([
+    const [{ data: prof }, { data: mp }] = await Promise.all([
       supabase.from('profiles').select('full_name, selected_plan').eq('id', userId).single(),
       supabase.from('member_profiles').select('fitness_level, primary_goal, training_days_per_week, injuries_limitations, preferred_days').eq('user_id', userId).single(),
-      // existing program fetched below after determining plan type
     ]);
 
     if (prof && mp) {
@@ -95,7 +94,7 @@ export default function AdminProgramBuilder() {
     const isSupplemental = prof?.selected_plan === 'in-person';
     const planTypeFilter = isSupplemental ? 'inperson_supplemental' : 'online';
 
-    const { data: existing } = await supabase
+    const { data: existingProg } = await supabase
       .from('coaching_programs')
       .select('version, program_data')
       .eq('user_id', userId)
