@@ -222,6 +222,9 @@ export default function Workouts() {
   return (
     <AppLayout title="Workouts">
       <div className="max-w-lg mx-auto p-4">
+        <div className="mb-4">
+          <CoachingProgramCard />
+        </div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger 
@@ -250,10 +253,7 @@ export default function Workouts() {
 
           {/* Weekly Plan Tab */}
           <TabsContent value="weekly" className="mt-4">
-            <CoachingProgramCard />
-            <div className="mt-4">
-              <WeeklyPlanView />
-            </div>
+            <WeeklyPlanView />
           </TabsContent>
 
           {/* Programs Tab */}
