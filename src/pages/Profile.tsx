@@ -104,6 +104,23 @@ export default function Profile() {
           </Card>
         )}
 
+        {isPaidMember && (
+          <Card className="p-4 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
+                <CreditCard className="w-6 h-6 text-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold">Manage Subscription</p>
+                <p className="text-sm text-muted-foreground">Update payment, cancel, or change plan</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={handleManageSubscription} disabled={portalLoading}>
+                {portalLoading ? '…' : 'Manage'}
+              </Button>
+            </div>
+          </Card>
+        )}
+
         <Card className="p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
