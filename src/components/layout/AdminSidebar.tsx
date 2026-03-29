@@ -79,7 +79,7 @@ export function AdminSidebar() {
           </div>
         </div>
         <Link
-          to="/"
+          to="/community"
           className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors w-full"
         >
           <ArrowLeftCircle className="w-4 h-4" />
