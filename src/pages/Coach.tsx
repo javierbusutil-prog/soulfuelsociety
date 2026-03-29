@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { CoachingProgramCard } from '@/components/community/CoachingProgramCard';
+import { CoachingDashboard } from '@/components/dashboard/CoachingDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -137,7 +137,7 @@ export default function Coach() {
     return (
       <AppLayout title="Coach">
         <div className="max-w-lg mx-auto p-4">
-          <CoachingProgramCard />
+          <CoachingDashboard />
         </div>
       </AppLayout>
     );

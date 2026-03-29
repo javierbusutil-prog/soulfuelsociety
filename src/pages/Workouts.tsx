@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MovementLibrary } from '@/components/movements/MovementLibrary';
-import { CoachingProgramCard } from '@/components/community/CoachingProgramCard';
+import { CoachingDashboard } from '@/components/dashboard/CoachingDashboard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -223,7 +223,7 @@ export default function Workouts() {
     <AppLayout title="Workouts">
       <div className="max-w-lg mx-auto p-4">
         <div className="mb-4">
-          <CoachingProgramCard />
+          <CoachingDashboard />
         </div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
           <TabsList className="grid w-full grid-cols-3">
