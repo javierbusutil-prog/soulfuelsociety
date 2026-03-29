@@ -87,6 +87,60 @@ export type Database = {
           },
         ]
       }
+      coach_availability: {
+        Row: {
+          coach_id: string
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean
+          start_time: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean
+          start_time: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          start_time?: string
+        }
+        Relationships: []
+      }
+      coach_blocked_dates: {
+        Row: {
+          blocked_date: string
+          coach_id: string
+          created_at: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_date: string
+          coach_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_date?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       coaches: {
         Row: {
           bio: string
@@ -1521,6 +1575,7 @@ export type Database = {
           duration_minutes: number
           id: string
           member_id: string
+          member_ids: string[] | null
           scheduled_at: string
           session_type: string
           status: string
@@ -1533,6 +1588,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           member_id: string
+          member_ids?: string[] | null
           scheduled_at: string
           session_type?: string
           status?: string
@@ -1545,6 +1601,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           member_id?: string
+          member_ids?: string[] | null
           scheduled_at?: string
           session_type?: string
           status?: string
