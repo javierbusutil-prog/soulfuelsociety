@@ -28,6 +28,7 @@ import JoinGroup from "./pages/JoinGroup";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMembers from "./pages/admin/AdminMembers";
 import AdminMemberDetail from "./pages/admin/AdminMemberDetail";
+import AdminProgramBuilder from "./pages/admin/AdminProgramBuilder";
 import AdminPrograms from "./pages/admin/AdminPrograms";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminSessions from "./pages/admin/AdminSessions";
