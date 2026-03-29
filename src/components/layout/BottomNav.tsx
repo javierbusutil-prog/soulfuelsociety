@@ -5,11 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const navItems = [
   { path: '/community', icon: Users, label: 'Community' },
-  { path: '/workouts', icon: Dumbbell, label: 'Workouts', paidOnly: true },
   { path: '/nutrition', icon: Apple, label: 'Nutrition' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
+  { path: '/workouts', icon: Dumbbell, label: 'Workouts', paidOnly: true },
   { path: '/coach', icon: MessageCircle, label: 'Coach', paidOnly: true },
-  { path: '/train', icon: Flame, label: 'Train' },
+  { path: '/train', icon: Flame, label: 'Store' },
   { path: '/profile', icon: User, label: 'Profile' },
 ];
 
