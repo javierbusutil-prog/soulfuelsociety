@@ -267,6 +267,7 @@ export default function BookSession() {
             description: `${sType} session`,
             event_date: format(scheduledAt, 'yyyy-MM-dd'),
             event_type: 'session',
+            booking_id: newBooking.id,
           },
           {
             user_id: selectedSlot.coach_id,
@@ -274,6 +275,7 @@ export default function BookSession() {
             description: `${sType} session`,
             event_date: format(scheduledAt, 'yyyy-MM-dd'),
             event_type: 'session',
+            booking_id: newBooking.id,
           },
         ] as any);
 
