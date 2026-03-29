@@ -9,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Post, Group, Profile } from '@/types/database';
 import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns';
 import { PostDetailDialog } from '@/components/community/PostDetailDialog';
-import { CoachingProgramCard } from '@/components/community/CoachingProgramCard';
 
 interface PostWithProfile extends Post {
   profiles: Profile;
@@ -285,10 +284,6 @@ export default function Community() {
           </div>
         )}
 
-        {/* Coaching program card */}
-        <div className="px-3 py-2 shrink-0">
-          <CoachingProgramCard />
-        </div>
 
         {/* Messages area */}
         <div
