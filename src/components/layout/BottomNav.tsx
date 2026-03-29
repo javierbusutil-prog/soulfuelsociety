@@ -27,13 +27,13 @@ export function BottomNav() {
           return (
             <Link
               key={item.path}
-              to={isLocked ? '/upgrade' : item.path}
+              to={item.path}
               aria-current={isActive ? 'page' : undefined}
-              aria-label={isLocked ? `${item.label} (requires upgrade)` : item.label}
+              aria-label={isLocked ? `${item.label} (locked preview)` : item.label}
               className={cn(
                 "flex flex-col items-center justify-center w-16 h-full relative transition-colors duration-200",
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
-                isLocked && "opacity-50"
+                isLocked && "opacity-70"
               )}
             >
               <div className="relative">
