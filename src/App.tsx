@@ -17,13 +17,20 @@ import Coach from "./pages/Coach";
 import Store from "./pages/Store";
 import Upgrade from "./pages/Upgrade";
 import Profile from "./pages/Profile";
-import Admin from "./pages/Admin";
 
 import Nutrition from "./pages/Nutrition";
 import TrainWithUs from "./pages/TrainWithUs";
 import Onboarding from "./pages/Onboarding";
 import Invite from "./pages/Invite";
 import JoinGroup from "./pages/JoinGroup";
+
+// Admin pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminMembers from "./pages/admin/AdminMembers";
+import AdminPrograms from "./pages/admin/AdminPrograms";
+import AdminMessages from "./pages/admin/AdminMessages";
+import AdminSessions from "./pages/admin/AdminSessions";
+import AdminRevenue from "./pages/admin/AdminRevenue";
 
 const queryClient = new QueryClient();
 
@@ -45,8 +52,30 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function CoachRoute({ children }: { children: React.ReactNode }) {
+  const { user, isAdmin, isPTAdmin, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (!isAdmin && !isPTAdmin) {
+    return <Navigate to="/community" replace />;
+  }
+  
+  return <>{children}</>;
+}
+
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, isAdmin, isPTAdmin, loading } = useAuth();
   
   if (loading) {
     return (
@@ -57,6 +86,10 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (user) {
+    // Coaches go to admin, members go to community
+    if (isAdmin || isPTAdmin) {
+      return <Navigate to="/admin" replace />;
+    }
     return <Navigate to="/community" replace />;
   }
   
@@ -64,7 +97,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function SmartRedirect() {
-  const { user, loading } = useAuth();
+  const { user, isAdmin, isPTAdmin, loading } = useAuth();
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -72,7 +105,9 @@ function SmartRedirect() {
       </div>
     );
   }
-  return <Navigate to={user ? "/community" : "/login"} replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (isAdmin || isPTAdmin) return <Navigate to="/admin" replace />;
+  return <Navigate to="/community" replace />;
 }
 
 function AppRoutes() {
@@ -83,8 +118,7 @@ function AppRoutes() {
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
       
-      
-      {/* Protected routes */}
+      {/* Protected member routes */}
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
       <Route path="/train" element={<ProtectedRoute><TrainWithUs /></ProtectedRoute>} />
       <Route path="/nutrition" element={<ProtectedRoute><Nutrition /></ProtectedRoute>} />
@@ -97,7 +131,14 @@ function AppRoutes() {
       <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
       <Route path="/join/:token" element={<JoinGroup />} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+      
+      {/* Coach admin routes */}
+      <Route path="/admin" element={<CoachRoute><AdminDashboard /></CoachRoute>} />
+      <Route path="/admin/members" element={<CoachRoute><AdminMembers /></CoachRoute>} />
+      <Route path="/admin/programs" element={<CoachRoute><AdminPrograms /></CoachRoute>} />
+      <Route path="/admin/messages" element={<CoachRoute><AdminMessages /></CoachRoute>} />
+      <Route path="/admin/sessions" element={<CoachRoute><AdminSessions /></CoachRoute>} />
+      <Route path="/admin/revenue" element={<CoachRoute><AdminRevenue /></CoachRoute>} />
       
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />

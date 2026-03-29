@@ -42,9 +42,8 @@ export default function Login() {
         description: error.message,
         variant: 'destructive',
       });
-    } else {
-      navigate('/community');
     }
+    // Redirect is handled by PublicRoute/SmartRedirect based on role
   };
 
   return (
