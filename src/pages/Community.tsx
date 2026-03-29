@@ -285,6 +285,11 @@ export default function Community() {
           </div>
         )}
 
+        {/* Coaching program card */}
+        <div className="px-3 py-2 shrink-0">
+          <CoachingProgramCard />
+        </div>
+
         {/* Messages area */}
         <div
           className="flex-1 overflow-y-auto px-3 py-2"
