@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame } from 'lucide-react';
+import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -44,6 +44,9 @@ export function BottomNav() {
                     isActive ? "stroke-[2]" : "stroke-[1.5]"
                   )} 
                 />
+                {isLocked && (
+                  <Lock className="w-2.5 h-2.5 absolute -top-1 -right-1.5 text-muted-foreground" />
+                )}
               </div>
               <span className={cn(
                 "text-[10px] mt-1.5 font-medium tracking-wide",
