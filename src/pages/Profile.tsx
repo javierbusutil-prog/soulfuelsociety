@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,11 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet } from 'lucide-react';
-
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCycleTracker } from '@/hooks/useCycleTracker';
-import { supabase } from '@/integrations/supabase/client';
 
 export default function Profile() {
   const { user, profile, roles, isPaidMember, isAdmin, signOut } = useAuth();
@@ -20,78 +18,8 @@ export default function Profile() {
 
   const cycleTrackingEnabled = settings?.prediction_enabled !== false;
 
-  useEffect(() => {
-    if (isAdmin) {
-      setWaitlistLoading(true);
-      supabase
-        .from('waitlist' as any)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .then(({ data }) => {
-          if (data) setWaitlistEntries(data as any);
-          setWaitlistLoading(false);
-        });
-      fetchInvitedEmails();
-    }
-  }, [isAdmin]);
-
-  const fetchInvitedEmails = async () => {
-    const { data } = await supabase
-      .from('invited_emails')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (data) setInvitedEmails(data as any);
-  };
-
-  const handleAddInvite = async () => {
-    const email = newInviteEmail.toLowerCase().trim();
-    if (!email || !user) return;
-    setInviteLoading(true);
-    const { error } = await supabase.from('invited_emails').insert({
-      email,
-      invited_by: user.id,
-    } as any);
-    if (!error) {
-      setNewInviteEmail('');
-      fetchInvitedEmails();
-      // Send invite email notification
-      supabase.functions.invoke('send-invite-email', {
-        body: { email },
-      }).then(({ error: fnError }) => {
-        if (fnError) console.error('Failed to send invite email:', fnError);
-      });
-    }
-    setInviteLoading(false);
-  };
-
-  const handleRemoveInvite = async (id: string) => {
-    await supabase.from('invited_emails').delete().eq('id', id);
-    fetchInvitedEmails();
-  };
-
-  const handleCopyInviteLink = (email: string) => {
-    const link = `https://soulfuelsociety.lovable.app/signup?email=${encodeURIComponent(email)}`;
-    navigator.clipboard.writeText(link);
-    setCopiedEmail(email);
-    setTimeout(() => setCopiedEmail(null), 2000);
-  };
-
   const handleCycleToggle = async (enabled: boolean) => {
     await updateSettings({ prediction_enabled: enabled });
-  };
-
-  const exportCSV = () => {
-    const header = 'Name,Email,Signed Up\n';
-    const rows = waitlistEntries
-      .map(e => `"${e.name}","${e.email}","${new Date(e.created_at).toLocaleDateString()}"`)
-      .join('\n');
-    const blob = new Blob([header + rows], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `waitlist-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const getInitials = (name: string | null) => {
@@ -173,117 +101,6 @@ export default function Profile() {
             />
           </div>
         </Card>
-
-        {/* Admin: Waitlist Dashboard */}
-        {isAdmin && (
-          <Card className="p-4 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Users className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Waitlist</p>
-                  <p className="text-xs text-muted-foreground">
-                    {waitlistLoading ? 'Loading...' : `${waitlistEntries.length} signups`}
-                  </p>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={exportCSV}
-                disabled={waitlistEntries.length === 0}
-              >
-                <Download className="w-3.5 h-3.5 mr-1.5" />
-                Export CSV
-              </Button>
-            </div>
-            {waitlistEntries.length > 0 && (
-              <div className="max-h-48 overflow-y-auto divide-y divide-border rounded-lg border border-border">
-                {waitlistEntries.map(entry => (
-                  <div key={entry.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                    <div>
-                      <p className="font-medium text-foreground">{entry.name}</p>
-                      <p className="text-xs text-muted-foreground">{entry.email}</p>
-                    </div>
-                    <span className="text-xs text-muted-foreground shrink-0 ml-2">
-                      {new Date(entry.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        )}
-
-        {/* Admin: Invite Test Users */}
-        {isAdmin && (
-          <Card className="p-4 mb-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 bg-accent/10 rounded-lg flex items-center justify-center">
-                <UserPlus className="w-4 h-4 text-accent" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">Invite Test Users</p>
-                <p className="text-xs text-muted-foreground">
-                  {invitedEmails.length} invited
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2 mb-3">
-              <Input
-                type="email"
-                placeholder="user@example.com"
-                value={newInviteEmail}
-                onChange={(e) => setNewInviteEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddInvite()}
-                className="flex-1"
-              />
-              <Button
-                size="sm"
-                onClick={handleAddInvite}
-                disabled={!newInviteEmail.trim() || inviteLoading}
-              >
-                <UserPlus className="w-3.5 h-3.5 mr-1.5" />
-                Add
-              </Button>
-            </div>
-            {invitedEmails.length > 0 && (
-              <div className="max-h-48 overflow-y-auto divide-y divide-border rounded-lg border border-border">
-                {invitedEmails.map(entry => (
-                  <div key={entry.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                    <div>
-                      <p className="text-foreground">{entry.email}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(entry.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleCopyInviteLink(entry.email)}
-                        className="text-muted-foreground hover:text-primary transition-colors"
-                        title="Copy invite link"
-                      >
-                        {copiedEmail === entry.email ? (
-                          <Check className="w-3.5 h-3.5 text-green-500" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleRemoveInvite(entry.id)}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        )}
 
         <Card className="divide-y divide-border">
           {menuItems.map((item, index) => (
