@@ -72,11 +72,11 @@ export default function Signup() {
       if (user) {
         await supabase.from('waiver_acceptances').insert({
           user_id: user.id,
-          waiver_version: 'March 2026',
+          waiver_version: 'March 2026 v2',
           ip_address: null,
           user_agent: navigator.userAgent,
         });
-        await supabase.from('profiles').update({ waiver_accepted: true }).eq('id', user.id);
+        await supabase.from('profiles').update({ waiver_accepted: true, waiver_version: 'March 2026 v2' }).eq('id', user.id);
       }
     } catch (e) {
       console.error('Failed to record waiver acceptance:', e);

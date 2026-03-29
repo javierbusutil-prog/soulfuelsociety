@@ -135,7 +135,16 @@ function WaiverText() {
 
       <div>
         <h4 className="font-semibold mb-1">8. NUTRITIONAL GUIDANCE DISCLAIMER</h4>
-        <p>Nutritional guidance provided through Soul Fuel Society is for general informational purposes only and does not constitute medical advice, registered dietitian services, a medically prescribed nutrition plan, or treatment for any eating disorder or medical condition. Consult a licensed medical professional before following any nutritional guidance if you have specific dietary needs or a diagnosed condition.</p>
+        <p>The nutritional information, macro tracking tools, fasting tracker, and any wellness suggestions provided through Soul Fuel Society are for general fitness and wellness purposes only. This content does not constitute and should not be interpreted as:</p>
+        <ul className="list-disc list-inside mt-2 space-y-1 ml-2">
+          <li>Medical advice or medical treatment of any kind</li>
+          <li>The professional services of a licensed registered dietitian or nutritionist</li>
+          <li>A medically prescribed or clinically supervised nutrition plan</li>
+          <li>Diagnosis, treatment, or management of any eating disorder, metabolic condition, or health condition</li>
+        </ul>
+        <p className="mt-2">Our coaches are fitness professionals and are not licensed dietitians, nutritionists, or physicians. Any macro targets, calorie suggestions, or nutritional guidance provided through the app or by our coaches represent general wellness starting points based on common fitness principles and are not personalized medical nutrition therapy.</p>
+        <p className="mt-2">You acknowledge that you are using all nutrition-related features and content in the app at your own discretion and risk. You agree that Soul Fuel Society, LLC shall not be liable for any adverse health outcomes resulting from your use of or reliance on any nutritional content, suggestions, or tools provided through the platform.</p>
+        <p className="mt-2">If you have a diagnosed eating disorder, metabolic condition, cardiovascular condition, are pregnant, postpartum, or have any other condition that affects your dietary needs, you should consult a licensed medical professional or registered dietitian before using any nutrition features of this app.</p>
       </div>
 
       <div>
@@ -168,7 +177,7 @@ function WaiverText() {
         <p>BY CHECKING THE ACCEPTANCE BOX YOU ACKNOWLEDGE THAT YOU HAVE READ THIS AGREEMENT IN ITS ENTIRETY, FULLY UNDERSTAND ITS TERMS, ARE 18 YEARS OF AGE OR OLDER, AND VOLUNTARILY AGREE TO BE BOUND BY ALL TERMS. YOUR ELECTRONIC ACCEPTANCE IS A LEGALLY BINDING SIGNATURE UNDER THE E-SIGN ACT AND APPLICABLE FLORIDA LAW.</p>
       </div>
 
-      <p className="text-muted-foreground text-xs mt-6">This Agreement was last updated: March 2026</p>
+      <p className="text-muted-foreground text-xs mt-6">This Agreement was last updated: March 2026 v2</p>
       <p className="text-muted-foreground text-xs">Soul Fuel Society, LLC | Florida</p>
     </div>
   );

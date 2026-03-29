@@ -1399,6 +1399,7 @@ export type Database = {
             | null
           updated_at: string
           waiver_accepted: boolean
+          waiver_version: string | null
         }
         Insert: {
           assigned_coach_id?: string | null
@@ -1420,6 +1421,7 @@ export type Database = {
             | null
           updated_at?: string
           waiver_accepted?: boolean
+          waiver_version?: string | null
         }
         Update: {
           assigned_coach_id?: string | null
@@ -1441,6 +1443,7 @@ export type Database = {
             | null
           updated_at?: string
           waiver_accepted?: boolean
+          waiver_version?: string | null
         }
         Relationships: [
           {
