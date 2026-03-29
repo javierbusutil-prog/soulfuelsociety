@@ -1135,9 +1135,13 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           full_name: string | null
+          group_size: string | null
           id: string
           phone: string | null
+          selected_plan: string | null
+          session_count: number | null
           stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           subscription_status:
             | Database["public"]["Enums"]["subscription_status"]
             | null
@@ -1149,9 +1153,13 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
+          group_size?: string | null
           id: string
           phone?: string | null
+          selected_plan?: string | null
+          session_count?: number | null
           stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_status?:
             | Database["public"]["Enums"]["subscription_status"]
             | null
@@ -1163,9 +1171,13 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
+          group_size?: string | null
           id?: string
           phone?: string | null
+          selected_plan?: string | null
+          session_count?: number | null
           stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_status?:
             | Database["public"]["Enums"]["subscription_status"]
             | null
