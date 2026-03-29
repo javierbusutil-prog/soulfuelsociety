@@ -192,6 +192,9 @@ export default function AdminProgramBuilder() {
     toast.success(`Copied ${WEEK_LABELS[srcWi]} to ${WEEK_LABELS[tgtWi]}`);
   };
 
+  const isSupplemental = context?.selected_plan === 'in-person';
+  const currentPlanType = isSupplemental ? 'inperson_supplemental' : 'online';
+
   const handleDeliver = async () => {
     if (!user || !id) return;
     setDelivering(true);
@@ -202,7 +205,8 @@ export default function AdminProgramBuilder() {
           .from('coaching_programs')
           .update({ is_active: false } as any)
           .eq('user_id', id)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('plan_type', currentPlanType as any);
       }
 
       const { error: insertError } = await supabase
@@ -213,6 +217,7 @@ export default function AdminProgramBuilder() {
           version: newVersion,
           is_active: true,
           program_data: { weeks } as any,
+          plan_type: currentPlanType,
         } as any);
       if (insertError) throw insertError;
 
@@ -221,9 +226,9 @@ export default function AdminProgramBuilder() {
         .update({ program_delivered: true } as any)
         .eq('user_id', id);
 
-      const notifTitle = isUpdate
-        ? 'Your coach has updated your program.'
-        : 'Your personalized program is ready — open it in your dashboard.';
+      const notifTitle = isSupplemental
+        ? (isUpdate ? 'Your coach has updated your supplemental program.' : 'Your coach has added a supplemental program to support your training between sessions.')
+        : (isUpdate ? 'Your coach has updated your program.' : 'Your personalized program is ready — open it in your dashboard.');
       await supabase.from('notifications').insert({
         user_id: id,
         type: 'program_delivered',
@@ -267,8 +272,12 @@ export default function AdminProgramBuilder() {
         {context && (
           <Card>
             <CardContent className="p-4 md:p-5">
-              <h2 className="text-lg font-bold mb-2">
-                {isUpdate ? 'Update' : 'Build'} program for {context.full_name}
+              <h2 className="text-lg font-bold mb-1">
+                {isSupplemental ? 'Supplemental program — between-session work' : `${isUpdate ? 'Update' : 'Build'} program for ${context.full_name}`}
+              </h2>
+              {isSupplemental && (
+                <p className="text-sm text-muted-foreground mb-2">This supports {context.full_name}'s training between in-person sessions.</p>
+              )}
               </h2>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">{formatGoal(context.fitness_level)}</Badge>
