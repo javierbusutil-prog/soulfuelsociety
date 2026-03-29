@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import AppLayout from '@/components/layout/AppLayout';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -105,7 +105,7 @@ export default function Admin() {
     switch (role) {
       case 'admin': return <Badge className="bg-primary text-primary-foreground">Admin</Badge>;
       case 'pt_admin': return <Badge className="bg-accent text-accent-foreground">PT Admin</Badge>;
-      case 'paid': return <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Paid</Badge>;
+      case 'paid': return <Badge className="bg-accent/20 text-accent-foreground border-accent/30">Paid</Badge>;
       default: return <Badge variant="secondary">Free</Badge>;
     }
   };
