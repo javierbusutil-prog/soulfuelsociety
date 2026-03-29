@@ -192,6 +192,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          plan_type: string
           program_data: Json
           user_id: string
           version: number
@@ -201,6 +202,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          plan_type?: string
           program_data?: Json
           user_id: string
           version?: number
@@ -210,6 +212,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          plan_type?: string
           program_data?: Json
           user_id?: string
           version?: number

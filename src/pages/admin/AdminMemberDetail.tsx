@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ProfileData {
@@ -63,6 +63,7 @@ export default function AdminMemberDetail() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolledProgram, setEnrolledProgram] = useState<{ title: string; weeks: number; start_date: string } | null>(null);
+  const [hasSupplementalProgram, setHasSupplementalProgram] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -106,6 +107,19 @@ export default function AdminMemberDetail() {
       if (prog) {
         setEnrolledProgram({ title: prog.title, weeks: prog.weeks, start_date: enrollment.start_date });
       }
+    }
+
+    // Check for supplemental program (in-person members)
+    if (prof?.selected_plan === 'in-person') {
+      const { data: suppProg } = await supabase
+        .from('coaching_programs')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .eq('plan_type', 'inperson_supplemental' as any)
+        .limit(1)
+        .maybeSingle();
+      setHasSupplementalProgram(!!suppProg);
     }
 
     // Workout logs (last 10)
@@ -330,6 +344,36 @@ export default function AdminMemberDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Supplemental program section — in-person members only */}
+        {profile.selected_plan === 'in-person' && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-muted-foreground" /> Supplemental program
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {hasSupplementalProgram ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">A supplemental between-session program has been delivered.</p>
+                  <Button size="sm" variant="outline" onClick={() => navigate(`/admin/members/${id}/program`)} className="gap-1.5 mt-1">
+                    Update supplemental program
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-6 space-y-3">
+                  <BookOpen className="w-8 h-8 text-muted-foreground mx-auto" />
+                  <p className="text-sm text-muted-foreground">No supplemental program delivered. Add one if this member would benefit from structured between-session work.</p>
+                  <Button onClick={() => navigate(`/admin/members/${id}/program`)} className="gap-1.5">
+                    Build supplemental program
+                    <BookOpen className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* SECTION 3 — Progress & Stats */}
         <Card>

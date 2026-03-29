@@ -1,0 +1,1 @@
+ALTER TABLE public.coaching_programs ADD COLUMN plan_type text NOT NULL DEFAULT 'online';
