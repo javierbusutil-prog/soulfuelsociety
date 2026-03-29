@@ -104,10 +104,10 @@ export default function AdminProgramBuilder() {
       .limit(1)
       .maybeSingle();
 
-    if (existing) {
-      setExistingVersion(existing.version);
+    if (existingProg) {
+      setExistingVersion(existingProg.version);
       setIsUpdate(true);
-      const pd = existing.program_data as any;
+      const pd = existingProg.program_data as any;
       if (pd?.weeks && Array.isArray(pd.weeks)) {
         setWeeks(pd.weeks);
         setOpenWeeks(new Set([0]));
