@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       calendar_events: {
         Row: {
+          booking_id: string | null
           completed: boolean
           completed_at: string | null
           created_at: string
@@ -32,6 +33,7 @@ export type Database = {
           user_notes: string | null
         }
         Insert: {
+          booking_id?: string | null
           completed?: boolean
           completed_at?: string | null
           created_at?: string
@@ -48,6 +50,7 @@ export type Database = {
           user_notes?: string | null
         }
         Update: {
+          booking_id?: string | null
           completed?: boolean
           completed_at?: string | null
           created_at?: string
@@ -64,6 +67,13 @@ export type Database = {
           user_notes?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "calendar_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "session_bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "calendar_events_enrollment_id_fkey"
             columns: ["enrollment_id"]
