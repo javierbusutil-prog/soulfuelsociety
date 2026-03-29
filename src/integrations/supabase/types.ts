@@ -1513,6 +1513,86 @@ export type Database = {
           },
         ]
       }
+      session_bookings: {
+        Row: {
+          coach_id: string | null
+          coach_note: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          member_id: string
+          scheduled_at: string
+          session_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          coach_id?: string | null
+          coach_note?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          member_id: string
+          scheduled_at: string
+          session_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string | null
+          coach_note?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          member_id?: string
+          scheduled_at?: string
+          session_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      session_logs: {
+        Row: {
+          booking_id: string | null
+          coach_id: string
+          coach_note: string | null
+          created_at: string
+          id: string
+          member_ids: string[]
+          scheduled_at: string
+          status: string
+        }
+        Insert: {
+          booking_id?: string | null
+          coach_id: string
+          coach_note?: string | null
+          created_at?: string
+          id?: string
+          member_ids?: string[]
+          scheduled_at: string
+          status?: string
+        }
+        Update: {
+          booking_id?: string | null
+          coach_id?: string
+          coach_note?: string | null
+          created_at?: string
+          id?: string
+          member_ids?: string[]
+          scheduled_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_logs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "session_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       set_logs: {
         Row: {
           completed: boolean
