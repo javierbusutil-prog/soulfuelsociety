@@ -17,6 +17,7 @@ import Coach from "./pages/Coach";
 import Store from "./pages/Store";
 import Upgrade from "./pages/Upgrade";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
 
 import Nutrition from "./pages/Nutrition";
 
@@ -88,6 +89,7 @@ function AppRoutes() {
       <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
       <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
       
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
