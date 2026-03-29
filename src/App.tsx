@@ -142,7 +142,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
       <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
       <Route path="/join/:token" element={<JoinGroup />} />
-      <Route path="/waiver" element={<ProtectedRoute><Waiver /></ProtectedRoute>} />
+      <Route path="/waiver" element={<WaiverRoute />} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/book" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
       <Route path="/book/confirm/:bookingId" element={<ProtectedRoute><BookConfirm /></ProtectedRoute>} />
