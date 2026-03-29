@@ -12,7 +12,7 @@ import { ProteinTracker } from '@/components/nutrition/ProteinTracker';
 import { HydrationTracker } from '@/components/nutrition/HydrationTracker';
 import { EnergyMoodCheckin } from '@/components/nutrition/EnergyMoodCheckin';
 import { WeeklyTrends } from '@/components/nutrition/WeeklyTrends';
-import { MealStructureTracker } from '@/components/nutrition/MealStructureTracker';
+
 import { WeeklyReflection } from '@/components/nutrition/WeeklyReflection';
 import { SmartInsights } from '@/components/nutrition/SmartInsights';
 import { FastingTimer } from '@/components/calendar/FastingTimer';
@@ -93,8 +93,6 @@ export default function Nutrition() {
           setGoal={nutrition.setGoal}
         />
 
-        {/* Meal Structure Tracking */}
-        <MealStructureTracker selectedDate={selectedDate} />
 
         <EnergyMoodCheckin
           entry={nutrition.entry}
