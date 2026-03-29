@@ -3,11 +3,11 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
   Users,
-  Dumbbell,
   MessageCircle,
   CalendarClock,
   DollarSign,
   Clock,
+  ArrowLeftRight,
 } from 'lucide-react';
 
 const navItems = [
@@ -15,7 +15,7 @@ const navItems = [
   { path: '/admin/members', icon: Users, label: 'Members' },
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
-  { path: '/admin/availability', icon: Clock, label: 'Availability' },
+  { path: '/admin/availability', icon: Clock, label: 'Hours' },
   { path: '/admin/revenue', icon: DollarSign, label: 'Revenue' },
 ];
 
@@ -35,7 +35,7 @@ export function AdminBottomNav() {
             key={item.path}
             to={item.path}
             className={cn(
-              'flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-colors min-w-0',
+              'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors min-w-0',
               isActive(item.path)
                 ? 'text-primary'
                 : 'text-muted-foreground'
@@ -45,6 +45,13 @@ export function AdminBottomNav() {
             <span className="text-[10px] font-medium truncate">{item.label}</span>
           </Link>
         ))}
+        <Link
+          to="/community"
+          className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors min-w-0 text-muted-foreground"
+        >
+          <ArrowLeftRight className="w-5 h-5" />
+          <span className="text-[10px] font-medium truncate">Member</span>
+        </Link>
       </div>
     </nav>
   );
