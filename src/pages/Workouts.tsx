@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Lock } from 'lucide-react';
 import { Search, Filter, Heart, Clock, Dumbbell, Check, Calendar, BookOpen, Pencil, Trash2, Play, History, ListChecks, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -62,7 +63,7 @@ const typeIcons: Record<WorkoutType, string> = {
 };
 
 export default function Workouts() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isPaidMember } = useAuth();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [completedToday, setCompletedToday] = useState<string[]>([]);
@@ -70,7 +71,7 @@ export default function Workouts() {
   const [levelFilter, setLevelFilter] = useState<WorkoutLevel[]>([]);
   const [typeFilter, setTypeFilter] = useState<WorkoutType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('weekly');
+  const [activeTab, setActiveTab] = useState((isPaidMember || isAdmin) ? 'weekly' : 'programs');
   const [selectedProgram, setSelectedProgram] = useState<WorkoutProgram | null>(null);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [deletingWorkout, setDeletingWorkout] = useState<Workout | null>(null);
@@ -222,9 +223,19 @@ export default function Workouts() {
       <div className="max-w-lg mx-auto p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="weekly" className="flex items-center gap-1.5 text-xs">
-              <CalendarDays className="w-3.5 h-3.5" />
-              Weekly
+            <TabsTrigger 
+              value="weekly" 
+              className="flex items-center gap-1.5 text-xs"
+              disabled={!isPaidMember && !isAdmin}
+              onClick={(e) => {
+                if (!isPaidMember && !isAdmin) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              {!isPaidMember && !isAdmin && <Lock className="w-3 h-3" />}
+              <Dumbbell className="w-3.5 h-3.5" />
+              Workouts
             </TabsTrigger>
             <TabsTrigger value="programs" className="flex items-center gap-1.5 text-xs">
               <Calendar className="w-3.5 h-3.5" />
