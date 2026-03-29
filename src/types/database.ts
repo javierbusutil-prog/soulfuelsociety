@@ -26,6 +26,7 @@ export interface Profile {
   assigned_pt_id: string | null;
   has_completed_onboarding: boolean;
   waiver_accepted: boolean;
+  nutrition_disclaimer_accepted: boolean;
   created_at: string;
   updated_at: string;
 }
