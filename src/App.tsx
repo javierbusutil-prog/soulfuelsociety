@@ -65,7 +65,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function CoachRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, isPTAdmin, loading } = useAuth();
+  const { user, profile, isAdmin, isPTAdmin, loading } = useAuth();
   
   if (loading) {
     return (
