@@ -85,18 +85,25 @@ export default function AdminProgramBuilder() {
     const [{ data: prof }, { data: mp }, { data: existing }] = await Promise.all([
       supabase.from('profiles').select('full_name, selected_plan').eq('id', userId).single(),
       supabase.from('member_profiles').select('fitness_level, primary_goal, training_days_per_week, injuries_limitations, preferred_days').eq('user_id', userId).single(),
-      supabase.from('coaching_programs').select('version, program_data').eq('user_id', userId).eq('is_active', true).order('version', { ascending: false }).limit(1).maybeSingle(),
+      // existing program fetched below after determining plan type
     ]);
 
     if (prof && mp) {
       setContext({ full_name: prof.full_name, selected_plan: prof.selected_plan, ...(mp as any) });
     }
 
-    // Redirect in-person members
-    if (prof?.selected_plan === 'in-person') {
-      navigate(`/admin/members/${userId}`);
-      return;
-    }
+    const isSupplemental = prof?.selected_plan === 'in-person';
+    const planTypeFilter = isSupplemental ? 'inperson_supplemental' : 'online';
+
+    const { data: existing } = await supabase
+      .from('coaching_programs')
+      .select('version, program_data')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .eq('plan_type', planTypeFilter as any)
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (existing) {
       setExistingVersion(existing.version);
