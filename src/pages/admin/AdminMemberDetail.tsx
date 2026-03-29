@@ -109,6 +109,19 @@ export default function AdminMemberDetail() {
       }
     }
 
+    // Check for supplemental program (in-person members)
+    if (prof?.selected_plan === 'in-person') {
+      const { data: suppProg } = await supabase
+        .from('coaching_programs')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .eq('plan_type', 'inperson_supplemental' as any)
+        .limit(1)
+        .maybeSingle();
+      setHasSupplementalProgram(!!suppProg);
+    }
+
     // Workout logs (last 10)
     const { data: logs } = await supabase
       .from('workout_logs')
