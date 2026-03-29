@@ -44,6 +44,7 @@ export function CalendarEventDetailDialog({
   onComplete,
   onReschedule,
 }: CalendarEventDetailDialogProps) {
+  const { user } = useAuth();
   const [session, setSession] = useState<WorkoutSessionTemplate | null>(null);
   const [program, setProgram] = useState<WorkoutProgram | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,10 @@ export function CalendarEventDetailDialog({
   const [saving, setSaving] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const isSessionEvent = event.event_type === 'session';
+  const bookingId = (event as any).booking_id as string | null;
 
   useEffect(() => {
     if (open && event) {
