@@ -20,6 +20,7 @@ const navItems = [
   { path: '/admin/programs', icon: Dumbbell, label: 'Programs' },
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
+  { path: '/admin/availability', icon: Clock, label: 'Availability' },
   { path: '/admin/revenue', icon: DollarSign, label: 'Revenue' },
 ];
 
