@@ -530,6 +530,45 @@ export type Database = {
           },
         ]
       }
+      group_invites: {
+        Row: {
+          accepted_by: string | null
+          created_at: string
+          created_by: string
+          expires_at: string
+          group_id: string
+          id: string
+          invite_token: string
+          invitee_email: string | null
+          plan_details: Json
+          status: string
+        }
+        Insert: {
+          accepted_by?: string | null
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          group_id: string
+          id?: string
+          invite_token: string
+          invitee_email?: string | null
+          plan_details?: Json
+          status?: string
+        }
+        Update: {
+          accepted_by?: string | null
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          group_id?: string
+          id?: string
+          invite_token?: string
+          invitee_email?: string | null
+          plan_details?: Json
+          status?: string
+        }
+        Relationships: []
+      }
       group_memberships: {
         Row: {
           group_id: string

@@ -69,11 +69,17 @@ serve(async (req) => {
       subscriptionId = subscription.id;
       logStep("Active subscription found", { subscriptionId });
 
-      // Update profile with subscription info
-      await supabaseClient.from("profiles").update({
+      const metadata = subscription.metadata || {};
+
+      const profileUpdate: Record<string, any> = {
         subscription_status: "active",
         stripe_subscription_id: subscriptionId,
-      }).eq("id", user.id);
+      };
+      if (metadata.plan) profileUpdate.selected_plan = metadata.plan === "in_person" ? "in-person" : "online";
+      if (metadata.session_count) profileUpdate.session_count = parseInt(metadata.session_count);
+      if (metadata.group_size) profileUpdate.group_size = metadata.group_size;
+
+      await supabaseClient.from("profiles").update(profileUpdate).eq("id", user.id);
 
       // Ensure user has 'paid' role
       const { data: existingRole } = await supabaseClient
@@ -86,9 +92,17 @@ serve(async (req) => {
       if (!existingRole) {
         await supabaseClient.from("user_roles").insert({ user_id: user.id, role: "paid" });
       }
+
+      // If this user accepted a group invite, mark it as accepted
+      if (metadata.invite_token) {
+        await supabaseClient
+          .from("group_invites")
+          .update({ status: "accepted", accepted_by: user.id })
+          .eq("invite_token", metadata.invite_token);
+        logStep("Marked invite as accepted", { token: metadata.invite_token });
+      }
     } else {
       logStep("No active subscription");
-      // Check if profile needs to be downgraded
       await supabaseClient.from("profiles").update({
         subscription_status: "inactive",
       }).eq("id", user.id);
