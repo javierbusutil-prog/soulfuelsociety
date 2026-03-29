@@ -47,6 +47,8 @@ import { DEFAULT_RING_HABITS } from '@/types/workoutPrograms';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, addDays, addWeeks, getDay, isAfter, isBefore, startOfDay, endOfDay, parseISO, isToday, isPast, isFuture } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useEffect, useCallback } from 'react';
+import { useNutritionDisclaimer } from '@/hooks/useNutritionDisclaimer';
+import { NutritionDisclaimerDialog } from '@/components/nutrition/NutritionDisclaimerDialog';
 
 export interface ExpandedEvent extends Event {
   occurrenceDate: Date;
