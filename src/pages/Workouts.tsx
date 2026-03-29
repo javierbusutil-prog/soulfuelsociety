@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MovementLibrary } from '@/components/movements/MovementLibrary';
+import { CoachingProgramCard } from '@/components/community/CoachingProgramCard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -249,7 +250,10 @@ export default function Workouts() {
 
           {/* Weekly Plan Tab */}
           <TabsContent value="weekly" className="mt-4">
-            <WeeklyPlanView />
+            <CoachingProgramCard />
+            <div className="mt-4">
+              <WeeklyPlanView />
+            </div>
           </TabsContent>
 
           {/* Programs Tab */}
