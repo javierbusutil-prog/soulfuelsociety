@@ -13,6 +13,9 @@ import { useToast } from '@/hooks/use-toast';
 import { lovable } from '@/integrations/lovable/index';
 import { supabase } from '@/integrations/supabase/client';
 import logoStacked from '@/assets/logo-stacked.svg';
+import LiabilityWaiver from '@/components/auth/LiabilityWaiver';
+
+const WAIVER_PDF_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/legal-documents/soul-fuel-waiver.pdf`;
 
 const signupSchema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -29,6 +32,8 @@ type SignupForm = z.infer<typeof signupSchema>;
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<'form' | 'waiver'>('form');
+  const [formData, setFormData] = useState<SignupForm | null>(null);
   const { signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -40,26 +45,60 @@ export default function Signup() {
     defaultValues: { email: prefilledEmail },
   });
 
-  const onSubmit = async (data: SignupForm) => {
+  const onFormSubmit = (data: SignupForm) => {
+    setFormData(data);
+    setStep('waiver');
+  };
+
+  const onWaiverAccept = async () => {
+    if (!formData) return;
     setLoading(true);
 
-    const { error } = await signUp(data.email, data.password, data.fullName);
-    setLoading(false);
+    const { error } = await signUp(formData.email, formData.password, formData.fullName);
 
     if (error) {
+      setLoading(false);
       toast({
         title: 'Signup failed',
         description: error.message,
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Welcome to Soul Fuel Society!',
-        description: 'Your account has been created.',
-      });
-      navigate('/community');
+      return;
     }
+
+    // Record waiver acceptance
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('waiver_acceptances').insert({
+          user_id: user.id,
+          waiver_version: 'March 2026',
+          ip_address: null,
+          user_agent: navigator.userAgent,
+        });
+        await supabase.from('profiles').update({ waiver_accepted: true }).eq('id', user.id);
+      }
+    } catch (e) {
+      console.error('Failed to record waiver acceptance:', e);
+    }
+
+    setLoading(false);
+    toast({
+      title: 'Welcome to Soul Fuel Society!',
+      description: 'Your account has been created.',
+    });
+    navigate('/community');
   };
+
+  if (step === 'waiver') {
+    return (
+      <LiabilityWaiver
+        onAccept={onWaiverAccept}
+        loading={loading}
+        pdfUrl={WAIVER_PDF_URL}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -70,7 +109,6 @@ export default function Signup() {
           transition={{ duration: 0.5 }}
           className="sm:mx-auto sm:w-full sm:max-w-sm"
         >
-          {/* Soul Fuel wordmark logo for onboarding screens */}
           <div className="flex justify-center mb-8 px-4">
             <img 
               src={logoStacked} 
@@ -87,75 +125,38 @@ export default function Signup() {
             Start your wellness journey today
           </p>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                autoComplete="name"
-                placeholder="John Doe"
-                {...register('fullName')}
-              />
-              {errors.fullName && (
-                <p className="text-sm text-destructive">{errors.fullName.message}</p>
-              )}
+              <Input id="fullName" type="text" autoComplete="name" placeholder="John Doe" {...register('fullName')} />
+              {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                {...register('email')}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
+              <Input id="email" type="email" autoComplete="email" placeholder="you@example.com" {...register('email')} />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                  {...register('password')}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
+                <Input id="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="••••••••" {...register('password')} className="pr-10" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                   {showPassword ? <EyeOff className="w-5 h-5 stroke-[1.5]" /> : <Eye className="w-5 h-5 stroke-[1.5]" />}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
+              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                placeholder="••••••••"
-                {...register('confirmPassword')}
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-              )}
+              <Input id="confirmPassword" type="password" autoComplete="new-password" placeholder="••••••••" {...register('confirmPassword')} />
+              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
             </div>
 
-            <Button type="submit" size="lg" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create account'}
+            <Button type="submit" size="lg" className="w-full">
+              Continue
             </Button>
           </form>
 
