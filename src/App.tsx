@@ -78,6 +78,10 @@ function CoachRoute({ children }: { children: React.ReactNode }) {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
+  if (profile && !profile.waiver_accepted) {
+    return <Navigate to="/waiver" replace />;
+  }
   
   if (!isAdmin && !isPTAdmin) {
     return <Navigate to="/community" replace />;
