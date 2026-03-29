@@ -42,23 +42,6 @@ export default function Signup() {
   const onSubmit = async (data: SignupForm) => {
     setLoading(true);
 
-    // Check if the email is on the invite list
-    const { data: invite } = await supabase
-      .from('invited_emails')
-      .select('id')
-      .eq('email', data.email.toLowerCase().trim())
-      .maybeSingle();
-
-    if (!invite) {
-      setLoading(false);
-      toast({
-        title: 'Access restricted',
-        description: 'This app is currently invite-only. Please contact the admin for access.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     const { error } = await signUp(data.email, data.password, data.fullName);
     setLoading(false);
 
