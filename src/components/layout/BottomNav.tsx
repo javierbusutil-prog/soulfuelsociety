@@ -9,7 +9,7 @@ const navItems = [
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/workouts', icon: Dumbbell, label: 'Workouts', paidOnly: true },
   { path: '/coach', icon: MessageCircle, label: 'Coach', paidOnly: true },
-  { path: '/train', icon: Flame, label: 'Store' },
+  { path: '/train', icon: Flame, label: 'The Team' },
   { path: '/profile', icon: User, label: 'Profile' },
 ];
 
