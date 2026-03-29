@@ -158,6 +158,8 @@ export default function Calendar() {
   const nutrition = useNutrition(selectedDate);
   const { settings: userSettings } = useUserSettings();
   const ringHabits = userSettings?.ring_habits || DEFAULT_RING_HABITS;
+  const { needsDisclaimer } = useNutritionDisclaimer();
+  const [disclaimerDismissed, setDisclaimerDismissed] = useState(false);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const fastCompletedForRing = getSessionsForDate(selectedDate).length > 0;
