@@ -21,6 +21,7 @@ import Admin from "./pages/Admin";
 
 import Nutrition from "./pages/Nutrition";
 import TrainWithUs from "./pages/TrainWithUs";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
