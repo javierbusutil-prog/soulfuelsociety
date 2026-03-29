@@ -22,6 +22,8 @@ import Admin from "./pages/Admin";
 import Nutrition from "./pages/Nutrition";
 import TrainWithUs from "./pages/TrainWithUs";
 import Onboarding from "./pages/Onboarding";
+import Invite from "./pages/Invite";
+import JoinGroup from "./pages/JoinGroup";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +94,8 @@ function AppRoutes() {
       <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
       <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+      <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
+      <Route path="/join/:token" element={<JoinGroup />} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
       
