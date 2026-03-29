@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Dumbbell, Calendar, MessageCircle, ShoppingBag, User, Apple } from 'lucide-react';
+import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
 const navItems = [
   { path: '/community', icon: Users, label: 'Community' },
-  { path: '/workouts', icon: Dumbbell, label: 'Workouts' },
+  { path: '/train', icon: Flame, label: 'Train' },
+  { path: '/workouts', icon: Dumbbell, label: 'Workouts', paidOnly: true },
   { path: '/nutrition', icon: Apple, label: 'Nutrition' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/coach', icon: MessageCircle, label: 'Coach', paidOnly: true },
