@@ -20,6 +20,7 @@ import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 
 import Nutrition from "./pages/Nutrition";
+import TrainWithUs from "./pages/TrainWithUs";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,7 @@ function AppRoutes() {
       
       {/* Protected routes */}
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+      <Route path="/train" element={<ProtectedRoute><TrainWithUs /></ProtectedRoute>} />
       <Route path="/nutrition" element={<ProtectedRoute><Nutrition /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       <Route path="/workouts" element={<ProtectedRoute><Workouts /></ProtectedRoute>} />
