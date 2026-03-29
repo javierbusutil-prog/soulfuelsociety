@@ -132,6 +132,36 @@ export type Database = {
         }
         Relationships: []
       }
+      coaching_programs: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          program_data: Json
+          user_id: string
+          version: number
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          program_data?: Json
+          user_id: string
+          version?: number
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          program_data?: Json
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
