@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock } from 'lucide-react';
+import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -15,7 +15,7 @@ const navItems = [
 
 export function BottomNav() {
   const location = useLocation();
-  const { isPaidMember } = useAuth();
+  const { isPaidMember, isAdmin } = useAuth();
 
   return (
     <nav className="tab-bar z-50" role="navigation" aria-label="Main navigation">
@@ -31,7 +31,7 @@ export function BottomNav() {
               aria-current={isActive ? 'page' : undefined}
               aria-label={isLocked ? `${item.label} (locked preview)` : item.label}
               className={cn(
-                "flex flex-col items-center justify-center w-16 h-full relative transition-colors duration-200",
+                "flex flex-col items-center justify-center w-14 h-full relative transition-colors duration-200",
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 isLocked && "opacity-70"
               )}
@@ -57,6 +57,15 @@ export function BottomNav() {
             </Link>
           );
         })}
+        {isAdmin && (
+          <Link
+            to="/admin"
+            className="flex flex-col items-center justify-center w-14 h-full relative transition-colors duration-200 text-muted-foreground hover:text-foreground"
+          >
+            <ShieldCheck className="w-5 h-5 stroke-[1.5]" />
+            <span className="text-[10px] mt-1.5 font-medium tracking-wide">Coach</span>
+          </Link>
+        )}
       </div>
     </nav>
   );
