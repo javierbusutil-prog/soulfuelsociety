@@ -7,13 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet } from 'lucide-react';
+import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCycleTracker } from '@/hooks/useCycleTracker';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Profile() {
   const { user, profile, roles, isPaidMember, isAdmin, signOut } = useAuth();
+  const { settings, updateSettings } = useCycleTracker();
+  const { toast } = useToast();
+  const [portalLoading, setPortalLoading] = useState(false);
   const { settings, updateSettings } = useCycleTracker();
 
   const cycleTrackingEnabled = settings?.prediction_enabled !== false;
