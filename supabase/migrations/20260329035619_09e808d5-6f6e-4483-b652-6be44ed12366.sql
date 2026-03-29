@@ -1,0 +1,1 @@
+ALTER TABLE public.calendar_events ADD COLUMN booking_id uuid REFERENCES public.session_bookings(id) ON DELETE CASCADE;

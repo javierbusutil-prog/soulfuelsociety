@@ -5,7 +5,8 @@ import {
   CheckCircle, 
   X,
   Save,
-  ArrowRightLeft
+  ArrowRightLeft,
+  XCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,8 +24,9 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { CalendarEvent, WorkoutSessionTemplate, WorkoutProgram, SessionContent } from '@/types/workoutPrograms';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInHours } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 
 interface CalendarEventDetailDialogProps {
@@ -42,6 +44,7 @@ export function CalendarEventDetailDialog({
   onComplete,
   onReschedule,
 }: CalendarEventDetailDialogProps) {
+  const { user } = useAuth();
   const [session, setSession] = useState<WorkoutSessionTemplate | null>(null);
   const [program, setProgram] = useState<WorkoutProgram | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,6 +52,10 @@ export function CalendarEventDetailDialog({
   const [saving, setSaving] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const isSessionEvent = event.event_type === 'session';
+  const bookingId = (event as any).booking_id as string | null;
 
   useEffect(() => {
     if (open && event) {
@@ -123,6 +130,57 @@ export function CalendarEventDetailDialog({
       toast({ title: 'Failed to reschedule', variant: 'destructive' });
     } finally {
       setRescheduling(false);
+    }
+  };
+
+  const handleCancelSession = async () => {
+    if (!bookingId || !user) return;
+    setCancelling(true);
+    try {
+      // Check 24-hour policy
+      const eventDateObj = parseISO(event.event_date);
+      const hoursUntil = differenceInHours(eventDateObj, new Date());
+      const isLate = hoursUntil < 24;
+      const newStatus = isLate ? 'cancelled_late' : 'cancelled';
+
+      await supabase
+        .from('session_bookings')
+        .update({ status: newStatus, updated_at: new Date().toISOString() } as any)
+        .eq('id', bookingId);
+
+      // Remove all calendar events for this booking
+      await supabase
+        .from('calendar_events')
+        .delete()
+        .eq('booking_id', bookingId);
+
+      // Notify coach
+      const { data: booking } = await supabase
+        .from('session_bookings')
+        .select('coach_id')
+        .eq('id', bookingId)
+        .single();
+
+      if (booking?.coach_id) {
+        const { data: memberProf } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        await supabase.from('notifications').insert({
+          user_id: booking.coach_id,
+          type: 'session_cancelled',
+          title: `${memberProf?.full_name || 'A member'} has cancelled their session on ${format(eventDateObj, 'MMM d')} at ${format(eventDateObj, 'h:mm a')}.`,
+          body: isLate ? 'Late cancellation — counts as a used session.' : 'Cancelled more than 24 hours in advance.',
+        } as any);
+      }
+
+      toast({ title: isLate ? 'Session cancelled (late — counts as used)' : 'Session cancelled' });
+      onOpenChange(false);
+    } catch {
+      toast({ title: 'Failed to cancel session', variant: 'destructive' });
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -236,6 +294,20 @@ export function CalendarEventDetailDialog({
             <p className="text-xs text-muted-foreground">
               Completed on {format(parseISO(event.completed_at), 'MMM d, yyyy at h:mm a')}
             </p>
+          )}
+
+          {/* Cancel session button — only for session events */}
+          {isSessionEvent && bookingId && !event.completed && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full gap-2"
+              onClick={handleCancelSession}
+              disabled={cancelling}
+            >
+              <XCircle className="w-4 h-4" />
+              {cancelling ? 'Cancelling...' : 'Cancel session'}
+            </Button>
           )}
 
           {/* Complete Button */}

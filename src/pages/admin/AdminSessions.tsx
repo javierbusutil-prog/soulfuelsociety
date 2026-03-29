@@ -102,6 +102,12 @@ export default function AdminSessions() {
         .eq('id', selectedBooking.member_id);
     }
 
+    // Mark calendar events as completed
+    await supabase
+      .from('calendar_events')
+      .update({ completed: true, completed_at: new Date().toISOString() } as any)
+      .eq('booking_id', selectedBooking.id);
+
     toast.success('Session marked as completed');
     setDetailOpen(false);
     fetchBookings();
@@ -112,10 +118,17 @@ export default function AdminSessions() {
     if (!selectedBooking || !rescheduleDate) return;
     setSaving(true);
 
+    const newDate = new Date(rescheduleDate);
     await supabase
       .from('session_bookings')
-      .update({ scheduled_at: new Date(rescheduleDate).toISOString(), coach_note: coachNote || null, updated_at: new Date().toISOString() } as any)
+      .update({ scheduled_at: newDate.toISOString(), coach_note: coachNote || null, updated_at: new Date().toISOString() } as any)
       .eq('id', selectedBooking.id);
+
+    // Update calendar events to new date
+    await supabase
+      .from('calendar_events')
+      .update({ event_date: format(newDate, 'yyyy-MM-dd') } as any)
+      .eq('booking_id', selectedBooking.id);
 
     toast.success('Session rescheduled');
     setDetailOpen(false);
@@ -131,6 +144,12 @@ export default function AdminSessions() {
       .from('session_bookings')
       .update({ status: 'cancelled', updated_at: new Date().toISOString() } as any)
       .eq('id', selectedBooking.id);
+
+    // Remove calendar events for this booking
+    await supabase
+      .from('calendar_events')
+      .delete()
+      .eq('booking_id', selectedBooking.id);
 
     toast.success('Session cancelled');
     setDetailOpen(false);

@@ -87,6 +87,7 @@ export default function BookConfirm() {
       description: `${booking.session_type} session`,
       event_date: format(scheduledAt, 'yyyy-MM-dd'),
       event_type: 'session',
+      booking_id: booking.id,
     }));
     calendarRows.push({
       user_id: booking.coach_id,
@@ -94,6 +95,7 @@ export default function BookConfirm() {
       description: `${booking.session_type} session`,
       event_date: format(scheduledAt, 'yyyy-MM-dd'),
       event_type: 'session',
+      booking_id: booking.id,
     });
 
     await supabase.from('calendar_events').insert(calendarRows as any);
