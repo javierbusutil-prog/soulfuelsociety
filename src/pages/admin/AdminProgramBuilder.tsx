@@ -278,7 +278,6 @@ export default function AdminProgramBuilder() {
               {isSupplemental && (
                 <p className="text-sm text-muted-foreground mb-2">This supports {context.full_name}'s training between in-person sessions.</p>
               )}
-              </h2>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">{formatGoal(context.fitness_level)}</Badge>
                 <Badge variant="secondary">{formatGoal(context.primary_goal)}</Badge>
