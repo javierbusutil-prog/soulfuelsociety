@@ -158,8 +158,8 @@ export default function TrainWithUs() {
                   </div>
                 ) : (
                   <div className="pt-2 border-t border-border/30 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <p className="text-sm text-emerald-500 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-chart-2" />
+                    <p className="text-sm text-chart-2 font-medium">
                       You're currently training with {coach.name.split(' ')[0]}.
                     </p>
                   </div>
