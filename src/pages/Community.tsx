@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Post, Group, Profile } from '@/types/database';
 import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns';
 import { PostDetailDialog } from '@/components/community/PostDetailDialog';
+import { CoachingProgramCard } from '@/components/community/CoachingProgramCard';
 
 interface PostWithProfile extends Post {
   profiles: Profile;
