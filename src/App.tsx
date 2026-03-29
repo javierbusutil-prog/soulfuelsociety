@@ -32,7 +32,12 @@ import AdminProgramBuilder from "./pages/admin/AdminProgramBuilder";
 import AdminPrograms from "./pages/admin/AdminPrograms";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminSessions from "./pages/admin/AdminSessions";
+import AdminAvailability from "./pages/admin/AdminAvailability";
 import AdminRevenue from "./pages/admin/AdminRevenue";
+
+// Booking pages
+import BookSession from "./pages/BookSession";
+import BookConfirm from "./pages/BookConfirm";
 
 const queryClient = new QueryClient();
 
@@ -133,6 +138,8 @@ function AppRoutes() {
       <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
       <Route path="/join/:token" element={<JoinGroup />} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/book" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
+      <Route path="/book/confirm/:bookingId" element={<ProtectedRoute><BookConfirm /></ProtectedRoute>} />
       
       {/* Coach admin routes */}
       <Route path="/admin" element={<CoachRoute><AdminDashboard /></CoachRoute>} />
@@ -142,6 +149,7 @@ function AppRoutes() {
       <Route path="/admin/programs" element={<CoachRoute><AdminPrograms /></CoachRoute>} />
       <Route path="/admin/messages" element={<CoachRoute><AdminMessages /></CoachRoute>} />
       <Route path="/admin/sessions" element={<CoachRoute><AdminSessions /></CoachRoute>} />
+      <Route path="/admin/availability" element={<CoachRoute><AdminAvailability /></CoachRoute>} />
       <Route path="/admin/revenue" element={<CoachRoute><AdminRevenue /></CoachRoute>} />
       
       {/* Catch-all */}

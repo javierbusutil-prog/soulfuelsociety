@@ -7,14 +7,15 @@ import {
   MessageCircle,
   CalendarClock,
   DollarSign,
+  Clock,
 } from 'lucide-react';
 
 const navItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/admin/members', icon: Users, label: 'Members' },
-  { path: '/admin/programs', icon: Dumbbell, label: 'Programs' },
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
+  { path: '/admin/availability', icon: Clock, label: 'Availability' },
   { path: '/admin/revenue', icon: DollarSign, label: 'Revenue' },
 ];
 
