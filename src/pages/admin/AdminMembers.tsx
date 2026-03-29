@@ -1,69 +1,80 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Crown } from 'lucide-react';
+import { Search, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
 
-interface UserWithRole {
+interface MemberRow {
   id: string;
   full_name: string | null;
-  subscription_status: string | null;
+  avatar_url: string | null;
+  selected_plan: string | null;
+  session_count: number | null;
+  group_size: string | null;
   created_at: string;
-  role: string;
+  program_delivered: boolean;
 }
 
 export default function AdminMembers() {
-  const [freeUsers, setFreeUsers] = useState<UserWithRole[]>([]);
-  const [paidUsers, setPaidUsers] = useState<UserWithRole[]>([]);
+  const navigate = useNavigate();
+  const [members, setMembers] = useState<MemberRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [planFilter, setPlanFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
-    fetchUsers();
+    fetchMembers();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchMembers = async () => {
     setLoading(true);
-    const { data: roles } = await supabase.from('user_roles').select('user_id, role');
-    if (!roles) { setLoading(false); return; }
+    // Get paid user IDs
+    const { data: paidRoles } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'paid');
 
-    const roleMap = new Map<string, string[]>();
-    roles.forEach(r => {
-      const existing = roleMap.get(r.user_id) || [];
-      existing.push(r.role);
-      roleMap.set(r.user_id, existing);
-    });
+    if (!paidRoles || paidRoles.length === 0) {
+      setLoading(false);
+      return;
+    }
 
-    const userIds = Array.from(roleMap.keys());
+    const userIds = paidRoles.map(r => r.user_id);
+
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, full_name, subscription_status, created_at')
+      .select('id, full_name, avatar_url, selected_plan, session_count, group_size, created_at')
       .in('id', userIds);
 
-    if (!profiles) { setLoading(false); return; }
+    // Get program_delivered status from member_profiles
+    const { data: memberProfiles } = await supabase
+      .from('member_profiles')
+      .select('user_id, program_delivered')
+      .in('user_id', userIds);
 
-    const free: UserWithRole[] = [];
-    const paid: UserWithRole[] = [];
+    const deliveredMap = new Map<string, boolean>();
+    memberProfiles?.forEach(mp => deliveredMap.set(mp.user_id, mp.program_delivered));
 
-    profiles.forEach(p => {
-      const userRoles = roleMap.get(p.id) || ['free'];
-      const highestRole = userRoles.includes('admin') ? 'admin'
-        : userRoles.includes('pt_admin') ? 'pt_admin'
-        : userRoles.includes('paid') ? 'paid'
-        : 'free';
+    const rows: MemberRow[] = (profiles || []).map(p => ({
+      id: p.id,
+      full_name: p.full_name,
+      avatar_url: p.avatar_url,
+      selected_plan: p.selected_plan,
+      session_count: p.session_count,
+      group_size: p.group_size,
+      created_at: p.created_at,
+      program_delivered: deliveredMap.get(p.id) ?? false,
+    }));
 
-      const user: UserWithRole = { ...p, role: highestRole };
-      if (['paid', 'admin', 'pt_admin'].includes(highestRole)) {
-        paid.push(user);
-      } else {
-        free.push(user);
-      }
-    });
-
-    setFreeUsers(free);
-    setPaidUsers(paid);
+    setMembers(rows);
     setLoading(false);
   };
 
@@ -72,65 +83,129 @@ export default function AdminMembers() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'admin': return <Badge className="bg-primary text-primary-foreground">Coach</Badge>;
-      case 'pt_admin': return <Badge className="bg-accent text-accent-foreground">PT</Badge>;
-      case 'paid': return <Badge className="bg-accent/20 text-accent-foreground border-accent/30">Paid</Badge>;
-      default: return <Badge variant="secondary">Free</Badge>;
-    }
+  const getPlanLabel = (plan: string | null) => {
+    if (!plan) return 'Unknown';
+    if (plan.toLowerCase().includes('online')) return 'Online';
+    if (plan.toLowerCase().includes('person')) return 'In-person';
+    return plan;
   };
 
-  const UserList = ({ users, emptyMsg }: { users: UserWithRole[]; emptyMsg: string }) => (
-    <div className="space-y-2">
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : users.length === 0 ? (
-        <p className="text-muted-foreground text-center py-8 text-sm">{emptyMsg}</p>
-      ) : (
-        users.map(user => (
-          <div key={user.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border">
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                {getInitials(user.full_name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.full_name || 'Unnamed User'}</p>
-              <p className="text-xs text-muted-foreground">
-                Joined {new Date(user.created_at).toLocaleDateString()}
-              </p>
-            </div>
-            {getRoleBadge(user.role)}
-          </div>
-        ))
-      )}
-    </div>
-  );
+  const isInPerson = (plan: string | null) => {
+    return plan?.toLowerCase().includes('person') ?? false;
+  };
+
+  const getGroupLabel = (size: string | null) => {
+    if (size === '2') return 'Partner';
+    if (size === '3') return 'Trio';
+    return 'Solo';
+  };
+
+  const filtered = members.filter(m => {
+    if (search) {
+      const q = search.toLowerCase();
+      if (!(m.full_name || '').toLowerCase().includes(q)) return false;
+    }
+    if (planFilter === 'online' && !m.selected_plan?.toLowerCase().includes('online')) return false;
+    if (planFilter === 'inperson' && !m.selected_plan?.toLowerCase().includes('person')) return false;
+    if (statusFilter === 'delivered' && !m.program_delivered) return false;
+    if (statusFilter === 'pending' && m.program_delivered) return false;
+    return true;
+  });
 
   return (
     <AdminLayout title="Members">
-      <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
-        <Tabs defaultValue="free">
-          <TabsList className="w-full">
-            <TabsTrigger value="free" className="flex-1 gap-1.5 text-xs">
-              <Users className="w-3.5 h-3.5" />
-              Free ({freeUsers.length})
-            </TabsTrigger>
-            <TabsTrigger value="paid" className="flex-1 gap-1.5 text-xs">
-              <Crown className="w-3.5 h-3.5" />
-              Paid ({paidUsers.length})
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="free">
-            <UserList users={freeUsers} emptyMsg="No free users yet" />
-          </TabsContent>
-          <TabsContent value="paid">
-            <UserList users={paidUsers} emptyMsg="No paid users yet" />
-          </TabsContent>
-        </Tabs>
+      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={planFilter} onValueChange={setPlanFilter}>
+            <SelectTrigger className="w-full sm:w-[140px]">
+              <SelectValue placeholder="Plan type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All plans</SelectItem>
+              <SelectItem value="online">Online</SelectItem>
+              <SelectItem value="inperson">In-person</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectValue placeholder="Program status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <p className="text-xs text-muted-foreground">{filtered.length} member{filtered.length !== 1 ? 's' : ''}</p>
+
+        {/* Member List */}
+        <div className="space-y-2">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-12">No members found.</p>
+          ) : (
+            filtered.map(member => (
+              <Card
+                key={member.id}
+                className="p-3 md:p-4 cursor-pointer hover:bg-muted/40 transition-colors"
+                onClick={() => navigate(`/admin/members/${member.id}`)}
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 shrink-0">
+                    {member.avatar_url && <AvatarImage src={member.avatar_url} />}
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                      {getInitials(member.full_name)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{member.full_name || 'Unnamed'}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {getPlanLabel(member.selected_plan)}
+                      </Badge>
+                      {isInPerson(member.selected_plan) && member.session_count && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {member.session_count} sessions
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        {getGroupLabel(member.group_size)}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                        Since {format(new Date(member.created_at), 'MMM yyyy')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {member.program_delivered ? (
+                      <Badge className="bg-chart-2/15 text-chart-2 border-chart-2/30 text-[10px]">Delivered</Badge>
+                    ) : (
+                      <Badge className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30 text-[10px]">Pending</Badge>
+                    )}
+                    <ChevronRight className="w-4 h-4 text-muted-foreground hidden sm:block" />
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
     </AdminLayout>
   );
