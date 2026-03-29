@@ -87,6 +87,51 @@ export type Database = {
           },
         ]
       }
+      coaches: {
+        Row: {
+          bio: string
+          created_at: string
+          credentials: string[]
+          id: string
+          initials: string
+          name: string
+          photo_url: string | null
+          sort_order: number
+          specialties: string[]
+          title: string
+          updated_at: string
+          years_experience: string
+        }
+        Insert: {
+          bio: string
+          created_at?: string
+          credentials?: string[]
+          id?: string
+          initials: string
+          name: string
+          photo_url?: string | null
+          sort_order?: number
+          specialties?: string[]
+          title: string
+          updated_at?: string
+          years_experience?: string
+        }
+        Update: {
+          bio?: string
+          created_at?: string
+          credentials?: string[]
+          id?: string
+          initials?: string
+          name?: string
+          photo_url?: string | null
+          sort_order?: number
+          specialties?: string[]
+          title?: string
+          updated_at?: string
+          years_experience?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string

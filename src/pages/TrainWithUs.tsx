@@ -1,150 +1,171 @@
+import { useEffect, useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Check, MessageCircle, Dumbbell, RefreshCw, Sparkles } from 'lucide-react';
+import { Award, CheckCircle2, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
-const onlineFeatures = [
-  { icon: Dumbbell, text: 'Personalized workout program' },
-  { icon: MessageCircle, text: '1:1 messaging with coaches' },
-  { icon: RefreshCw, text: 'Weekly program adjustments' },
-  { icon: Sparkles, text: 'All free features included' },
-];
-
-const inPersonPricing = {
-  headers: ['Solo', 'Partner', 'Trio'],
-  savings: ['', '20% off', '30% off'],
-  rows: [
-    { sessions: '4 sessions', prices: ['$200', '$160', '$140'] },
-    { sessions: '8 sessions', prices: ['$400', '$320', '$280'] },
-    { sessions: '12 sessions', prices: ['$600', '$480', '$420'] },
-  ],
-  perPerson: [false, true, true],
-};
+interface Coach {
+  id: string;
+  name: string;
+  initials: string;
+  title: string;
+  years_experience: string;
+  bio: string;
+  specialties: string[];
+  credentials: string[];
+  photo_url: string | null;
+  sort_order: number;
+}
 
 export default function TrainWithUs() {
   const { isPaidMember } = useAuth();
   const navigate = useNavigate();
+  const [coaches, setCoaches] = useState<Coach[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCoaches = async () => {
+      const { data } = await supabase
+        .from('coaches')
+        .select('*')
+        .order('sort_order', { ascending: true });
+      if (data) setCoaches(data as Coach[]);
+      setLoading(false);
+    };
+    fetchCoaches();
+  }, []);
 
   return (
-    <AppLayout title="Train With Us">
+    <AppLayout title="The Team">
       <div className="max-w-lg mx-auto px-4 pb-8 space-y-8">
-        {/* Hero */}
-        <div className="text-center pt-4 space-y-2">
+        {/* Section heading */}
+        <div className="pt-6 space-y-2">
           <h1 className="font-display text-2xl font-semibold tracking-editorial text-foreground">
-            Train with Javier &amp; Elizabeth
+            Your coaches
           </h1>
-          <p className="text-muted-foreground text-sm">
-            Personalized coaching, real results.
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            The people behind your program — real coaches, real experience, real results.
           </p>
         </div>
 
-        {/* Trainer Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { name: 'Javier Busutil', initials: 'JB' },
-            { name: 'Elizabeth Busutil', initials: 'EB' },
-          ].map((trainer) => (
-            <Card key={trainer.name} className="flex flex-col items-center py-5 px-3 gap-2.5">
-              <Avatar className="w-16 h-16">
-                <AvatarFallback className="bg-secondary text-foreground text-lg font-medium">
-                  {trainer.initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-center">
-                <p className="font-medium text-sm text-foreground">{trainer.name}</p>
-                <p className="text-xs text-muted-foreground">Coach</p>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Online Training */}
-        <section className="space-y-3">
-          <h2 className="font-display text-lg font-medium tracking-editorial text-foreground">
-            Online Training
-          </h2>
-          <Card className="p-5 space-y-4">
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-semibold text-foreground">$99</span>
-              <span className="text-sm text-muted-foreground">/month per person</span>
-            </div>
-            <ul className="space-y-2.5">
-              {onlineFeatures.map((f) => (
-                <li key={f.text} className="flex items-center gap-2.5 text-sm text-foreground">
-                  <Check className="w-4 h-4 text-accent shrink-0" />
-                  {f.text}
-                </li>
-              ))}
-            </ul>
-            <Button className="w-full" variant="accent" onClick={() => navigate('/upgrade')}>
-              Get started
-            </Button>
-          </Card>
-        </section>
-
-        {/* In-Person Training */}
-        <section className="space-y-3">
-          <h2 className="font-display text-lg font-medium tracking-editorial text-foreground">
-            In-Person Training
-          </h2>
-          <Card className="p-0 overflow-hidden">
-            {/* Header row */}
-            <div className="grid grid-cols-4 border-b border-border">
-              <div className="p-3" />
-              {inPersonPricing.headers.map((h, i) => (
-                <div key={h} className="p-3 text-center space-y-1">
-                  <p className="text-sm font-medium text-foreground">{h}</p>
-                  {inPersonPricing.savings[i] && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 font-normal">
-                      {inPersonPricing.savings[i]}
-                    </Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Price rows */}
-            {inPersonPricing.rows.map((row, ri) => (
-              <div
-                key={row.sessions}
-                className={`grid grid-cols-4 ${ri < inPersonPricing.rows.length - 1 ? 'border-b border-border' : ''}`}
+        {/* Coach cards */}
+        {loading ? (
+          <div className="space-y-6">
+            {[1, 2].map((i) => (
+              <Card key={i} className="p-8 animate-pulse space-y-4">
+                <div className="w-28 h-28 rounded-full bg-muted mx-auto" />
+                <div className="h-5 bg-muted rounded w-1/2 mx-auto" />
+                <div className="h-3 bg-muted rounded w-1/3 mx-auto" />
+                <div className="h-20 bg-muted rounded" />
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {coaches.map((coach) => (
+              <Card
+                key={coach.id}
+                className="p-6 bg-card/60 border-border/40 space-y-6"
               >
-                <div className="p-3 flex items-center">
-                  <span className="text-xs font-medium text-muted-foreground">{row.sessions}</span>
+                {/* Photo & name */}
+                <div className="flex flex-col items-center space-y-3">
+                  <Avatar className="w-28 h-28 border-2 border-primary/20">
+                    {coach.photo_url ? (
+                      <AvatarImage
+                        src={coach.photo_url}
+                        alt={coach.name}
+                        className="object-cover"
+                      />
+                    ) : null}
+                    <AvatarFallback className="text-2xl font-display font-semibold bg-secondary text-secondary-foreground">
+                      {coach.initials}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="text-center space-y-1">
+                    <h2 className="font-display text-xl font-semibold text-foreground">
+                      {coach.name}
+                    </h2>
+                    <p className="text-muted-foreground text-sm">{coach.title}</p>
+                  </div>
+
+                  <Badge variant="secondary" className="text-xs font-medium">
+                    {coach.years_experience} years experience
+                  </Badge>
                 </div>
-                {row.prices.map((price, ci) => (
-                  <div key={ci} className="p-2.5 text-center space-y-1.5">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{price}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        /mo{inPersonPricing.perPerson[ci] ? ' per person' : ''}
-                      </p>
-                    </div>
+
+                {/* About */}
+                <div className="space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    About
+                  </p>
+                  <p className="text-sm text-foreground/90 leading-relaxed">
+                    {coach.bio}
+                  </p>
+                </div>
+
+                {/* Specialties */}
+                <div className="space-y-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Specialties
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {coach.specialties.map((s) => (
+                      <Badge
+                        key={s}
+                        variant="secondary"
+                        className="text-xs font-normal bg-secondary/60"
+                      >
+                        {s}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Credentials */}
+                <div className="space-y-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Credentials
+                  </p>
+                  <div className="space-y-1.5">
+                    {coach.credentials.map((c) => (
+                      <div key={c} className="flex items-start gap-2">
+                        <Award className="w-3.5 h-3.5 mt-0.5 text-primary/70 shrink-0" />
+                        <span className="text-sm text-foreground/80">{c}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* CTA */}
+                {!isPaidMember ? (
+                  <div className="pt-2 border-t border-border/30 space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Want to train with {coach.name.split(' ')[0]}?
+                    </p>
                     <Button
-                      variant="outline"
                       size="sm"
-                      className="text-[10px] h-7 px-2"
+                      variant="secondary"
                       onClick={() => navigate('/upgrade')}
                     >
-                      Book a call
+                      See coaching plans
                     </Button>
                   </div>
-                ))}
-              </div>
+                ) : (
+                  <div className="pt-2 border-t border-border/30 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-chart-2" />
+                    <p className="text-sm text-chart-2 font-medium">
+                      You're currently training with {coach.name.split(' ')[0]}.
+                    </p>
+                  </div>
+                )}
+              </Card>
             ))}
-          </Card>
-        </section>
-
-        {/* Free user banner */}
-        {!isPaidMember && (
-          <div className="rounded-xl bg-secondary/60 border border-border px-4 py-3 text-center">
-            <p className="text-xs text-muted-foreground">
-              You're on the free plan — you keep all your current features when you upgrade.
-            </p>
           </div>
         )}
       </div>
