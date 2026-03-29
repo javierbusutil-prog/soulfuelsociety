@@ -28,6 +28,7 @@ import JoinGroup from "./pages/JoinGroup";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMembers from "./pages/admin/AdminMembers";
 import AdminMemberDetail from "./pages/admin/AdminMemberDetail";
+import AdminProgramBuilder from "./pages/admin/AdminProgramBuilder";
 import AdminPrograms from "./pages/admin/AdminPrograms";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminSessions from "./pages/admin/AdminSessions";
@@ -137,6 +138,7 @@ function AppRoutes() {
       <Route path="/admin" element={<CoachRoute><AdminDashboard /></CoachRoute>} />
       <Route path="/admin/members" element={<CoachRoute><AdminMembers /></CoachRoute>} />
       <Route path="/admin/members/:id" element={<CoachRoute><AdminMemberDetail /></CoachRoute>} />
+      <Route path="/admin/members/:id/program" element={<CoachRoute><AdminProgramBuilder /></CoachRoute>} />
       <Route path="/admin/programs" element={<CoachRoute><AdminPrograms /></CoachRoute>} />
       <Route path="/admin/messages" element={<CoachRoute><AdminMessages /></CoachRoute>} />
       <Route path="/admin/sessions" element={<CoachRoute><AdminSessions /></CoachRoute>} />
