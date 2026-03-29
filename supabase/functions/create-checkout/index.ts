@@ -39,8 +39,8 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { plan, sessionCount, groupSize } = await req.json();
-    logStep("Checkout request", { plan, sessionCount, groupSize, email: user.email });
+    const { plan, sessionCount, groupSize, inviteToken, groupId } = await req.json();
+    logStep("Checkout request", { plan, sessionCount, groupSize, email: user.email, inviteToken });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
 
@@ -60,7 +60,7 @@ serve(async (req) => {
         customer_email: customerId ? undefined : user.email,
         line_items: [{ price: ONLINE_PRICE_ID, quantity: 1 }],
         mode: "subscription",
-        success_url: `${origin}/community?checkout=success`,
+        success_url: `${origin}/onboarding?checkout=success`,
         cancel_url: `${origin}/upgrade?checkout=cancelled`,
         metadata: { user_id: user.id, plan: "online" },
       };
@@ -69,6 +69,18 @@ serve(async (req) => {
       const rate = SESSION_RATES[groupSize] || SESSION_RATES.solo;
       const totalCents = rate * (sessionCount || 4);
       const groupLabel = groupSize === "solo" ? "Solo" : groupSize === "partner" ? "Partner" : "Trio";
+
+      // Determine success URL based on context
+      let successUrl: string;
+      if (inviteToken) {
+        // Invited member paying — go to onboarding
+        successUrl = `${origin}/onboarding?checkout=success&invite_token=${inviteToken}`;
+      } else if (groupSize === "solo") {
+        successUrl = `${origin}/onboarding?checkout=success`;
+      } else {
+        // Group organizer — redirect to invite page
+        successUrl = `${origin}/invite?checkout=success`;
+      }
 
       sessionConfig = {
         customer: customerId,
@@ -85,13 +97,14 @@ serve(async (req) => {
           quantity: 1,
         }],
         mode: "subscription",
-        success_url: `${origin}/${groupSize === "solo" ? "community" : "community"}?checkout=success`,
+        success_url: successUrl,
         cancel_url: `${origin}/upgrade?checkout=cancelled`,
         metadata: {
           user_id: user.id,
           plan: "in_person",
           session_count: String(sessionCount),
           group_size: groupSize,
+          ...(inviteToken ? { invite_token: inviteToken, group_id: groupId } : {}),
         },
       };
     }
