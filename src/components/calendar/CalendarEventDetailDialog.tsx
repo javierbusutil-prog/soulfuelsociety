@@ -296,6 +296,20 @@ export function CalendarEventDetailDialog({
             </p>
           )}
 
+          {/* Cancel session button — only for session events */}
+          {isSessionEvent && bookingId && !event.completed && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full gap-2"
+              onClick={handleCancelSession}
+              disabled={cancelling}
+            >
+              <XCircle className="w-4 h-4" />
+              {cancelling ? 'Cancelling...' : 'Cancel session'}
+            </Button>
+          )}
+
           {/* Complete Button */}
           <Button
             className="w-full"
