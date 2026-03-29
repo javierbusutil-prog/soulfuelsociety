@@ -1,0 +1,143 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { BookOpen, ChevronDown, ChevronRight, Minus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { startOfWeek, differenceInWeeks } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+interface DayPlan {
+  isRest: boolean;
+  restNote?: string;
+  blocks: any[];
+}
+
+interface WeekPlan {
+  days: DayPlan[];
+}
+
+function getDaySummary(day: DayPlan): string {
+  if (day.isRest) return 'Rest day';
+  const parts: string[] = [];
+  for (const block of day.blocks) {
+    if (block.type === 'strength') parts.push(`Strength · ${block.exercises?.length || 0} exercises`);
+    else if (block.type === 'cardio') parts.push('Cardio');
+    else if (block.type === 'mobility') parts.push('Mobility');
+    else if (block.type === 'nutrition') parts.push('Nutrition');
+  }
+  return parts.join(' + ') || 'Active day';
+}
+
+export function SupplementalProgramCard() {
+  const { user } = useAuth();
+  const [program, setProgram] = useState<{ weeks: WeekPlan[]; created_at: string } | null>(null);
+  const [currentWeekIdx, setCurrentWeekIdx] = useState(0);
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetch = async () => {
+      const { data } = await supabase
+        .from('coaching_programs')
+        .select('program_data, created_at')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .eq('plan_type', 'inperson_supplemental' as any)
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        const pd = data.program_data as any;
+        if (pd?.weeks && Array.isArray(pd.weeks)) {
+          const programStart = startOfWeek(new Date(data.created_at), { weekStartsOn: 1 });
+          const now = startOfWeek(new Date(), { weekStartsOn: 1 });
+          const weekDiff = differenceInWeeks(now, programStart);
+          const idx = Math.max(0, Math.min(weekDiff, pd.weeks.length - 1));
+          setCurrentWeekIdx(idx);
+          setProgram({ weeks: pd.weeks, created_at: data.created_at });
+        }
+      }
+      setLoading(false);
+    };
+    fetch();
+  }, [user]);
+
+  if (loading || !program) return null;
+
+  const week = program.weeks[currentWeekIdx];
+
+  return (
+    <Card className="p-4 space-y-3 border-accent/30 bg-accent/5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-accent-foreground" />
+          <h3 className="text-sm font-semibold">Between-session work</h3>
+        </div>
+        <Badge variant="outline" className="text-[10px]">
+          Week {currentWeekIdx + 1} of {program.weeks.length}
+        </Badge>
+      </div>
+
+      <div className="space-y-1">
+        {week.days.map((day, di) => (
+          <Collapsible
+            key={di}
+            open={expandedDay === di}
+            onOpenChange={() => setExpandedDay(expandedDay === di ? null : di)}
+          >
+            <CollapsibleTrigger className="w-full flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors text-left">
+              {expandedDay === di ? (
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              )}
+              <span className="text-sm font-medium w-20 shrink-0">{DAY_NAMES[di]}</span>
+              <span className="text-xs text-muted-foreground flex-1 truncate">{getDaySummary(day)}</span>
+              {day.isRest && <Minus className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />}
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="ml-7 mr-3 mb-2 space-y-2">
+                {day.isRest ? (
+                  <p className="text-xs text-muted-foreground italic">{day.restNote || 'Rest and recover.'}</p>
+                ) : (
+                  day.blocks.map((block: any, bi: number) => (
+                    <div key={bi} className="bg-muted/40 rounded-lg p-2.5 space-y-1.5">
+                      <p className="text-[10px] uppercase tracking-wider text-primary font-medium">{block.type}</p>
+                      {block.type === 'strength' && block.exercises?.map((ex: any, ei: number) => (
+                        <div key={ei} className="flex items-baseline justify-between">
+                          <span className="text-xs font-medium">{ex.name}</span>
+                          <span className="text-[11px] text-muted-foreground">{ex.sets}×{ex.reps}{ex.weight ? ` @ ${ex.weight}` : ''}</span>
+                        </div>
+                      ))}
+                      {block.type === 'cardio' && <p className="text-xs">{block.activity} — {block.duration}</p>}
+                      {block.type === 'mobility' && block.exercises?.map((ex: any, ei: number) => (
+                        <div key={ei} className="flex items-baseline justify-between">
+                          <span className="text-xs font-medium">{ex.name}</span>
+                          <span className="text-[11px] text-muted-foreground">{ex.duration}</span>
+                        </div>
+                      ))}
+                      {block.type === 'nutrition' && <p className="text-xs whitespace-pre-wrap">{block.content}</p>}
+                    </div>
+                  ))
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        ))}
+      </div>
+
+      <div className="pt-2 border-t border-border">
+        <Button asChild size="sm" variant="outline" className="w-full text-xs">
+          <Link to="/workouts">View full program</Link>
+        </Button>
+      </div>
+    </Card>
+  );
+}
