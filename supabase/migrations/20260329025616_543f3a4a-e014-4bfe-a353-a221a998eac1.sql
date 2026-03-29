@@ -1,0 +1,1 @@
+ALTER TABLE public.member_profiles ADD COLUMN program_delivered boolean NOT NULL DEFAULT false;

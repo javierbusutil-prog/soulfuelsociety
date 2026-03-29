@@ -797,6 +797,7 @@ export type Database = {
           preferred_days: string[] | null
           preferred_time: string | null
           primary_goal: string
+          program_delivered: boolean
           training_days_per_week: number
           updated_at: string
           user_id: string
@@ -810,6 +811,7 @@ export type Database = {
           preferred_days?: string[] | null
           preferred_time?: string | null
           primary_goal?: string
+          program_delivered?: boolean
           training_days_per_week?: number
           updated_at?: string
           user_id: string
@@ -823,6 +825,7 @@ export type Database = {
           preferred_days?: string[] | null
           preferred_time?: string | null
           primary_goal?: string
+          program_delivered?: boolean
           training_days_per_week?: number
           updated_at?: string
           user_id?: string
