@@ -1373,6 +1373,7 @@ export type Database = {
             | Database["public"]["Enums"]["subscription_status"]
             | null
           updated_at: string
+          waiver_accepted: boolean
         }
         Insert: {
           assigned_coach_id?: string | null
@@ -1392,6 +1393,7 @@ export type Database = {
             | Database["public"]["Enums"]["subscription_status"]
             | null
           updated_at?: string
+          waiver_accepted?: boolean
         }
         Update: {
           assigned_coach_id?: string | null
@@ -1411,6 +1413,7 @@ export type Database = {
             | Database["public"]["Enums"]["subscription_status"]
             | null
           updated_at?: string
+          waiver_accepted?: boolean
         }
         Relationships: [
           {
@@ -1832,6 +1835,33 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      waiver_acceptances: {
+        Row: {
+          accepted_at: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+          waiver_version: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+          waiver_version?: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string
+          waiver_version?: string
         }
         Relationships: []
       }

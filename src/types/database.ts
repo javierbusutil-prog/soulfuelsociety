@@ -24,6 +24,8 @@ export interface Profile {
   group_size: string | null;
   assigned_coach_id: string | null;
   assigned_pt_id: string | null;
+  has_completed_onboarding: boolean;
+  waiver_accepted: boolean;
   created_at: string;
   updated_at: string;
 }
