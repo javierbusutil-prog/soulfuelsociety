@@ -29,6 +29,7 @@ import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { EditEventDialog } from '@/components/calendar/EditEventDialog';
 import { CalendarEventDetailDialog } from '@/components/calendar/CalendarEventDetailDialog';
 import { DayEventsDialog } from '@/components/calendar/DayEventsDialog';
+import { LogWorkoutDialog, WorkoutLog } from '@/components/calendar/LogWorkoutDialog';
 
 import { FastSessionEntry } from '@/components/calendar/FastSessionEntry';
 import { LogPeriodDialog } from '@/components/calendar/LogPeriodDialog';
@@ -119,6 +120,8 @@ export default function Calendar() {
   const [calendarFilter, setCalendarFilter] = useState<'all' | 'workouts' | 'cycle'>('all');
   const [showPeriodLog, setShowPeriodLog] = useState(false);
   const [showDayEvents, setShowDayEvents] = useState(false);
+  const [showWorkoutLog, setShowWorkoutLog] = useState(false);
+  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       return Notification.permission === 'granted';
@@ -243,12 +246,27 @@ export default function Calendar() {
     }
   }, [user]);
 
+  const fetchWorkoutLogs = useCallback(async () => {
+    if (!user) return;
+    const start = format(startOfMonth(subMonths(currentDate, 1)), 'yyyy-MM-dd');
+    const end = format(endOfMonth(addMonths(currentDate, 2)), 'yyyy-MM-dd');
+    const { data } = await supabase
+      .from('calendar_events')
+      .select('id, title, description, event_date')
+      .eq('user_id', user.id)
+      .eq('event_type', 'workout_log')
+      .gte('event_date', start)
+      .lte('event_date', end);
+    if (data) setWorkoutLogs(data as WorkoutLog[]);
+  }, [user, currentDate]);
+
   useEffect(() => {
     fetchEvents();
     if (user) {
       fetchCompletions();
+      fetchWorkoutLogs();
     }
-  }, [user, fetchEvents, fetchCompletions]);
+  }, [user, fetchEvents, fetchCompletions, fetchWorkoutLogs]);
 
   const handleComplete = async (eventId: string) => {
     if (!user) return;
@@ -303,6 +321,13 @@ export default function Calendar() {
   const getFastSessionsForDay = (day: Date) => {
     return getSessionsForDate(day);
   };
+
+  const getWorkoutLogForDay = (day: Date) => {
+    const dayStr = format(day, 'yyyy-MM-dd');
+    return workoutLogs.find(l => l.event_date === dayStr) || null;
+  };
+
+  const selectedDayWorkoutLog = getWorkoutLogForDay(selectedDate);
 
   // Data for the day events dialog
   const selectedDayEvents = getEventsForDay(selectedDate);
@@ -362,7 +387,46 @@ export default function Calendar() {
     } else {
       lastClickRef.current = { date: dayKey, time: now };
       setSelectedDate(day);
+      // Single click opens workout log dialog after a brief delay (to not conflict with double-click)
+      setTimeout(() => {
+        if (lastClickRef.current && lastClickRef.current.date === dayKey) {
+          setShowWorkoutLog(true);
+        }
+      }, 420);
     }
+  };
+
+  const handleSaveWorkoutLog = async (title: string, details: string) => {
+    if (!user) return;
+    const dayStr = format(selectedDate, 'yyyy-MM-dd');
+    const existing = getWorkoutLogForDay(selectedDate);
+
+    if (existing) {
+      await supabase
+        .from('calendar_events')
+        .update({ title, description: details || null })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('calendar_events')
+        .insert({
+          user_id: user.id,
+          event_date: dayStr,
+          event_type: 'workout_log',
+          title,
+          description: details || null,
+        });
+    }
+    fetchWorkoutLogs();
+    checkWorkoutCompletion();
+    toast({ title: existing ? 'Workout updated' : 'Workout logged' });
+  };
+
+  const handleDeleteWorkoutLog = async (id: string) => {
+    await supabase.from('calendar_events').delete().eq('id', id);
+    fetchWorkoutLogs();
+    checkWorkoutCompletion();
+    toast({ title: 'Workout deleted' });
   };
 
   return (
@@ -477,7 +541,8 @@ export default function Calendar() {
                   const isFertile = isFertileDay(day);
                   const isOvulation = isOvulationDay(day);
                   const showCycle = !hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle');
-                  const hasAnyEvent = dayEvents.length > 0 || dayCalendarEvents.length > 0 || dayFastSessions.length > 0;
+                  const dayWorkoutLog = getWorkoutLogForDay(day);
+                  const hasWorkoutLog = !!dayWorkoutLog;
 
                   return (
                     <motion.button
@@ -487,10 +552,11 @@ export default function Calendar() {
                       transition={{ delay: index * 0.01 }}
                       onClick={() => handleDayClick(day)}
                       className={`
-                        aspect-square rounded-lg flex flex-col items-center justify-center relative transition-colors
+                        aspect-square rounded-lg flex flex-col items-center justify-center relative transition-colors overflow-hidden
                         ${isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'}
-                        ${isTodayDate && !isSelected ? 'ring-2 ring-primary' : ''}
+                        ${isTodayDate && !isSelected ? 'ring-2 ring-primary bg-primary/10' : ''}
                         ${!isSameMonth(day, currentDate) ? 'opacity-30' : ''}
+                        ${hasWorkoutLog && !isSelected && !isTodayDate ? 'bg-accent/60' : ''}
                         ${showCycle && hasPeriod && !isSelected ? 'bg-rose-100 dark:bg-rose-900/30' : ''}
                         ${showCycle && isPredicted && !hasPeriod && !isSelected ? 'bg-rose-50 dark:bg-rose-900/15 ring-1 ring-rose-300/50 ring-inset' : ''}
                         ${showCycle && isOvulation && !hasPeriod && !isPredicted && !isSelected ? 'bg-violet-100 dark:bg-violet-900/30' : ''}
@@ -498,6 +564,13 @@ export default function Calendar() {
                       `}
                     >
                       <span className="text-sm font-medium">{format(day, 'd')}</span>
+                      {hasWorkoutLog && (
+                        <span className={`text-[7px] leading-tight truncate max-w-full px-0.5 ${
+                          isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                        }`}>
+                          {dayWorkoutLog.title}
+                        </span>
+                      )}
                       <div className="flex gap-0.5 mt-0.5">
                         {(calendarFilter === 'all' || calendarFilter === 'workouts') && (
                           <>
@@ -584,7 +657,7 @@ export default function Calendar() {
             )}
 
             {/* Hint for double-click */}
-            <p className="text-xs text-muted-foreground mb-4">Double-tap a day to view its events</p>
+            <p className="text-xs text-muted-foreground mb-4">Tap a day to log a workout · Double-tap to view all events</p>
 
             {/* Today's Habits */}
             <div className="mb-6">
@@ -736,6 +809,15 @@ export default function Calendar() {
         existingEntry={getEntriesForDate(selectedDate)}
         onTogglePeriod={togglePeriodDay}
         onUpdateEntry={updateCycleEntry}
+      />
+
+      <LogWorkoutDialog
+        open={showWorkoutLog}
+        onOpenChange={setShowWorkoutLog}
+        date={selectedDate}
+        existingLog={selectedDayWorkoutLog}
+        onSave={handleSaveWorkoutLog}
+        onDelete={handleDeleteWorkoutLog}
       />
     </AppLayout>
   );
