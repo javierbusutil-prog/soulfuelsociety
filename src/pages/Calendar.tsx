@@ -822,6 +822,21 @@ export default function Calendar() {
         onSave={handleSaveWorkoutLog}
         onDelete={handleDeleteWorkoutLog}
       />
+
+      <DayActionDialog
+        open={showDayAction}
+        onOpenChange={setShowDayAction}
+        date={selectedDate}
+        onAddEvent={() => setShowCreateEvent(true)}
+        onLogWorkout={() => setShowWorkoutLog(true)}
+      />
+
+      <CreateEventDialog
+        onEventCreated={fetchEvents}
+        selectedDate={selectedDate}
+        externalOpen={showCreateEvent}
+        onExternalOpenChange={setShowCreateEvent}
+      />
     </AppLayout>
   );
 }
