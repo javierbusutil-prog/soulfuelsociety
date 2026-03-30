@@ -29,6 +29,7 @@ import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { EditEventDialog } from '@/components/calendar/EditEventDialog';
 import { CalendarEventDetailDialog } from '@/components/calendar/CalendarEventDetailDialog';
 import { DayEventsDialog } from '@/components/calendar/DayEventsDialog';
+import { LogWorkoutDialog, WorkoutLog } from '@/components/calendar/LogWorkoutDialog';
 
 import { FastSessionEntry } from '@/components/calendar/FastSessionEntry';
 import { LogPeriodDialog } from '@/components/calendar/LogPeriodDialog';
