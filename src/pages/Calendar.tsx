@@ -246,12 +246,27 @@ export default function Calendar() {
     }
   }, [user]);
 
+  const fetchWorkoutLogs = useCallback(async () => {
+    if (!user) return;
+    const start = format(startOfMonth(subMonths(currentDate, 1)), 'yyyy-MM-dd');
+    const end = format(endOfMonth(addMonths(currentDate, 2)), 'yyyy-MM-dd');
+    const { data } = await supabase
+      .from('calendar_events')
+      .select('id, title, description, event_date')
+      .eq('user_id', user.id)
+      .eq('event_type', 'workout_log')
+      .gte('event_date', start)
+      .lte('event_date', end);
+    if (data) setWorkoutLogs(data as WorkoutLog[]);
+  }, [user, currentDate]);
+
   useEffect(() => {
     fetchEvents();
     if (user) {
       fetchCompletions();
+      fetchWorkoutLogs();
     }
-  }, [user, fetchEvents, fetchCompletions]);
+  }, [user, fetchEvents, fetchCompletions, fetchWorkoutLogs]);
 
   const handleComplete = async (eventId: string) => {
     if (!user) return;
