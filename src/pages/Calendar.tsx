@@ -541,7 +541,8 @@ export default function Calendar() {
                   const isFertile = isFertileDay(day);
                   const isOvulation = isOvulationDay(day);
                   const showCycle = !hideCycleMarkers && (calendarFilter === 'all' || calendarFilter === 'cycle');
-                  const hasAnyEvent = dayEvents.length > 0 || dayCalendarEvents.length > 0 || dayFastSessions.length > 0;
+                  const dayWorkoutLog = getWorkoutLogForDay(day);
+                  const hasWorkoutLog = !!dayWorkoutLog;
 
                   return (
                     <motion.button
@@ -551,10 +552,11 @@ export default function Calendar() {
                       transition={{ delay: index * 0.01 }}
                       onClick={() => handleDayClick(day)}
                       className={`
-                        aspect-square rounded-lg flex flex-col items-center justify-center relative transition-colors
+                        aspect-square rounded-lg flex flex-col items-center justify-center relative transition-colors overflow-hidden
                         ${isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary'}
-                        ${isTodayDate && !isSelected ? 'ring-2 ring-primary' : ''}
+                        ${isTodayDate && !isSelected ? 'ring-2 ring-primary bg-primary/10' : ''}
                         ${!isSameMonth(day, currentDate) ? 'opacity-30' : ''}
+                        ${hasWorkoutLog && !isSelected && !isTodayDate ? 'bg-accent/60' : ''}
                         ${showCycle && hasPeriod && !isSelected ? 'bg-rose-100 dark:bg-rose-900/30' : ''}
                         ${showCycle && isPredicted && !hasPeriod && !isSelected ? 'bg-rose-50 dark:bg-rose-900/15 ring-1 ring-rose-300/50 ring-inset' : ''}
                         ${showCycle && isOvulation && !hasPeriod && !isPredicted && !isSelected ? 'bg-violet-100 dark:bg-violet-900/30' : ''}
@@ -562,6 +564,13 @@ export default function Calendar() {
                       `}
                     >
                       <span className="text-sm font-medium">{format(day, 'd')}</span>
+                      {hasWorkoutLog && (
+                        <span className={`text-[7px] leading-tight truncate max-w-full px-0.5 ${
+                          isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                        }`}>
+                          {dayWorkoutLog.title}
+                        </span>
+                      )}
                       <div className="flex gap-0.5 mt-0.5">
                         {(calendarFilter === 'all' || calendarFilter === 'workouts') && (
                           <>
