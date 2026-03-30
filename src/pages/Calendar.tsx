@@ -481,7 +481,9 @@ export default function Calendar() {
             <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
               <ChevronRight className="w-5 h-5" />
             </Button>
-            <CreateEventDialog onEventCreated={fetchEvents} selectedDate={selectedDate} />
+            <Button size="icon" className="rounded-full" onClick={() => setShowDayAction(true)}>
+              <Plus className="w-5 h-5" />
+            </Button>
           </div>
         </div>
 
