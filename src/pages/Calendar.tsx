@@ -30,6 +30,7 @@ import { EditEventDialog } from '@/components/calendar/EditEventDialog';
 import { CalendarEventDetailDialog } from '@/components/calendar/CalendarEventDetailDialog';
 import { DayEventsDialog } from '@/components/calendar/DayEventsDialog';
 import { LogWorkoutDialog, WorkoutLog } from '@/components/calendar/LogWorkoutDialog';
+import { DayActionDialog } from '@/components/calendar/DayActionDialog';
 
 import { FastSessionEntry } from '@/components/calendar/FastSessionEntry';
 import { LogPeriodDialog } from '@/components/calendar/LogPeriodDialog';
@@ -121,6 +122,8 @@ export default function Calendar() {
   const [showPeriodLog, setShowPeriodLog] = useState(false);
   const [showDayEvents, setShowDayEvents] = useState(false);
   const [showWorkoutLog, setShowWorkoutLog] = useState(false);
+  const [showDayAction, setShowDayAction] = useState(false);
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -387,10 +390,10 @@ export default function Calendar() {
     } else {
       lastClickRef.current = { date: dayKey, time: now };
       setSelectedDate(day);
-      // Single click opens workout log dialog after a brief delay (to not conflict with double-click)
+      // Single click opens action chooser after a brief delay
       setTimeout(() => {
         if (lastClickRef.current && lastClickRef.current.date === dayKey) {
-          setShowWorkoutLog(true);
+          setShowDayAction(true);
         }
       }, 420);
     }
@@ -818,6 +821,21 @@ export default function Calendar() {
         existingLog={selectedDayWorkoutLog}
         onSave={handleSaveWorkoutLog}
         onDelete={handleDeleteWorkoutLog}
+      />
+
+      <DayActionDialog
+        open={showDayAction}
+        onOpenChange={setShowDayAction}
+        date={selectedDate}
+        onAddEvent={() => setShowCreateEvent(true)}
+        onLogWorkout={() => setShowWorkoutLog(true)}
+      />
+
+      <CreateEventDialog
+        onEventCreated={fetchEvents}
+        selectedDate={selectedDate}
+        externalOpen={showCreateEvent}
+        onExternalOpenChange={setShowCreateEvent}
       />
     </AppLayout>
   );
