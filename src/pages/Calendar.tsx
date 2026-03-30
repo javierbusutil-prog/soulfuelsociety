@@ -810,6 +810,15 @@ export default function Calendar() {
         onTogglePeriod={togglePeriodDay}
         onUpdateEntry={updateCycleEntry}
       />
+
+      <LogWorkoutDialog
+        open={showWorkoutLog}
+        onOpenChange={setShowWorkoutLog}
+        date={selectedDate}
+        existingLog={selectedDayWorkoutLog}
+        onSave={handleSaveWorkoutLog}
+        onDelete={handleDeleteWorkoutLog}
+      />
     </AppLayout>
   );
 }
