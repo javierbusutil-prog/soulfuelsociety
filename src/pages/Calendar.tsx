@@ -122,6 +122,8 @@ export default function Calendar() {
   const [showPeriodLog, setShowPeriodLog] = useState(false);
   const [showDayEvents, setShowDayEvents] = useState(false);
   const [showWorkoutLog, setShowWorkoutLog] = useState(false);
+  const [showDayAction, setShowDayAction] = useState(false);
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
