@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Droplets, Flame, Moon } from 'lucide-react';
+import { Check, Droplets, Flame, Moon, Dumbbell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyNutrition } from '@/hooks/useNutrition';
+import type { RingHabits } from '@/types/workoutPrograms';
 
 type ManualHabitField = 'protein_priority' | 'whole_foods_focus' | 'electrolyte_taken' | 'protein_goal_checked' | 'hydration_goal_checked' | 'fast_checked' | 'cycle_checked';
 
@@ -13,6 +14,8 @@ interface Props {
   cycleEnabled: boolean;
   proteinMet: boolean;
   hydrationMet: boolean;
+  workoutCompleted: boolean;
+  ringHabits: RingHabits;
 }
 
 interface HabitRowProps {
