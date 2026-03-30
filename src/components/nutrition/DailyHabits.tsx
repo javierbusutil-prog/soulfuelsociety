@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Droplets, Flame, Moon } from 'lucide-react';
+import { Check, Droplets, Flame, Moon, Dumbbell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyNutrition } from '@/hooks/useNutrition';
+import type { RingHabits } from '@/types/workoutPrograms';
 
 type ManualHabitField = 'protein_priority' | 'whole_foods_focus' | 'electrolyte_taken' | 'protein_goal_checked' | 'hydration_goal_checked' | 'fast_checked' | 'cycle_checked';
 
@@ -13,6 +14,8 @@ interface Props {
   cycleEnabled: boolean;
   proteinMet: boolean;
   hydrationMet: boolean;
+  workoutCompleted: boolean;
+  ringHabits: RingHabits;
 }
 
 interface HabitRowProps {
@@ -47,38 +50,54 @@ function HabitRow({ label, done, onToggle, icon }: HabitRowProps) {
   );
 }
 
-export function DailyHabits({ entry, toggleHabit, fastCompleted, cycleLogged, cycleEnabled, proteinMet, hydrationMet }: Props) {
+export function DailyHabits({ entry, toggleHabit, fastCompleted, cycleLogged, cycleEnabled, proteinMet, hydrationMet, workoutCompleted, ringHabits }: Props) {
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-sans font-semibold tracking-normal">Today's Habits</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        <HabitRow
-          label="Protein Goal"
-          done={proteinMet || (entry?.protein_goal_checked ?? false)}
-          onToggle={() => toggleHabit('protein_goal_checked')}
-          icon={<span className="text-base">🥩</span>}
-        />
-        <HabitRow
-          label="Hydration Goal"
-          done={hydrationMet || (entry?.hydration_goal_checked ?? false)}
-          onToggle={() => toggleHabit('hydration_goal_checked')}
-          icon={<Droplets className="w-4 h-4 text-sky-500" />}
-        />
-        <HabitRow
-          label="Whole Foods Focus"
-          done={entry?.whole_foods_focus || false}
-          onToggle={() => toggleHabit('whole_foods_focus')}
-          icon={<span className="text-base">🥗</span>}
-        />
-        <HabitRow
-          label="Fast Completed"
-          done={fastCompleted || (entry?.fast_checked ?? false)}
-          onToggle={() => toggleHabit('fast_checked')}
-          icon={<Flame className="w-4 h-4 text-accent" />}
-        />
-        {cycleEnabled && (
+        {ringHabits.workout && (
+          <HabitRow
+            label="Workout"
+            done={workoutCompleted}
+            onToggle={() => {}}
+            icon={<Dumbbell className="w-4 h-4 text-primary" />}
+          />
+        )}
+        {ringHabits.protein && (
+          <HabitRow
+            label="Protein Goal"
+            done={proteinMet || (entry?.protein_goal_checked ?? false)}
+            onToggle={() => toggleHabit('protein_goal_checked')}
+            icon={<span className="text-base">🥩</span>}
+          />
+        )}
+        {ringHabits.hydration && (
+          <HabitRow
+            label="Hydration Goal"
+            done={hydrationMet || (entry?.hydration_goal_checked ?? false)}
+            onToggle={() => toggleHabit('hydration_goal_checked')}
+            icon={<Droplets className="w-4 h-4 text-sky-500" />}
+          />
+        )}
+        {ringHabits.whole_foods && (
+          <HabitRow
+            label="Whole Foods Focus"
+            done={entry?.whole_foods_focus || false}
+            onToggle={() => toggleHabit('whole_foods_focus')}
+            icon={<span className="text-base">🥗</span>}
+          />
+        )}
+        {ringHabits.fasting && (
+          <HabitRow
+            label="Fast Completed"
+            done={fastCompleted || (entry?.fast_checked ?? false)}
+            onToggle={() => toggleHabit('fast_checked')}
+            icon={<Flame className="w-4 h-4 text-accent" />}
+          />
+        )}
+        {ringHabits.cycle_logging && cycleEnabled && (
           <HabitRow
             label="Cycle Logged"
             done={cycleLogged || (entry?.cycle_checked ?? false)}
