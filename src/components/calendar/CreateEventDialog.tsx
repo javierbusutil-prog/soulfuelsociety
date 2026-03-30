@@ -39,9 +39,14 @@ const recurrenceOptions = [
   { value: 'monthly', label: 'Monthly' },
 ];
 
-export function CreateEventDialog({ onEventCreated, selectedDate }: CreateEventDialogProps) {
+export function CreateEventDialog({ onEventCreated, selectedDate, externalOpen, onExternalOpenChange }: CreateEventDialogProps) {
   const { user, isAdmin } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (onExternalOpenChange) onExternalOpenChange(v);
+    setInternalOpen(v);
+  };
   const [loading, setLoading] = useState(false);
   
   const [title, setTitle] = useState('');
