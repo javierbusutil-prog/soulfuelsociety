@@ -387,7 +387,46 @@ export default function Calendar() {
     } else {
       lastClickRef.current = { date: dayKey, time: now };
       setSelectedDate(day);
+      // Single click opens workout log dialog after a brief delay (to not conflict with double-click)
+      setTimeout(() => {
+        if (lastClickRef.current && lastClickRef.current.date === dayKey) {
+          setShowWorkoutLog(true);
+        }
+      }, 420);
     }
+  };
+
+  const handleSaveWorkoutLog = async (title: string, details: string) => {
+    if (!user) return;
+    const dayStr = format(selectedDate, 'yyyy-MM-dd');
+    const existing = getWorkoutLogForDay(selectedDate);
+
+    if (existing) {
+      await supabase
+        .from('calendar_events')
+        .update({ title, description: details || null })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('calendar_events')
+        .insert({
+          user_id: user.id,
+          event_date: dayStr,
+          event_type: 'workout_log',
+          title,
+          description: details || null,
+        });
+    }
+    fetchWorkoutLogs();
+    checkWorkoutCompletion();
+    toast({ title: existing ? 'Workout updated' : 'Workout logged' });
+  };
+
+  const handleDeleteWorkoutLog = async (id: string) => {
+    await supabase.from('calendar_events').delete().eq('id', id);
+    fetchWorkoutLogs();
+    checkWorkoutCompletion();
+    toast({ title: 'Workout deleted' });
   };
 
   return (
