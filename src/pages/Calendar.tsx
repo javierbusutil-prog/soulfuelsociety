@@ -390,10 +390,10 @@ export default function Calendar() {
     } else {
       lastClickRef.current = { date: dayKey, time: now };
       setSelectedDate(day);
-      // Single click opens workout log dialog after a brief delay (to not conflict with double-click)
+      // Single click opens action chooser after a brief delay
       setTimeout(() => {
         if (lastClickRef.current && lastClickRef.current.date === dayKey) {
-          setShowWorkoutLog(true);
+          setShowDayAction(true);
         }
       }, 420);
     }
