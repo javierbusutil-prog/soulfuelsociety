@@ -19,6 +19,8 @@ import { EventType } from '@/types/database';
 interface CreateEventDialogProps {
   onEventCreated: () => void;
   selectedDate?: Date;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
 }
 
 const eventTypes: { value: EventType; label: string }[] = [
