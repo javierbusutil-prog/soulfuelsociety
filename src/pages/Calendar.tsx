@@ -596,6 +596,8 @@ export default function Calendar() {
                 cycleEnabled={!!cycleSettings && !cycleSettings.hide_cycle_markers}
                 proteinMet={proteinMet}
                 hydrationMet={hydrationMet}
+                workoutCompleted={workoutCompletedForRing}
+                ringHabits={ringHabits}
               />
             </div>
           </>
