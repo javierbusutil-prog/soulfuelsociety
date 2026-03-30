@@ -322,6 +322,13 @@ export default function Calendar() {
     return getSessionsForDate(day);
   };
 
+  const getWorkoutLogForDay = (day: Date) => {
+    const dayStr = format(day, 'yyyy-MM-dd');
+    return workoutLogs.find(l => l.event_date === dayStr) || null;
+  };
+
+  const selectedDayWorkoutLog = getWorkoutLogForDay(selectedDate);
+
   // Data for the day events dialog
   const selectedDayEvents = getEventsForDay(selectedDate);
   const selectedDayCalendarEvents = getCalendarEventsForDay(selectedDate);
