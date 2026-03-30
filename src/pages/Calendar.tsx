@@ -657,7 +657,7 @@ export default function Calendar() {
             )}
 
             {/* Hint for double-click */}
-            <p className="text-xs text-muted-foreground mb-4">Double-tap a day to view its events</p>
+            <p className="text-xs text-muted-foreground mb-4">Tap a day to log a workout · Double-tap to view all events</p>
 
             {/* Today's Habits */}
             <div className="mb-6">
