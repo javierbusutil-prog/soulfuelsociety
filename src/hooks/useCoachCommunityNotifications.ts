@@ -19,10 +19,12 @@ export function useCoachCommunityNotifications() {
 
   const markAsRead = async () => {
     if (!user) return;
-    // We need to use an edge function or rpc since notifications table doesn't allow updates
-    // Instead, let's fetch all unread and mark them read one by one via the existing pattern
-    // Actually, looking at the notifications table - it has no UPDATE policy.
-    // We'll need to handle this differently. For now, let's just track locally.
+    await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('user_id', user.id)
+      .eq('type', 'community_post')
+      .eq('read', false);
     setUnreadCount(0);
   };
 
