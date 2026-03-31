@@ -143,7 +143,7 @@ function SmartRedirect() {
       </div>
     );
   }
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Landing />;
   if (isAdmin || isPTAdmin) return <Navigate to="/admin" replace />;
   return <Navigate to="/community" replace />;
 }
