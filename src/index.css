@@ -53,6 +53,11 @@
     /* Custom tokens */
     --success: 160 35% 40%;
     --success-foreground: 60 20% 97%;
+
+    /* Landing page tokens */
+    --landing-bg: 24 33% 97%;
+    --landing-navy: 213 31% 33%;
+    --landing-gold: 42 55% 47%;
     
     --warning: 38 50% 50%;
     --warning-foreground: 0 0% 16%;

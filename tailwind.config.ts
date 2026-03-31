@@ -59,6 +59,9 @@ export default {
         "warm-sand": "hsl(38 37% 89%)",
         "slate-blue": "hsl(213 31% 26%)",
         "muted-clay": "hsl(19 48% 55%)",
+        "landing-bg": "hsl(var(--landing-bg))",
+        "landing-navy": "hsl(var(--landing-navy))",
+        "landing-gold": "hsl(var(--landing-gold))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
