@@ -98,13 +98,6 @@ export default function AdminDashboard() {
     fetchData();
   }, []);
 
-  const metricCards = [
-    { label: 'Active members', value: stats.activeMembers, icon: Users, color: 'text-primary' },
-    { label: 'New this month', value: stats.newThisMonth, icon: UserPlus, color: 'text-chart-2' },
-    { label: 'Sessions this week', value: stats.sessionsThisWeek, icon: CalendarDays, color: 'text-chart-4' },
-    { label: 'Pending programs', value: stats.pendingPrograms, icon: ClipboardList, color: 'text-destructive' },
-  ];
-
   return (
     <AdminLayout title="Dashboard">
       <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
@@ -118,21 +111,86 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        {/* Metric Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          {metricCards.map((card) => (
-            <Card key={card.label}>
+        {/* Metric Cards — 2 rows of 3 */}
+        <div className="space-y-3 md:space-y-4">
+          {/* Row 1 — Membership Overview */}
+          <div className="grid grid-cols-3 gap-3 md:gap-4">
+            <Card>
               <CardContent className="p-4 md:p-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-2xl md:text-3xl font-bold">{loading ? '–' : card.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{card.label}</p>
+                    <p className="text-2xl md:text-3xl font-bold">{loading ? '–' : stats.activeMembers}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Active paid members</p>
                   </div>
-                  <card.icon className={`w-5 h-5 ${card.color} mt-1`} />
+                  <Users className="w-5 h-5 text-primary mt-1" />
                 </div>
               </CardContent>
             </Card>
-          ))}
+            <Card className="border-muted bg-muted/30">
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold text-muted-foreground">{loading ? '–' : stats.freeMembers}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Free members</p>
+                  </div>
+                  <Users className="w-5 h-5 text-muted-foreground/60 mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold text-amber-600 dark:text-amber-400">{loading ? '–' : stats.totalCommunity}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Total community</p>
+                  </div>
+                  <Users className="w-5 h-5 text-amber-500 mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Row 2 — Activity & Pipeline */}
+          <div className="grid grid-cols-3 gap-3 md:gap-4">
+            <Card>
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold">{loading ? '–' : stats.newThisMonth}</p>
+                    <p className="text-xs text-muted-foreground mt-1">New this month</p>
+                    {!loading && stats.newThisMonth > 0 && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {stats.newPaid} paid · {stats.newFree} free
+                      </p>
+                    )}
+                  </div>
+                  <UserPlus className="w-5 h-5 text-chart-2 mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold">{loading ? '–' : stats.sessionsThisWeek}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Sessions this week</p>
+                  </div>
+                  <CalendarDays className="w-5 h-5 text-chart-4 mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold">{loading ? '–' : stats.pendingPrograms}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Pending programs</p>
+                  </div>
+                  <ClipboardList className="w-5 h-5 text-destructive mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Two Panels */}
