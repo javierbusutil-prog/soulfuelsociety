@@ -20,7 +20,7 @@ interface AwaitingMember {
 export default function AdminDashboard() {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ activeMembers: 0, newThisMonth: 0, sessionsThisWeek: 0, pendingPrograms: 0 });
+  const [stats, setStats] = useState({ activeMembers: 0, freeMembers: 0, totalCommunity: 0, newThisMonth: 0, newPaid: 0, newFree: 0, sessionsThisWeek: 0, pendingPrograms: 0 });
   const [awaitingMembers, setAwaitingMembers] = useState<AwaitingMember[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,21 +32,21 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Active members (paid role)
-        const { data: paidRoles } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'paid');
-        const activeMembers = paidRoles?.length || 0;
-
-        // New members this month - paid users whose profile was created this month
-        const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
-        const { data: newMembers } = await supabase
+        // All profiles with selected_plan info
+        const { data: allProfiles } = await supabase
           .from('profiles')
-          .select('id')
-          .gte('created_at', monthStart)
-          .eq('subscription_status', 'active');
-        const newThisMonth = newMembers?.length || 0;
+          .select('id, selected_plan, created_at');
+
+        const activeMembers = allProfiles?.filter(p => p.selected_plan && p.selected_plan !== 'free').length || 0;
+        const freeMembers = allProfiles?.filter(p => !p.selected_plan || p.selected_plan === 'free').length || 0;
+        const totalCommunity = allProfiles?.length || 0;
+
+        // New members this month
+        const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
+        const newAll = allProfiles?.filter(p => p.created_at >= monthStart) || [];
+        const newPaid = newAll.filter(p => p.selected_plan && p.selected_plan !== 'free').length;
+        const newFree = newAll.filter(p => !p.selected_plan || p.selected_plan === 'free').length;
+        const newThisMonth = newAll.length;
 
         // Sessions this week (from pt_consult_requests scheduled this week)
         const weekStart = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd\'T\'HH:mm:ss');
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
           setAwaitingMembers(merged);
         }
 
-        setStats({ activeMembers, newThisMonth, sessionsThisWeek, pendingPrograms });
+        setStats({ activeMembers, freeMembers, totalCommunity, newThisMonth, newPaid, newFree, sessionsThisWeek, pendingPrograms });
       } catch (e) {
         console.error('Dashboard fetch error:', e);
       } finally {
@@ -97,13 +97,6 @@ export default function AdminDashboard() {
     };
     fetchData();
   }, []);
-
-  const metricCards = [
-    { label: 'Active members', value: stats.activeMembers, icon: Users, color: 'text-primary' },
-    { label: 'New this month', value: stats.newThisMonth, icon: UserPlus, color: 'text-chart-2' },
-    { label: 'Sessions this week', value: stats.sessionsThisWeek, icon: CalendarDays, color: 'text-chart-4' },
-    { label: 'Pending programs', value: stats.pendingPrograms, icon: ClipboardList, color: 'text-destructive' },
-  ];
 
   return (
     <AdminLayout title="Dashboard">
@@ -118,21 +111,86 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        {/* Metric Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          {metricCards.map((card) => (
-            <Card key={card.label}>
+        {/* Metric Cards — 2 rows of 3 */}
+        <div className="space-y-3 md:space-y-4">
+          {/* Row 1 — Membership Overview */}
+          <div className="grid grid-cols-3 gap-3 md:gap-4">
+            <Card>
               <CardContent className="p-4 md:p-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-2xl md:text-3xl font-bold">{loading ? '–' : card.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{card.label}</p>
+                    <p className="text-2xl md:text-3xl font-bold">{loading ? '–' : stats.activeMembers}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Active paid members</p>
                   </div>
-                  <card.icon className={`w-5 h-5 ${card.color} mt-1`} />
+                  <Users className="w-5 h-5 text-primary mt-1" />
                 </div>
               </CardContent>
             </Card>
-          ))}
+            <Card className="border-muted bg-muted/30">
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold text-muted-foreground">{loading ? '–' : stats.freeMembers}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Free members</p>
+                  </div>
+                  <Users className="w-5 h-5 text-muted-foreground/60 mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold text-amber-600 dark:text-amber-400">{loading ? '–' : stats.totalCommunity}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Total community</p>
+                  </div>
+                  <Users className="w-5 h-5 text-amber-500 mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Row 2 — Activity & Pipeline */}
+          <div className="grid grid-cols-3 gap-3 md:gap-4">
+            <Card>
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold">{loading ? '–' : stats.newThisMonth}</p>
+                    <p className="text-xs text-muted-foreground mt-1">New this month</p>
+                    {!loading && stats.newThisMonth > 0 && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {stats.newPaid} paid · {stats.newFree} free
+                      </p>
+                    )}
+                  </div>
+                  <UserPlus className="w-5 h-5 text-chart-2 mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold">{loading ? '–' : stats.sessionsThisWeek}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Sessions this week</p>
+                  </div>
+                  <CalendarDays className="w-5 h-5 text-chart-4 mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-2xl md:text-3xl font-bold">{loading ? '–' : stats.pendingPrograms}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Pending programs</p>
+                  </div>
+                  <ClipboardList className="w-5 h-5 text-destructive mt-1" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Two Panels */}
