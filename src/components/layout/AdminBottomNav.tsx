@@ -8,19 +8,22 @@ import {
   DollarSign,
   Clock,
   ArrowLeftRight,
+  MessagesSquare,
 } from 'lucide-react';
+import { useCoachCommunityNotifications } from '@/hooks/useCoachCommunityNotifications';
 
 const navItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/admin/members', icon: Users, label: 'Members' },
+  { path: '/admin/community', icon: MessagesSquare, label: 'Community', hasBadge: true },
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
   { path: '/admin/availability', icon: Clock, label: 'Hours' },
-  { path: '/admin/revenue', icon: DollarSign, label: 'Revenue' },
 ];
 
 export function AdminBottomNav() {
   const location = useLocation();
+  const { unreadCount, markAsRead } = useCoachCommunityNotifications();
 
   const isActive = (path: string) => {
     if (path === '/admin') return location.pathname === '/admin';
@@ -34,14 +37,24 @@ export function AdminBottomNav() {
           <Link
             key={item.path}
             to={item.path}
+            onClick={() => {
+              if (item.hasBadge) markAsRead();
+            }}
             className={cn(
-              'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors min-w-0',
+              'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors min-w-0 relative',
               isActive(item.path)
                 ? 'text-primary'
                 : 'text-muted-foreground'
             )}
           >
-            <item.icon className="w-5 h-5" />
+            <div className="relative">
+              <item.icon className="w-5 h-5" />
+              {item.hasBadge && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-2 min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[8px] font-bold px-0.5">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </div>
             <span className="text-[10px] font-medium truncate">{item.label}</span>
           </Link>
         ))}
