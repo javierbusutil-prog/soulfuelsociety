@@ -20,7 +20,7 @@ interface AwaitingMember {
 export default function AdminDashboard() {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ activeMembers: 0, newThisMonth: 0, sessionsThisWeek: 0, pendingPrograms: 0 });
+  const [stats, setStats] = useState({ activeMembers: 0, freeMembers: 0, totalCommunity: 0, newThisMonth: 0, newPaid: 0, newFree: 0, sessionsThisWeek: 0, pendingPrograms: 0 });
   const [awaitingMembers, setAwaitingMembers] = useState<AwaitingMember[]>([]);
   const [loading, setLoading] = useState(true);
 
