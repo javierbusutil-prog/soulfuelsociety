@@ -151,6 +151,51 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_notification_preferences: {
+        Row: {
+          coach_id: string
+          id: string
+          inapp_enabled: boolean
+          push_enabled: boolean
+        }
+        Insert: {
+          coach_id: string
+          id?: string
+          inapp_enabled?: boolean
+          push_enabled?: boolean
+        }
+        Update: {
+          coach_id?: string
+          id?: string
+          inapp_enabled?: boolean
+          push_enabled?: boolean
+        }
+        Relationships: []
+      }
+      coach_push_tokens: {
+        Row: {
+          coach_id: string
+          created_at: string
+          device_type: string
+          id: string
+          push_token: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          device_type?: string
+          id?: string
+          push_token: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          device_type?: string
+          id?: string
+          push_token?: string
+        }
+        Relationships: []
+      }
       coaches: {
         Row: {
           bio: string
@@ -254,6 +299,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_notification_log: {
+        Row: {
+          channels: string[]
+          coach_id: string
+          delivered: boolean
+          id: string
+          notified_at: string
+          post_id: string
+        }
+        Insert: {
+          channels?: string[]
+          coach_id: string
+          delivered?: boolean
+          id?: string
+          notified_at?: string
+          post_id: string
+        }
+        Update: {
+          channels?: string[]
+          coach_id?: string
+          delivered?: boolean
+          id?: string
+          notified_at?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_notification_log_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
