@@ -35,6 +35,8 @@ import AdminMessages from "./pages/admin/AdminMessages";
 import AdminSessions from "./pages/admin/AdminSessions";
 import AdminAvailability from "./pages/admin/AdminAvailability";
 import AdminRevenue from "./pages/admin/AdminRevenue";
+import AdminSettings from "./pages/admin/AdminSettings";
+import AdminCommunity from "./pages/admin/AdminCommunity";
 
 // Booking pages
 import BookSession from "./pages/BookSession";
