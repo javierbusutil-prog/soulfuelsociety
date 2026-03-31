@@ -26,7 +26,7 @@ function LandingNav() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-landing-bg/95 backdrop-blur-sm border-b border-landing-navy/10" role="navigation" aria-label="Main navigation">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
         <Link to="/" aria-label="Soul Fuel Society Home">
-          <img src={logoPrimary} alt="Soul Fuel Society" className="h-40 w-auto" />
+          <img src={logoPrimary} alt="Soul Fuel Society" className="h-[7.5rem] w-auto" />
         </Link>
         {/* Desktop */}
         <div className="hidden sm:flex items-center gap-3">
