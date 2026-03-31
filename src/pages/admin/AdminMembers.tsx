@@ -20,6 +20,7 @@ interface MemberRow {
   group_size: string | null;
   created_at: string;
   program_delivered: boolean;
+  isPaid: boolean;
 }
 
 export default function AdminMembers() {
@@ -29,6 +30,7 @@ export default function AdminMembers() {
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [memberTypeFilter, setMemberTypeFilter] = useState('all');
 
   useEffect(() => {
     fetchMembers();
@@ -36,34 +38,23 @@ export default function AdminMembers() {
 
   const fetchMembers = async () => {
     setLoading(true);
-    // Get paid user IDs
-    const { data: paidRoles } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'paid');
 
-    if (!paidRoles || paidRoles.length === 0) {
-      setLoading(false);
-      return;
-    }
+    // Fetch all profiles and paid roles in parallel
+    const [profilesRes, rolesRes, memberProfilesRes] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, avatar_url, selected_plan, session_count, group_size, created_at'),
+      supabase.from('user_roles').select('user_id, role'),
+      supabase.from('member_profiles').select('user_id, program_delivered'),
+    ]);
 
-    const userIds = paidRoles.map(r => r.user_id);
-
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url, selected_plan, session_count, group_size, created_at')
-      .in('id', userIds);
-
-    // Get program_delivered status from member_profiles
-    const { data: memberProfiles } = await supabase
-      .from('member_profiles')
-      .select('user_id, program_delivered')
-      .in('user_id', userIds);
+    const paidSet = new Set<string>();
+    rolesRes.data?.forEach(r => {
+      if (r.role === 'paid' || r.role === 'admin' || r.role === 'pt_admin') paidSet.add(r.user_id);
+    });
 
     const deliveredMap = new Map<string, boolean>();
-    memberProfiles?.forEach(mp => deliveredMap.set(mp.user_id, mp.program_delivered));
+    memberProfilesRes.data?.forEach(mp => deliveredMap.set(mp.user_id, mp.program_delivered));
 
-    const rows: MemberRow[] = (profiles || []).map(p => ({
+    const rows: MemberRow[] = (profilesRes.data || []).map(p => ({
       id: p.id,
       full_name: p.full_name,
       avatar_url: p.avatar_url,
@@ -72,7 +63,14 @@ export default function AdminMembers() {
       group_size: p.group_size,
       created_at: p.created_at,
       program_delivered: deliveredMap.get(p.id) ?? false,
+      isPaid: paidSet.has(p.id),
     }));
+
+    // Sort paid first, then by name
+    rows.sort((a, b) => {
+      if (a.isPaid !== b.isPaid) return a.isPaid ? -1 : 1;
+      return (a.full_name || '').localeCompare(b.full_name || '');
+    });
 
     setMembers(rows);
     setLoading(false);
@@ -83,8 +81,9 @@ export default function AdminMembers() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const getPlanLabel = (plan: string | null) => {
-    if (!plan) return 'Unknown';
+  const getPlanLabel = (plan: string | null, isPaid: boolean) => {
+    if (!isPaid) return 'Free';
+    if (!plan) return 'Paid';
     if (plan.toLowerCase().includes('online')) return 'Online';
     if (plan.toLowerCase().includes('person')) return 'In-person';
     return plan;
@@ -105,6 +104,8 @@ export default function AdminMembers() {
       const q = search.toLowerCase();
       if (!(m.full_name || '').toLowerCase().includes(q)) return false;
     }
+    if (memberTypeFilter === 'paid' && !m.isPaid) return false;
+    if (memberTypeFilter === 'free' && m.isPaid) return false;
     if (planFilter === 'online' && !m.selected_plan?.toLowerCase().includes('online')) return false;
     if (planFilter === 'inperson' && !m.selected_plan?.toLowerCase().includes('person')) return false;
     if (statusFilter === 'delivered' && !m.program_delivered) return false;
