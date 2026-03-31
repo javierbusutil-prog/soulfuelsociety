@@ -88,7 +88,7 @@ export default function AdminDashboard() {
           setAwaitingMembers(merged);
         }
 
-        setStats({ activeMembers, newThisMonth, sessionsThisWeek, pendingPrograms });
+        setStats({ activeMembers, freeMembers, totalCommunity, newThisMonth, newPaid, newFree, sessionsThisWeek, pendingPrograms });
       } catch (e) {
         console.error('Dashboard fetch error:', e);
       } finally {
