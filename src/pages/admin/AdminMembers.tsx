@@ -20,6 +20,7 @@ interface MemberRow {
   group_size: string | null;
   created_at: string;
   program_delivered: boolean;
+  isPaid: boolean;
 }
 
 export default function AdminMembers() {
@@ -29,6 +30,7 @@ export default function AdminMembers() {
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [memberTypeFilter, setMemberTypeFilter] = useState('all');
 
   useEffect(() => {
     fetchMembers();
@@ -36,34 +38,23 @@ export default function AdminMembers() {
 
   const fetchMembers = async () => {
     setLoading(true);
-    // Get paid user IDs
-    const { data: paidRoles } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'paid');
 
-    if (!paidRoles || paidRoles.length === 0) {
-      setLoading(false);
-      return;
-    }
+    // Fetch all profiles and paid roles in parallel
+    const [profilesRes, rolesRes, memberProfilesRes] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, avatar_url, selected_plan, session_count, group_size, created_at'),
+      supabase.from('user_roles').select('user_id, role'),
+      supabase.from('member_profiles').select('user_id, program_delivered'),
+    ]);
 
-    const userIds = paidRoles.map(r => r.user_id);
-
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url, selected_plan, session_count, group_size, created_at')
-      .in('id', userIds);
-
-    // Get program_delivered status from member_profiles
-    const { data: memberProfiles } = await supabase
-      .from('member_profiles')
-      .select('user_id, program_delivered')
-      .in('user_id', userIds);
+    const paidSet = new Set<string>();
+    rolesRes.data?.forEach(r => {
+      if (r.role === 'paid' || r.role === 'admin' || r.role === 'pt_admin') paidSet.add(r.user_id);
+    });
 
     const deliveredMap = new Map<string, boolean>();
-    memberProfiles?.forEach(mp => deliveredMap.set(mp.user_id, mp.program_delivered));
+    memberProfilesRes.data?.forEach(mp => deliveredMap.set(mp.user_id, mp.program_delivered));
 
-    const rows: MemberRow[] = (profiles || []).map(p => ({
+    const rows: MemberRow[] = (profilesRes.data || []).map(p => ({
       id: p.id,
       full_name: p.full_name,
       avatar_url: p.avatar_url,
@@ -72,7 +63,14 @@ export default function AdminMembers() {
       group_size: p.group_size,
       created_at: p.created_at,
       program_delivered: deliveredMap.get(p.id) ?? false,
+      isPaid: paidSet.has(p.id),
     }));
+
+    // Sort paid first, then by name
+    rows.sort((a, b) => {
+      if (a.isPaid !== b.isPaid) return a.isPaid ? -1 : 1;
+      return (a.full_name || '').localeCompare(b.full_name || '');
+    });
 
     setMembers(rows);
     setLoading(false);
@@ -83,8 +81,9 @@ export default function AdminMembers() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const getPlanLabel = (plan: string | null) => {
-    if (!plan) return 'Unknown';
+  const getPlanLabel = (plan: string | null, isPaid: boolean) => {
+    if (!isPaid) return 'Free';
+    if (!plan) return 'Paid';
     if (plan.toLowerCase().includes('online')) return 'Online';
     if (plan.toLowerCase().includes('person')) return 'In-person';
     return plan;
@@ -105,6 +104,8 @@ export default function AdminMembers() {
       const q = search.toLowerCase();
       if (!(m.full_name || '').toLowerCase().includes(q)) return false;
     }
+    if (memberTypeFilter === 'paid' && !m.isPaid) return false;
+    if (memberTypeFilter === 'free' && m.isPaid) return false;
     if (planFilter === 'online' && !m.selected_plan?.toLowerCase().includes('online')) return false;
     if (planFilter === 'inperson' && !m.selected_plan?.toLowerCase().includes('person')) return false;
     if (statusFilter === 'delivered' && !m.program_delivered) return false;
@@ -126,6 +127,16 @@ export default function AdminMembers() {
               className="pl-9"
             />
           </div>
+          <Select value={memberTypeFilter} onValueChange={setMemberTypeFilter}>
+            <SelectTrigger className="w-full sm:w-[130px]">
+              <SelectValue placeholder="Member type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All members</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="free">Free</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={planFilter} onValueChange={setPlanFilter}>
             <SelectTrigger className="w-full sm:w-[140px]">
               <SelectValue placeholder="Plan type" />
@@ -176,17 +187,25 @@ export default function AdminMembers() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{member.full_name || 'Unnamed'}</p>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {getPlanLabel(member.selected_plan)}
-                      </Badge>
-                      {isInPerson(member.selected_plan) && member.session_count && (
+                      {member.isPaid ? (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          {getPlanLabel(member.selected_plan, member.isPaid)}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-muted-foreground/30 text-muted-foreground">
+                          Free
+                        </Badge>
+                      )}
+                      {member.isPaid && isInPerson(member.selected_plan) && member.session_count && (
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                           {member.session_count} sessions
                         </Badge>
                       )}
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                        {getGroupLabel(member.group_size)}
-                      </Badge>
+                      {member.isPaid && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {getGroupLabel(member.group_size)}
+                        </Badge>
+                      )}
                       <span className="text-[10px] text-muted-foreground hidden sm:inline">
                         Since {format(new Date(member.created_at), 'MMM yyyy')}
                       </span>
@@ -194,11 +213,13 @@ export default function AdminMembers() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {member.program_delivered ? (
-                      <Badge className="bg-chart-2/15 text-chart-2 border-chart-2/30 text-[10px]">Delivered</Badge>
-                    ) : (
-                      <Badge className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30 text-[10px]">Pending</Badge>
-                    )}
+                    {member.isPaid ? (
+                      member.program_delivered ? (
+                        <Badge className="bg-chart-2/15 text-chart-2 border-chart-2/30 text-[10px]">Delivered</Badge>
+                      ) : (
+                        <Badge className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30 text-[10px]">Pending</Badge>
+                      )
+                    ) : null}
                     <ChevronRight className="w-4 h-4 text-muted-foreground hidden sm:block" />
                   </div>
                 </div>
