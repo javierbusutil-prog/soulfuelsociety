@@ -11,23 +11,29 @@ import {
   LogOut,
   ArrowLeftCircle,
   Clock,
+  MessagesSquare,
+  Settings,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import logoWordmark from '@/assets/logo-wordmark.svg';
+import { useCoachCommunityNotifications } from '@/hooks/useCoachCommunityNotifications';
 
 const navItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/admin/members', icon: Users, label: 'Members' },
   { path: '/admin/programs', icon: Dumbbell, label: 'Programs' },
+  { path: '/admin/community', icon: MessagesSquare, label: 'Community', hasBadge: true },
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
   { path: '/admin/availability', icon: Clock, label: 'Availability' },
   { path: '/admin/revenue', icon: DollarSign, label: 'Revenue' },
+  { path: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function AdminSidebar() {
   const location = useLocation();
   const { profile, signOut } = useAuth();
+  const { unreadCount, markAsRead } = useCoachCommunityNotifications();
 
   const isActive = (path: string) => {
     if (path === '/admin') return location.pathname === '/admin';
@@ -52,8 +58,11 @@ export function AdminSidebar() {
           <Link
             key={item.path}
             to={item.path}
+            onClick={() => {
+              if (item.hasBadge) markAsRead();
+            }}
             className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors relative',
               isActive(item.path)
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -61,6 +70,11 @@ export function AdminSidebar() {
           >
             <item.icon className="w-4 h-4" />
             {item.label}
+            {item.hasBadge && unreadCount > 0 && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
