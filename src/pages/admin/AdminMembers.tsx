@@ -127,6 +127,16 @@ export default function AdminMembers() {
               className="pl-9"
             />
           </div>
+          <Select value={memberTypeFilter} onValueChange={setMemberTypeFilter}>
+            <SelectTrigger className="w-full sm:w-[130px]">
+              <SelectValue placeholder="Member type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All members</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="free">Free</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={planFilter} onValueChange={setPlanFilter}>
             <SelectTrigger className="w-full sm:w-[140px]">
               <SelectValue placeholder="Plan type" />
