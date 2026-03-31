@@ -32,21 +32,21 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Active members (paid role)
-        const { data: paidRoles } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'paid');
-        const activeMembers = paidRoles?.length || 0;
-
-        // New members this month - paid users whose profile was created this month
-        const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
-        const { data: newMembers } = await supabase
+        // All profiles with selected_plan info
+        const { data: allProfiles } = await supabase
           .from('profiles')
-          .select('id')
-          .gte('created_at', monthStart)
-          .eq('subscription_status', 'active');
-        const newThisMonth = newMembers?.length || 0;
+          .select('id, selected_plan, created_at');
+
+        const activeMembers = allProfiles?.filter(p => p.selected_plan && p.selected_plan !== 'free').length || 0;
+        const freeMembers = allProfiles?.filter(p => !p.selected_plan || p.selected_plan === 'free').length || 0;
+        const totalCommunity = allProfiles?.length || 0;
+
+        // New members this month
+        const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
+        const newAll = allProfiles?.filter(p => p.created_at >= monthStart) || [];
+        const newPaid = newAll.filter(p => p.selected_plan && p.selected_plan !== 'free').length;
+        const newFree = newAll.filter(p => !p.selected_plan || p.selected_plan === 'free').length;
+        const newThisMonth = newAll.length;
 
         // Sessions this week (from pt_consult_requests scheduled this week)
         const weekStart = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd\'T\'HH:mm:ss');
