@@ -182,6 +182,8 @@ function AppRoutes() {
       <Route path="/admin/sessions" element={<CoachRoute><AdminSessions /></CoachRoute>} />
       <Route path="/admin/availability" element={<CoachRoute><AdminAvailability /></CoachRoute>} />
       <Route path="/admin/revenue" element={<CoachRoute><AdminRevenue /></CoachRoute>} />
+      <Route path="/admin/settings" element={<CoachRoute><AdminSettings /></CoachRoute>} />
+      <Route path="/admin/community" element={<CoachRoute><AdminCommunity /></CoachRoute>} />
       
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
