@@ -65,9 +65,9 @@ function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="font-display text-4xl sm:text-5xl lg:text-6xl font-semibold text-landing-navy leading-tight tracking-editorial mb-6"
+          className="font-display text-3xl sm:text-4xl lg:text-5xl font-semibold text-landing-navy leading-tight tracking-editorial mb-6 whitespace-nowrap"
         >
-          Feed your body. Fuel your soul.<br />Find your people.
+          Feed your body. Fuel your soul.<br className="sm:hidden" />Find your people.
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
