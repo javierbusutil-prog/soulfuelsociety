@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
-import logoPrimary from '@/assets/logo-primary.svg';
+import logoWordmark from '@/assets/logo-wordmark.svg';
 import LiabilityWaiver from '@/components/auth/LiabilityWaiver';
 
 const WAIVER_PDF_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/legal-documents/soul-fuel-waiver.pdf`;
