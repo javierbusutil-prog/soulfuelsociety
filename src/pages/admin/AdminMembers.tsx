@@ -187,17 +187,25 @@ export default function AdminMembers() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{member.full_name || 'Unnamed'}</p>
                     <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {getPlanLabel(member.selected_plan)}
-                      </Badge>
-                      {isInPerson(member.selected_plan) && member.session_count && (
+                      {member.isPaid ? (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          {getPlanLabel(member.selected_plan, member.isPaid)}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-muted-foreground/30 text-muted-foreground">
+                          Free
+                        </Badge>
+                      )}
+                      {member.isPaid && isInPerson(member.selected_plan) && member.session_count && (
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                           {member.session_count} sessions
                         </Badge>
                       )}
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                        {getGroupLabel(member.group_size)}
-                      </Badge>
+                      {member.isPaid && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {getGroupLabel(member.group_size)}
+                        </Badge>
+                      )}
                       <span className="text-[10px] text-muted-foreground hidden sm:inline">
                         Since {format(new Date(member.created_at), 'MMM yyyy')}
                       </span>
