@@ -213,11 +213,13 @@ export default function AdminMembers() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {member.program_delivered ? (
-                      <Badge className="bg-chart-2/15 text-chart-2 border-chart-2/30 text-[10px]">Delivered</Badge>
-                    ) : (
-                      <Badge className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30 text-[10px]">Pending</Badge>
-                    )}
+                    {member.isPaid ? (
+                      member.program_delivered ? (
+                        <Badge className="bg-chart-2/15 text-chart-2 border-chart-2/30 text-[10px]">Delivered</Badge>
+                      ) : (
+                        <Badge className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30 text-[10px]">Pending</Badge>
+                      )
+                    ) : null}
                     <ChevronRight className="w-4 h-4 text-muted-foreground hidden sm:block" />
                   </div>
                 </div>
