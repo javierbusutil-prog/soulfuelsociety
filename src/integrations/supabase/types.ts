@@ -341,6 +341,33 @@ export type Database = {
           },
         ]
       }
+      contact_submissions: {
+        Row: {
+          email: string
+          id: string
+          message: string
+          name: string
+          responded: boolean
+          submitted_at: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          message: string
+          name: string
+          responded?: boolean
+          submitted_at?: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          responded?: boolean
+          submitted_at?: string
+        }
+        Relationships: []
+      }
       cycle_entries: {
         Row: {
           created_at: string
