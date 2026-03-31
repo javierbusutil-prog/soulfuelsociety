@@ -47,24 +47,29 @@ export default function AdminMembers() {
     ]);
 
     const paidSet = new Set<string>();
+    const adminSet = new Set<string>();
     rolesRes.data?.forEach(r => {
-      if (r.role === 'paid' || r.role === 'admin' || r.role === 'pt_admin') paidSet.add(r.user_id);
+      if (r.role === 'admin' || r.role === 'pt_admin') adminSet.add(r.user_id);
+      if (r.role === 'paid') paidSet.add(r.user_id);
     });
 
     const deliveredMap = new Map<string, boolean>();
     memberProfilesRes.data?.forEach(mp => deliveredMap.set(mp.user_id, mp.program_delivered));
 
-    const rows: MemberRow[] = (profilesRes.data || []).map(p => ({
-      id: p.id,
-      full_name: p.full_name,
-      avatar_url: p.avatar_url,
-      selected_plan: p.selected_plan,
-      session_count: p.session_count,
-      group_size: p.group_size,
-      created_at: p.created_at,
-      program_delivered: deliveredMap.get(p.id) ?? false,
-      isPaid: paidSet.has(p.id),
-    }));
+    // Exclude admins/coaches from the member list
+    const rows: MemberRow[] = (profilesRes.data || [])
+      .filter(p => !adminSet.has(p.id))
+      .map(p => ({
+        id: p.id,
+        full_name: p.full_name,
+        avatar_url: p.avatar_url,
+        selected_plan: p.selected_plan,
+        session_count: p.session_count,
+        group_size: p.group_size,
+        created_at: p.created_at,
+        program_delivered: deliveredMap.get(p.id) ?? false,
+        isPaid: paidSet.has(p.id),
+      }));
 
     // Sort paid first, then by name
     rows.sort((a, b) => {
