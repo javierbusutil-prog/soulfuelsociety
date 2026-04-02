@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { Send, MessageSquare } from 'lucide-react';
+import { IntakeFormMessage, isIntakeFormMessage } from '@/components/chat/IntakeFormMessage';
 import { toast } from 'sonner';
 
 interface ThreadSummary {
@@ -217,9 +218,20 @@ export default function AdminMessages() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.map(msg => {
                   const isCoach = msg.sender_id === user?.id;
-                  const isSystem = msg.tag === 'system';
+                  const isSystem = msg.tag === 'system' || msg.tag === 'intake_form';
 
                   if (isSystem) {
+                    const intakeData = isIntakeFormMessage(msg.content);
+                    if (intakeData || msg.tag === 'intake_form') {
+                      const data = intakeData || (() => { try { return JSON.parse(msg.content); } catch { return null; } })();
+                      if (data) {
+                        return (
+                          <div key={msg.id} className="flex justify-center my-3">
+                            <IntakeFormMessage data={data} />
+                          </div>
+                        );
+                      }
+                    }
                     return (
                       <div key={msg.id} className="flex justify-center my-2">
                         <div className="bg-muted/60 border border-border rounded-xl px-4 py-3 max-w-[85%] text-sm text-muted-foreground whitespace-pre-wrap">
