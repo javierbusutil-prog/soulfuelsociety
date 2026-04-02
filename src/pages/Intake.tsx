@@ -63,6 +63,19 @@ export default function Intake() {
     }
     setSubmitting(true);
     try {
+      const goalLabels: Record<string, string> = {
+        build_muscle: 'Build Muscle',
+        lose_weight: 'Lose Weight',
+        improve_endurance: 'Improve Endurance',
+        general_fitness: 'General Fitness',
+      };
+      const styleLabels: Record<string, string> = {
+        weightlifting: 'Weightlifting',
+        crossfit: 'CrossFit',
+        cardio: 'Cardio',
+        mixed: 'Mixed',
+      };
+
       const responses = {
         full_name: fullName,
         primary_goal: goal,
@@ -85,6 +98,83 @@ export default function Intake() {
         .eq('id', user!.id);
 
       if (updateError) throw updateError;
+
+      // Post structured summary to 1:1 chat thread
+      try {
+        // Find or create thread
+        const { data: existingThread } = await supabase
+          .from('threads')
+          .select('id')
+          .eq('user_id', user!.id)
+          .limit(1)
+          .single();
+
+        let threadId = existingThread?.id;
+
+        if (!threadId) {
+          const { data: newThread } = await supabase
+            .from('threads')
+            .insert({ user_id: user!.id })
+            .select('id')
+            .single();
+          threadId = newThread?.id;
+        }
+
+        if (threadId) {
+          const submittedDate = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+
+          const summary = [
+            '📋 INTAKE FORM SUBMISSION',
+            '',
+            `👤 Full Name: ${fullName || 'Not provided'}`,
+            '',
+            `🎯 Primary Goal: ${goalLabels[goal] || goal}`,
+            '',
+            `📊 Fitness Level: ${level}`,
+            '',
+            `📅 Training Days/Week: ${trainingDays}`,
+            '',
+            `⚠️ Injuries/Limitations: ${injuries || 'None'}`,
+            '',
+            `🏋️ Preferred Styles: ${workoutStyles.length > 0 ? workoutStyles.map(s => styleLabels[s] || s).join(', ') : 'None selected'}`,
+            '',
+            `📝 Additional Notes: ${extraNotes || 'None'}`,
+            '',
+            `Submitted on ${submittedDate}.`,
+          ].join('\n');
+
+          await supabase.from('messages').insert({
+            thread_id: threadId,
+            sender_id: user!.id,
+            content: summary,
+            tag: 'system',
+          });
+        }
+
+        // Notify all coaches
+        const { data: coaches } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .in('role', ['admin', 'pt_admin']);
+
+        const firstName = (fullName || 'A member').split(' ')[0];
+
+        for (const coach of coaches || []) {
+          await supabase.from('notifications').insert({
+            user_id: coach.user_id,
+            type: 'intake_submitted',
+            title: 'Intake form received',
+            body: `${firstName} has submitted their intake form.`,
+            reference_id: user!.id,
+          } as any);
+        }
+      } catch (chatErr) {
+        console.error('Failed to post intake summary to chat:', chatErr);
+      }
 
       await refreshProfile();
       toast.success('Intake form submitted! Welcome aboard.');

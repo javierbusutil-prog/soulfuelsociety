@@ -28,6 +28,10 @@ export interface Profile {
   waiver_accepted: boolean;
   waiver_version: string | null;
   nutrition_disclaimer_accepted: boolean;
+  membership_expires_at: string | null;
+  intake_submitted: boolean;
+  upgraded_at: string | null;
+  intake_reminder_sent: boolean;
   created_at: string;
   updated_at: string;
 }

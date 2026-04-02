@@ -1552,6 +1552,7 @@ export type Database = {
           group_size: string | null
           has_completed_onboarding: boolean
           id: string
+          intake_reminder_sent: boolean
           intake_submitted: boolean
           membership_expires_at: string | null
           nutrition_disclaimer_accepted: boolean
@@ -1564,6 +1565,7 @@ export type Database = {
             | Database["public"]["Enums"]["subscription_status"]
             | null
           updated_at: string
+          upgraded_at: string | null
           waiver_accepted: boolean
           waiver_version: string | null
         }
@@ -1576,6 +1578,7 @@ export type Database = {
           group_size?: string | null
           has_completed_onboarding?: boolean
           id: string
+          intake_reminder_sent?: boolean
           intake_submitted?: boolean
           membership_expires_at?: string | null
           nutrition_disclaimer_accepted?: boolean
@@ -1588,6 +1591,7 @@ export type Database = {
             | Database["public"]["Enums"]["subscription_status"]
             | null
           updated_at?: string
+          upgraded_at?: string | null
           waiver_accepted?: boolean
           waiver_version?: string | null
         }
@@ -1600,6 +1604,7 @@ export type Database = {
           group_size?: string | null
           has_completed_onboarding?: boolean
           id?: string
+          intake_reminder_sent?: boolean
           intake_submitted?: boolean
           membership_expires_at?: string | null
           nutrition_disclaimer_accepted?: boolean
@@ -1612,6 +1617,7 @@ export type Database = {
             | Database["public"]["Enums"]["subscription_status"]
             | null
           updated_at?: string
+          upgraded_at?: string | null
           waiver_accepted?: boolean
           waiver_version?: string | null
         }

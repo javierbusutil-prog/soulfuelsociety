@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
 import { UpgradeBanner } from './UpgradeBanner';
+import { IntakeBanner } from './IntakeBanner';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ export function AppLayout({ children, title, hideNav, hideHeader }: AppLayoutPro
       </a>
       {!hideHeader && <Header title={title} />}
       <UpgradeBanner />
+      <IntakeBanner />
       <main id="main-content" className="flex-1 pb-20" aria-label={title || 'Main content'}>
         {children}
       </main>

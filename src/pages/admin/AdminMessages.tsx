@@ -26,6 +26,7 @@ interface Message {
   sender_id: string;
   created_at: string;
   sender_name?: string;
+  tag?: string | null;
 }
 
 export default function AdminMessages() {
@@ -93,7 +94,7 @@ export default function AdminMessages() {
     setSelectedThread(thread);
     const { data: msgs } = await supabase
       .from('messages')
-      .select('id, content, sender_id, created_at')
+      .select('id, content, sender_id, created_at, tag')
       .eq('thread_id', thread.thread_id)
       .order('created_at', { ascending: true });
 
@@ -216,6 +217,21 @@ export default function AdminMessages() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.map(msg => {
                   const isCoach = msg.sender_id === user?.id;
+                  const isSystem = msg.tag === 'system';
+
+                  if (isSystem) {
+                    return (
+                      <div key={msg.id} className="flex justify-center my-2">
+                        <div className="bg-muted/60 border border-border rounded-xl px-4 py-3 max-w-[85%] text-sm text-muted-foreground whitespace-pre-wrap">
+                          {msg.content}
+                          <p className="text-[10px] mt-2 text-muted-foreground/60">
+                            {format(new Date(msg.created_at), 'MMM d, h:mm a')}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={msg.id} className={`flex ${isCoach ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[75%] rounded-xl px-3 py-2 ${isCoach ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>

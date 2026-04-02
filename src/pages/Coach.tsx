@@ -192,8 +192,8 @@ export default function Coach() {
 
                 if (isSystemMessage) {
                   return (
-                    <div key={message.id} className="flex justify-center">
-                      <div className="bg-muted px-3 py-1.5 rounded-full text-xs text-muted-foreground">
+                    <div key={message.id} className="flex justify-center my-2">
+                      <div className="bg-muted/60 border border-border rounded-xl px-4 py-3 max-w-[90%] text-sm text-muted-foreground whitespace-pre-wrap">
                         {message.content}
                       </div>
                     </div>

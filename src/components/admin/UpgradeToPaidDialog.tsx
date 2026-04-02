@@ -115,6 +115,8 @@ export function UpgradeToPaidDialog({ open, onOpenChange, memberId, memberName, 
           selected_plan: 'online',
           subscription_status: 'active',
           membership_expires_at: expirationDate.toISOString(),
+          upgraded_at: new Date().toISOString(),
+          intake_reminder_sent: false,
         } as any)
         .eq('id', memberId);
 
@@ -153,6 +155,15 @@ export function UpgradeToPaidDialog({ open, onOpenChange, memberId, memberName, 
       } else {
         toast.success('Member upgraded successfully.');
       }
+
+      // Send welcome notification to the member
+      await supabase.from('notifications').insert({
+        user_id: memberId,
+        type: 'upgrade_welcome',
+        title: 'Welcome to Soul Fuel!',
+        body: 'Your coach is ready for you. Tap to complete your intake form and get started.',
+        reference_id: memberId,
+      } as any);
     }
 
     setSubmitting(false);
