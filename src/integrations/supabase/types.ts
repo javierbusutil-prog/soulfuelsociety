@@ -937,6 +937,27 @@ export type Database = {
         }
         Relationships: []
       }
+      intake_forms: {
+        Row: {
+          id: string
+          responses: Json
+          submitted_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          responses?: Json
+          submitted_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          responses?: Json
+          submitted_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invited_emails: {
         Row: {
           created_at: string
@@ -1531,6 +1552,7 @@ export type Database = {
           group_size: string | null
           has_completed_onboarding: boolean
           id: string
+          intake_submitted: boolean
           membership_expires_at: string | null
           nutrition_disclaimer_accepted: boolean
           phone: string | null
@@ -1554,6 +1576,7 @@ export type Database = {
           group_size?: string | null
           has_completed_onboarding?: boolean
           id: string
+          intake_submitted?: boolean
           membership_expires_at?: string | null
           nutrition_disclaimer_accepted?: boolean
           phone?: string | null
@@ -1577,6 +1600,7 @@ export type Database = {
           group_size?: string | null
           has_completed_onboarding?: boolean
           id?: string
+          intake_submitted?: boolean
           membership_expires_at?: string | null
           nutrition_disclaimer_accepted?: boolean
           phone?: string | null
