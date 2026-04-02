@@ -9,8 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar, BookOpen } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar, BookOpen, ArrowUpCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { UpgradeToPaidDialog } from '@/components/admin/UpgradeToPaidDialog';
 
 interface ProfileData {
   id: string;
