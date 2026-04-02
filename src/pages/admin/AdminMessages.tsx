@@ -221,6 +221,17 @@ export default function AdminMessages() {
                   const isSystem = msg.tag === 'system';
 
                   if (isSystem) {
+                    const intakeData = isIntakeFormMessage(msg.content);
+                    if (intakeData || msg.tag === 'intake_form') {
+                      const data = intakeData || (() => { try { return JSON.parse(msg.content); } catch { return null; } })();
+                      if (data) {
+                        return (
+                          <div key={msg.id} className="flex justify-center my-3">
+                            <IntakeFormMessage data={data} />
+                          </div>
+                        );
+                      }
+                    }
                     return (
                       <div key={msg.id} className="flex justify-center my-2">
                         <div className="bg-muted/60 border border-border rounded-xl px-4 py-3 max-w-[85%] text-sm text-muted-foreground whitespace-pre-wrap">
