@@ -189,9 +189,20 @@ export default function Coach() {
             <div className="space-y-4">
               {messages.map((message) => {
                 const isOwnMessage = message.sender_id === user?.id;
-                const isSystemMessage = message.tag === 'system';
+                const isSystemMessage = message.tag === 'system' || message.tag === 'intake_form';
 
                 if (isSystemMessage) {
+                  const intakeData = isIntakeFormMessage(message.content);
+                  if (intakeData || message.tag === 'intake_form') {
+                    const data = intakeData || (() => { try { return JSON.parse(message.content); } catch { return null; } })();
+                    if (data) {
+                      return (
+                        <div key={message.id} className="flex justify-center my-3">
+                          <IntakeFormMessage data={data} />
+                        </div>
+                      );
+                    }
+                  }
                   return (
                     <div key={message.id} className="flex justify-center my-2">
                       <div className="bg-muted/60 border border-border rounded-xl px-4 py-3 max-w-[90%] text-sm text-muted-foreground whitespace-pre-wrap">

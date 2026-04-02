@@ -218,7 +218,7 @@ export default function AdminMessages() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.map(msg => {
                   const isCoach = msg.sender_id === user?.id;
-                  const isSystem = msg.tag === 'system';
+                  const isSystem = msg.tag === 'system' || msg.tag === 'intake_form';
 
                   if (isSystem) {
                     const intakeData = isIntakeFormMessage(msg.content);
