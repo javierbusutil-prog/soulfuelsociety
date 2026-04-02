@@ -147,14 +147,14 @@ const coaches = [
     initials: 'JB',
     name: 'Javier Busutil',
     title: 'Physical Therapist & Fitness Coach',
-    bio: "Javier's path to coaching is rooted in both athletics and healthcare. He played baseball at Brito Miami Private School and competed at Barry University before earning his Doctor of Physical Therapy at Florida International University. When his athletic career ended, he discovered CrossFit — and never looked back. His background in physical therapy means he understands the body deeply, and his athletic career means he understands what it takes to push past your limits.",
+    bio: "Javier's path to coaching is rooted in both athletics and healthcare. He played baseball at Brito Miami Private School and competed at Barry University before earning his Doctor of Physical Therapy at Florida International University. When his athletic career ended, he discovered CrossFit and never looked back. His background in physical therapy means he understands the body deeply, and his athletic career means he understands what it takes to push past your limits.",
     specialties: ['CrossFit', 'Strength & conditioning', 'Athletic performance', 'Injury prevention', 'Physical rehabilitation'],
   },
   {
     initials: 'EB',
     name: 'Elizabeth Busutil',
     title: 'Speech Language Pathologist & Fitness Coach',
-    bio: "Elizabeth brings a rare combination of professional discipline and genuine heart to her coaching. A speech language pathologist by training and a fitness coach for over 10 years, she danced for the FIU Golden Dazzlers while earning her undergraduate degree. As a mother of two boys, she knows firsthand how life and a growing family can challenge your relationship with fitness — and that is exactly what makes her so effective at helping women reclaim their strength and unlock their potential.",
+    bio: "Elizabeth brings a rare combination of professional discipline and genuine heart to her coaching. A speech language pathologist by training and a fitness coach for over 10 years, she danced for the FIU Golden Dazzlers while earning her undergraduate degree. As a mother of two boys, she knows firsthand how life and a growing family can challenge your relationship with fitness, and that is exactly what makes her so effective at helping women reclaim their strength and unlock their potential.",
     specialties: ["Women's fitness", 'Pre & postnatal training', 'Weight management', 'Movement & mobility', 'Lifestyle coaching'],
   },
 ];
