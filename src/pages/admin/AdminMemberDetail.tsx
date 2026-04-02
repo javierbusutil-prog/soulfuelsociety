@@ -9,8 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar, BookOpen } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar, BookOpen, ArrowUpCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { UpgradeToPaidDialog } from '@/components/admin/UpgradeToPaidDialog';
 
 interface ProfileData {
   id: string;
@@ -65,7 +66,7 @@ export default function AdminMemberDetail() {
   const [enrolledProgram, setEnrolledProgram] = useState<{ title: string; weeks: number; start_date: string } | null>(null);
   const [hasSupplementalProgram, setHasSupplementalProgram] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
   useEffect(() => {
     if (id) fetchAll(id);
   }, [id]);
@@ -279,6 +280,15 @@ export default function AdminMemberDetail() {
                   Member since {format(new Date(profile.created_at), 'MMMM d, yyyy')}
                   {profile.phone && ` · ${profile.phone}`}
                 </p>
+                {(!profile.selected_plan || profile.selected_plan === 'free') && (
+                  <Button
+                    size="sm"
+                    className="mt-3 gap-1.5"
+                    onClick={() => setUpgradeDialogOpen(true)}
+                  >
+                    <ArrowUpCircle className="w-4 h-4" /> Upgrade to Paid
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -469,6 +479,17 @@ export default function AdminMemberDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {profile && user && (
+        <UpgradeToPaidDialog
+          open={upgradeDialogOpen}
+          onOpenChange={setUpgradeDialogOpen}
+          memberId={profile.id}
+          memberName={profile.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => id && fetchAll(id)}
+        />
+      )}
     </AdminLayout>
   );
 }

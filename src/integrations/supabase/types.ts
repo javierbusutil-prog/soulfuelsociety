@@ -97,6 +97,39 @@ export type Database = {
           },
         ]
       }
+      cash_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          payment_date: string
+          payment_method: string
+          upgraded_by: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          payment_date?: string
+          payment_method?: string
+          upgraded_by: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          payment_date?: string
+          payment_method?: string
+          upgraded_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coach_availability: {
         Row: {
           coach_id: string
