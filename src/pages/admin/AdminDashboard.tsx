@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, UserPlus, CalendarDays, ClipboardList, ArrowRight, Clock } from 'lucide-react';
 import { format, startOfMonth, startOfWeek, endOfWeek, differenceInDays } from 'date-fns';
-import { CashRevenueSection } from '@/components/admin/CashRevenueSection';
+
 
 interface AwaitingMember {
   id: string;
