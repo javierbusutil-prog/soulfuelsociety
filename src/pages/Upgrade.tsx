@@ -203,7 +203,7 @@ export default function Upgrade() {
                       <p className="text-xs text-muted-foreground">from $140/mo</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Train face-to-face with your coach, group options available
+                      Work side-by-side with a coach who knows you, your goals, your strengths, your limits. Every session is part of a program designed exclusively around you. Group options available.
                     </p>
                   </div>
                 </div>
