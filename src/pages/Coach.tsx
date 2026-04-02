@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
+import { IntakeFormMessage, isIntakeFormMessage } from '@/components/chat/IntakeFormMessage';
 
 interface Message {
   id: string;

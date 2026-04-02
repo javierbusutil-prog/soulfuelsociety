@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { Send, MessageSquare } from 'lucide-react';
+import { IntakeFormMessage, isIntakeFormMessage } from '@/components/chat/IntakeFormMessage';
 import { toast } from 'sonner';
 
 interface ThreadSummary {
