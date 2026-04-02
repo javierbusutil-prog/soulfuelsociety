@@ -200,7 +200,7 @@ export default function Upgrade() {
                   <div className="flex-1">
                     <div className="flex items-baseline justify-between">
                       <p className="font-medium text-foreground">In-Person Training</p>
-                      <p className="text-xs text-muted-foreground">from $140/mo</p>
+                      <p className="text-sm font-semibold text-foreground">from $140/mo</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Work side-by-side with a coach who knows you, your goals, your strengths, your limits. Every session is part of a program designed exclusively around you. Group options available.
