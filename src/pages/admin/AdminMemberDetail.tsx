@@ -280,6 +280,15 @@ export default function AdminMemberDetail() {
                   Member since {format(new Date(profile.created_at), 'MMMM d, yyyy')}
                   {profile.phone && ` · ${profile.phone}`}
                 </p>
+                {(!profile.selected_plan || profile.selected_plan === 'free') && (
+                  <Button
+                    size="sm"
+                    className="mt-3 gap-1.5"
+                    onClick={() => setUpgradeDialogOpen(true)}
+                  >
+                    <ArrowUpCircle className="w-4 h-4" /> Upgrade to Paid
+                  </Button>
+                )}
               </div>
             </div>
 
