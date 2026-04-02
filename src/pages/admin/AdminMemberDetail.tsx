@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar, BookOpen, ArrowUpCircle } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar, BookOpen, ArrowUpCircle, DollarSign, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { UpgradeToPaidDialog } from '@/components/admin/UpgradeToPaidDialog';
+import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
+import { DeletePaymentDialog } from '@/components/admin/DeletePaymentDialog';
 
 interface ProfileData {
   id: string;
@@ -67,6 +68,10 @@ export default function AdminMemberDetail() {
   const [hasSupplementalProgram, setHasSupplementalProgram] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [cashPayments, setCashPayments] = useState<CashPaymentRecord[]>([]);
+  const [editingPayment, setEditingPayment] = useState<CashPaymentRecord | null>(null);
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+
   useEffect(() => {
     if (id) fetchAll(id);
   }, [id]);
@@ -89,6 +94,14 @@ export default function AdminMemberDetail() {
       .eq('user_id', userId)
       .single();
     if (mp) setMemberProfile(mp as MemberProfileData);
+
+    // Cash payments
+    const { data: payments } = await supabase
+      .from('cash_payments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (payments) setCashPayments(payments as unknown as CashPaymentRecord[]);
 
     // Enrolled program
     const { data: enrollment } = await supabase
@@ -224,6 +237,16 @@ export default function AdminMemberDetail() {
 
   const formatGoal = (g: string) => g.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
+  const handleEditPayment = (payment: CashPaymentRecord) => {
+    setEditingPayment(payment);
+    setUpgradeDialogOpen(true);
+  };
+
+  const handleNewUpgrade = () => {
+    setEditingPayment(null);
+    setUpgradeDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <AdminLayout title="Member">
@@ -284,7 +307,7 @@ export default function AdminMemberDetail() {
                   <Button
                     size="sm"
                     className="mt-3 gap-1.5"
-                    onClick={() => setUpgradeDialogOpen(true)}
+                    onClick={handleNewUpgrade}
                   >
                     <ArrowUpCircle className="w-4 h-4" /> Upgrade to Paid
                   </Button>
@@ -314,6 +337,48 @@ export default function AdminMemberDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* SECTION — Cash Payments */}
+        {cashPayments.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground" /> Payment History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {cashPayments.map(payment => (
+                  <div key={payment.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">${payment.amount}</p>
+                        <Badge variant="outline" className="text-[10px]">
+                          {payment.payment_method === 'bank_transfer' ? 'Bank Transfer' : payment.payment_method === 'cash' ? 'Cash' : 'Other'}
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Paid {format(new Date(payment.payment_date), 'MMM d, yyyy')}
+                        {payment.expires_at && ` · Expires ${format(new Date(payment.expires_at), 'MMM d, yyyy')}`}
+                      </p>
+                      {payment.note && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5 italic">{payment.note}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditPayment(payment)}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeletePaymentId(payment.id)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* SECTION 2 — Current Program / Sessions */}
         <Card>
@@ -483,13 +548,24 @@ export default function AdminMemberDetail() {
       {profile && user && (
         <UpgradeToPaidDialog
           open={upgradeDialogOpen}
-          onOpenChange={setUpgradeDialogOpen}
+          onOpenChange={(open) => {
+            setUpgradeDialogOpen(open);
+            if (!open) setEditingPayment(null);
+          }}
           memberId={profile.id}
           memberName={profile.full_name || 'Unnamed'}
           coachId={user.id}
           onSuccess={() => id && fetchAll(id)}
+          editPayment={editingPayment}
         />
       )}
+
+      <DeletePaymentDialog
+        open={!!deletePaymentId}
+        onOpenChange={(open) => !open && setDeletePaymentId(null)}
+        paymentId={deletePaymentId || ''}
+        onSuccess={() => id && fetchAll(id)}
+      />
     </AdminLayout>
   );
 }
