@@ -37,13 +37,21 @@ export default function AdminDashboard() {
           .from('profiles')
           .select('id, selected_plan, created_at');
 
-        const activeMembers = allProfiles?.filter(p => p.selected_plan && p.selected_plan !== 'free').length || 0;
-        const freeMembers = allProfiles?.filter(p => !p.selected_plan || p.selected_plan === 'free').length || 0;
-        const totalCommunity = allProfiles?.length || 0;
+        // Get admin/coach user IDs to exclude from counts
+        const { data: adminRoles } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .in('role', ['admin', 'pt_admin']);
+        const adminIds = new Set(adminRoles?.map(r => r.user_id) || []);
+
+        const memberProfiles = allProfiles?.filter(p => !adminIds.has(p.id)) || [];
+        const activeMembers = memberProfiles.filter(p => p.selected_plan && p.selected_plan !== 'free').length;
+        const freeMembers = memberProfiles.filter(p => !p.selected_plan || p.selected_plan === 'free').length;
+        const totalCommunity = memberProfiles.length;
 
         // New members this month
         const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
-        const newAll = allProfiles?.filter(p => p.created_at >= monthStart) || [];
+        const newAll = memberProfiles.filter(p => p.created_at >= monthStart);
         const newPaid = newAll.filter(p => p.selected_plan && p.selected_plan !== 'free').length;
         const newFree = newAll.filter(p => !p.selected_plan || p.selected_plan === 'free').length;
         const newThisMonth = newAll.length;
