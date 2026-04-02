@@ -101,6 +101,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          expires_at: string | null
           id: string
           note: string | null
           payment_date: string
@@ -111,6 +112,7 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          expires_at?: string | null
           id?: string
           note?: string | null
           payment_date?: string
@@ -121,6 +123,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          expires_at?: string | null
           id?: string
           note?: string | null
           payment_date?: string
@@ -1528,6 +1531,7 @@ export type Database = {
           group_size: string | null
           has_completed_onboarding: boolean
           id: string
+          membership_expires_at: string | null
           nutrition_disclaimer_accepted: boolean
           phone: string | null
           selected_plan: string | null
@@ -1550,6 +1554,7 @@ export type Database = {
           group_size?: string | null
           has_completed_onboarding?: boolean
           id: string
+          membership_expires_at?: string | null
           nutrition_disclaimer_accepted?: boolean
           phone?: string | null
           selected_plan?: string | null
@@ -1572,6 +1577,7 @@ export type Database = {
           group_size?: string | null
           has_completed_onboarding?: boolean
           id?: string
+          membership_expires_at?: string | null
           nutrition_disclaimer_accepted?: boolean
           phone?: string | null
           selected_plan?: string | null
