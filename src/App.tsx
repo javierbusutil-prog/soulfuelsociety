@@ -25,6 +25,7 @@ import Onboarding from "./pages/Onboarding";
 import Invite from "./pages/Invite";
 import JoinGroup from "./pages/JoinGroup";
 import Waiver from "./pages/Waiver";
+import Intake from "./pages/Intake";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -170,6 +171,7 @@ function AppRoutes() {
       <Route path="/join/:token" element={<JoinGroup />} />
       <Route path="/waiver" element={<WaiverRoute />} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/intake" element={<Intake />} />
       <Route path="/book" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
       <Route path="/book/confirm/:bookingId" element={<ProtectedRoute><BookConfirm /></ProtectedRoute>} />
       
