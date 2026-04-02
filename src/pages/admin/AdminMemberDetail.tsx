@@ -66,7 +66,7 @@ export default function AdminMemberDetail() {
   const [enrolledProgram, setEnrolledProgram] = useState<{ title: string; weeks: number; start_date: string } | null>(null);
   const [hasSupplementalProgram, setHasSupplementalProgram] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
   useEffect(() => {
     if (id) fetchAll(id);
   }, [id]);
