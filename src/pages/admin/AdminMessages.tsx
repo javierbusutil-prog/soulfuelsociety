@@ -94,7 +94,7 @@ export default function AdminMessages() {
     setSelectedThread(thread);
     const { data: msgs } = await supabase
       .from('messages')
-      .select('id, content, sender_id, created_at')
+      .select('id, content, sender_id, created_at, tag')
       .eq('thread_id', thread.thread_id)
       .order('created_at', { ascending: true });
 
