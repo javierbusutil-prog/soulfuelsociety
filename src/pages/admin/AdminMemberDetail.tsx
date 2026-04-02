@@ -479,6 +479,17 @@ export default function AdminMemberDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {profile && user && (
+        <UpgradeToPaidDialog
+          open={upgradeDialogOpen}
+          onOpenChange={setUpgradeDialogOpen}
+          memberId={profile.id}
+          memberName={profile.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => id && fetchAll(id)}
+        />
+      )}
     </AdminLayout>
   );
 }
