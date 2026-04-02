@@ -26,6 +26,7 @@ interface Message {
   sender_id: string;
   created_at: string;
   sender_name?: string;
+  tag?: string | null;
 }
 
 export default function AdminMessages() {
