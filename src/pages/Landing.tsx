@@ -147,7 +147,7 @@ const coaches = [
     initials: 'JB',
     name: 'Javier Busutil',
     title: 'Physical Therapist & Fitness Coach',
-    bio: "Javier's path to coaching is rooted in both athletics and healthcare. He played baseball at Brito Miami Private School and competed at Barry University before earning his Doctor of Physical Therapy at Florida International University. When his athletic career ended, he discovered CrossFit — and never looked back. His background in physical therapy means he understands the body deeply, and his athletic career means he understands what it takes to push past your limits.",
+    bio: "Javier's path to coaching is rooted in both athletics and healthcare. He played baseball at Brito Miami Private School and competed at Barry University before earning his Doctor of Physical Therapy at Florida International University. When his athletic career ended, he discovered CrossFit and never looked back. His background in physical therapy means he understands the body deeply, and his athletic career means he understands what it takes to push past your limits.",
     specialties: ['CrossFit', 'Strength & conditioning', 'Athletic performance', 'Injury prevention', 'Physical rehabilitation'],
   },
   {
