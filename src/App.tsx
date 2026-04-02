@@ -25,6 +25,7 @@ import Onboarding from "./pages/Onboarding";
 import Invite from "./pages/Invite";
 import JoinGroup from "./pages/JoinGroup";
 import Waiver from "./pages/Waiver";
+import Intake from "./pages/Intake";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
