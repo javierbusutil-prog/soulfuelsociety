@@ -257,9 +257,6 @@ export default function AdminDashboard() {
           {/* Right Panel - Upcoming Sessions */}
           <UpcomingSessions />
         </div>
-
-        {/* Cash Revenue Section */}
-        <CashRevenueSection />
       </div>
     </AdminLayout>
   );
