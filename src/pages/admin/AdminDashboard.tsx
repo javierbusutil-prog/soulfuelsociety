@@ -51,7 +51,7 @@ export default function AdminDashboard() {
 
         // New members this month
         const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
-        const newAll = allProfiles?.filter(p => p.created_at >= monthStart) || [];
+        const newAll = memberProfiles.filter(p => p.created_at >= monthStart);
         const newPaid = newAll.filter(p => p.selected_plan && p.selected_plan !== 'free').length;
         const newFree = newAll.filter(p => !p.selected_plan || p.selected_plan === 'free').length;
         const newThisMonth = newAll.length;
