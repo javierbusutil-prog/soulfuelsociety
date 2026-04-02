@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+export interface CashPaymentRecord {
+  id: string;
+  user_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  note: string | null;
+  upgraded_by: string;
+  expires_at: string | null;
+  created_at: string;
+}
 
 interface UpgradeToPaidDialogProps {
   open: boolean;
@@ -20,14 +32,41 @@ interface UpgradeToPaidDialogProps {
   memberName: string;
   coachId: string;
   onSuccess: () => void;
+  editPayment?: CashPaymentRecord | null;
 }
 
-export function UpgradeToPaidDialog({ open, onOpenChange, memberId, memberName, coachId, onSuccess }: UpgradeToPaidDialogProps) {
+export function UpgradeToPaidDialog({ open, onOpenChange, memberId, memberName, coachId, onSuccess, editPayment }: UpgradeToPaidDialogProps) {
   const [amount, setAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
+  const [expirationDate, setExpirationDate] = useState<Date>(addDays(new Date(), 30));
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const isEditMode = !!editPayment;
+
+  useEffect(() => {
+    if (editPayment) {
+      setAmount(String(editPayment.amount));
+      setPaymentDate(new Date(editPayment.payment_date));
+      setExpirationDate(editPayment.expires_at ? new Date(editPayment.expires_at) : addDays(new Date(editPayment.payment_date), 30));
+      setPaymentMethod(editPayment.payment_method);
+      setNote(editPayment.note || '');
+    } else {
+      setAmount('');
+      setPaymentDate(new Date());
+      setExpirationDate(addDays(new Date(), 30));
+      setPaymentMethod('cash');
+      setNote('');
+    }
+  }, [editPayment, open]);
+
+  // Auto-update expiration when payment date changes (only in create mode)
+  useEffect(() => {
+    if (!isEditMode) {
+      setExpirationDate(addDays(paymentDate, 30));
+    }
+  }, [paymentDate, isEditMode]);
 
   const handleConfirm = async () => {
     const numAmount = parseFloat(amount);
@@ -38,52 +77,84 @@ export function UpgradeToPaidDialog({ open, onOpenChange, memberId, memberName, 
 
     setSubmitting(true);
 
-    // Update profile to paid
-    const { error: profileErr } = await supabase
-      .from('profiles')
-      .update({ selected_plan: 'online', subscription_status: 'active' } as any)
-      .eq('id', memberId);
+    if (isEditMode && editPayment) {
+      // Edit mode: update existing payment
+      const { error: paymentErr } = await supabase
+        .from('cash_payments')
+        .update({
+          amount: numAmount,
+          payment_date: format(paymentDate, 'yyyy-MM-dd'),
+          payment_method: paymentMethod,
+          note: note.trim() || null,
+          expires_at: expirationDate.toISOString(),
+        } as any)
+        .eq('id', editPayment.id);
 
-    if (profileErr) {
-      toast.error('Failed to update member plan.');
-      setSubmitting(false);
-      return;
-    }
+      if (paymentErr) {
+        toast.error('Failed to update payment.');
+        setSubmitting(false);
+        return;
+      }
 
-    // Update user role to paid
-    const { error: roleErr } = await supabase
-      .from('user_roles')
-      .update({ role: 'paid' } as any)
-      .eq('user_id', memberId);
+      // Update membership_expires_at on profile
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update({ membership_expires_at: expirationDate.toISOString() } as any)
+        .eq('id', memberId);
 
-    if (roleErr) {
-      console.error('Role update error:', roleErr);
-    }
+      if (profileErr) {
+        console.error('Profile expiration update error:', profileErr);
+      }
 
-    // Insert cash payment record
-    const { error: paymentErr } = await supabase
-      .from('cash_payments' as any)
-      .insert({
-        user_id: memberId,
-        amount: numAmount,
-        payment_date: format(paymentDate, 'yyyy-MM-dd'),
-        payment_method: paymentMethod,
-        note: note.trim() || null,
-        upgraded_by: coachId,
-      });
-
-    if (paymentErr) {
-      console.error('Payment record error:', paymentErr);
-      toast.error('Member upgraded but failed to record payment.');
+      toast.success('Payment updated successfully.');
     } else {
-      toast.success('Member upgraded successfully.');
+      // Create mode: upgrade member
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update({
+          selected_plan: 'online',
+          subscription_status: 'active',
+          membership_expires_at: expirationDate.toISOString(),
+        } as any)
+        .eq('id', memberId);
+
+      if (profileErr) {
+        toast.error('Failed to update member plan.');
+        setSubmitting(false);
+        return;
+      }
+
+      // Update user role to paid
+      const { error: roleErr } = await supabase
+        .from('user_roles')
+        .update({ role: 'paid' } as any)
+        .eq('user_id', memberId);
+
+      if (roleErr) {
+        console.error('Role update error:', roleErr);
+      }
+
+      // Insert cash payment record
+      const { error: paymentErr } = await supabase
+        .from('cash_payments')
+        .insert({
+          user_id: memberId,
+          amount: numAmount,
+          payment_date: format(paymentDate, 'yyyy-MM-dd'),
+          payment_method: paymentMethod,
+          note: note.trim() || null,
+          upgraded_by: coachId,
+          expires_at: expirationDate.toISOString(),
+        } as any);
+
+      if (paymentErr) {
+        console.error('Payment record error:', paymentErr);
+        toast.error('Member upgraded but failed to record payment.');
+      } else {
+        toast.success('Member upgraded successfully.');
+      }
     }
 
-    // Reset form
-    setAmount('');
-    setPaymentDate(new Date());
-    setPaymentMethod('cash');
-    setNote('');
     setSubmitting(false);
     onOpenChange(false);
     onSuccess();
@@ -93,7 +164,7 @@ export function UpgradeToPaidDialog({ open, onOpenChange, memberId, memberName, 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Upgrade to Paid</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Payment' : 'Upgrade to Paid'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -138,6 +209,29 @@ export function UpgradeToPaidDialog({ open, onOpenChange, memberId, memberName, 
             </Popover>
           </div>
 
+          {/* Expiration Date */}
+          <div className="space-y-1.5">
+            <Label>Expiration Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !expirationDate && 'text-muted-foreground')}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {expirationDate ? format(expirationDate, 'PPP') : 'Pick a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={expirationDate}
+                  onSelect={d => d && setExpirationDate(d)}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            <p className="text-[11px] text-muted-foreground">Member will automatically return to the free plan on this date.</p>
+          </div>
+
           {/* Payment Method */}
           <div className="space-y-1.5">
             <Label>Payment Method</Label>
@@ -170,7 +264,7 @@ export function UpgradeToPaidDialog({ open, onOpenChange, memberId, memberName, 
             Cancel
           </Button>
           <Button onClick={handleConfirm} disabled={submitting}>
-            {submitting ? 'Upgrading...' : 'Confirm Upgrade'}
+            {submitting ? (isEditMode ? 'Saving...' : 'Upgrading...') : (isEditMode ? 'Save Changes' : 'Confirm Upgrade')}
           </Button>
         </DialogFooter>
       </DialogContent>
