@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
 import { UpgradeBanner } from './UpgradeBanner';
+import { IntakeBanner } from './IntakeBanner';
 
 interface AppLayoutProps {
   children: ReactNode;
