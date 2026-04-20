@@ -13,6 +13,7 @@ import {
   Clock,
   MessagesSquare,
   Settings,
+  Activity,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import logoWordmark from '@/assets/logo-wordmark.svg';
@@ -22,6 +23,7 @@ const navItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/admin/members', icon: Users, label: 'Members' },
   { path: '/admin/programs', icon: Dumbbell, label: 'Programs' },
+  { path: '/admin/movements', icon: Activity, label: 'Movements' },
   { path: '/admin/community', icon: MessagesSquare, label: 'Community', hasBadge: true },
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },

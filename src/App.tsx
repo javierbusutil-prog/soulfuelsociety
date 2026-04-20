@@ -39,6 +39,7 @@ import AdminAvailability from "./pages/admin/AdminAvailability";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminCommunity from "./pages/admin/AdminCommunity";
+import AdminMovements from "./pages/admin/AdminMovements";
 
 // Booking pages
 import BookSession from "./pages/BookSession";
@@ -187,6 +188,7 @@ function AppRoutes() {
       <Route path="/admin/revenue" element={<CoachRoute><AdminRevenue /></CoachRoute>} />
       <Route path="/admin/settings" element={<CoachRoute><AdminSettings /></CoachRoute>} />
       <Route path="/admin/community" element={<CoachRoute><AdminCommunity /></CoachRoute>} />
+      <Route path="/admin/movements" element={<CoachRoute><AdminMovements /></CoachRoute>} />
       
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
