@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Event, EventCompletion, EventType } from '@/types/database';
+import { Event, EventType } from '@/types/database';
 import { CalendarEvent } from '@/types/workoutPrograms';
 import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { EditEventDialog } from '@/components/calendar/EditEventDialog';
@@ -114,7 +114,6 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<Event[]>([]);
-  const [completions, setCompletions] = useState<EventCompletion[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
