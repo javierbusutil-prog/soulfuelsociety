@@ -9,7 +9,7 @@ import type { Movement } from '@/types/movements';
 interface Props {
   movement: Movement;
   isFavorite: boolean;
-  onToggleFavorite: () => void;
+  onToggleFavorite?: () => void;
   onClose: () => void;
 }
 
@@ -48,12 +48,14 @@ export function MovementDetailView({ movement, isFavorite, onToggleFavorite, onC
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        <button
-          onClick={onToggleFavorite}
-          className={cn('transition-colors', isFavorite ? 'text-accent' : 'text-muted-foreground hover:text-foreground')}
-        >
-          <Heart className={cn('w-5 h-5', isFavorite && 'fill-current')} />
-        </button>
+        {onToggleFavorite && (
+          <button
+            onClick={onToggleFavorite}
+            className={cn('transition-colors', isFavorite ? 'text-accent' : 'text-muted-foreground hover:text-foreground')}
+          >
+            <Heart className={cn('w-5 h-5', isFavorite && 'fill-current')} />
+          </button>
+        )}
       </div>
 
       {/* Video / Thumbnail */}

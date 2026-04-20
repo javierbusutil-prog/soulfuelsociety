@@ -71,6 +71,14 @@ export function useMovements() {
     return error;
   };
 
+  const getMovementUsageCount = async (id: string): Promise<number> => {
+    const { count } = await supabase
+      .from('exercise_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('movement_id', id);
+    return count ?? 0;
+  };
+
   return {
     movements,
     favorites,
@@ -79,6 +87,7 @@ export function useMovements() {
     createMovement,
     updateMovement,
     deleteMovement,
+    getMovementUsageCount,
     refetch: fetchMovements,
   };
 }
