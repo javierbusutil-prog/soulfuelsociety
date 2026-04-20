@@ -133,6 +133,63 @@ export type Database = {
         }
         Relationships: []
       }
+      check_ins: {
+        Row: {
+          back_photo_url: string | null
+          check_in_date: string
+          coach_responded_at: string | null
+          coach_responder_id: string | null
+          coach_response: string | null
+          created_at: string
+          energy_level: number | null
+          front_photo_url: string | null
+          id: string
+          mood: number | null
+          notes: string | null
+          side_photo_url: string | null
+          sleep_hours: number | null
+          stress_level: number | null
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          back_photo_url?: string | null
+          check_in_date?: string
+          coach_responded_at?: string | null
+          coach_responder_id?: string | null
+          coach_response?: string | null
+          created_at?: string
+          energy_level?: number | null
+          front_photo_url?: string | null
+          id?: string
+          mood?: number | null
+          notes?: string | null
+          side_photo_url?: string | null
+          sleep_hours?: number | null
+          stress_level?: number | null
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          back_photo_url?: string | null
+          check_in_date?: string
+          coach_responded_at?: string | null
+          coach_responder_id?: string | null
+          coach_response?: string | null
+          created_at?: string
+          energy_level?: number | null
+          front_photo_url?: string | null
+          id?: string
+          mood?: number | null
+          notes?: string | null
+          side_photo_url?: string | null
+          sleep_hours?: number | null
+          stress_level?: number | null
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       coach_availability: {
         Row: {
           coach_id: string
@@ -187,6 +244,36 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_client_notes: {
+        Row: {
+          category: string | null
+          client_id: string
+          coach_id: string
+          created_at: string
+          id: string
+          note: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          client_id: string
+          coach_id: string
+          created_at?: string
+          id?: string
+          note: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          client_id?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coach_notification_preferences: {
         Row: {
           coach_id: string
@@ -205,30 +292,6 @@ export type Database = {
           id?: string
           inapp_enabled?: boolean
           push_enabled?: boolean
-        }
-        Relationships: []
-      }
-      coach_push_tokens: {
-        Row: {
-          coach_id: string
-          created_at: string
-          device_type: string
-          id: string
-          push_token: string
-        }
-        Insert: {
-          coach_id: string
-          created_at?: string
-          device_type?: string
-          id?: string
-          push_token: string
-        }
-        Update: {
-          coach_id?: string
-          created_at?: string
-          device_type?: string
-          id?: string
-          push_token?: string
         }
         Relationships: []
       }
@@ -566,35 +629,6 @@ export type Database = {
         }
         Relationships: []
       }
-      event_completions: {
-        Row: {
-          completed_at: string
-          event_id: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string
-          event_id: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          completed_at?: string
-          event_id?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "event_completions_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       events: {
         Row: {
           checkoff_enabled: boolean | null
@@ -647,7 +681,9 @@ export type Database = {
           exercise_name: string
           exercise_template_id: string | null
           id: string
+          movement_id: string | null
           notes: string | null
+          rpe: number | null
           section_type: string
           sort_order: number
           superset_completed: boolean | null
@@ -666,7 +702,9 @@ export type Database = {
           exercise_name: string
           exercise_template_id?: string | null
           id?: string
+          movement_id?: string | null
           notes?: string | null
+          rpe?: number | null
           section_type?: string
           sort_order?: number
           superset_completed?: boolean | null
@@ -685,7 +723,9 @@ export type Database = {
           exercise_name?: string
           exercise_template_id?: string | null
           id?: string
+          movement_id?: string | null
           notes?: string | null
+          rpe?: number | null
           section_type?: string
           sort_order?: number
           superset_completed?: boolean | null
@@ -704,6 +744,13 @@ export type Database = {
             columns: ["exercise_template_id"]
             isOneToOne: false
             referencedRelation: "exercise_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_logs_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "movements"
             referencedColumns: ["id"]
           },
           {
@@ -1349,112 +1396,56 @@ export type Database = {
         }
         Relationships: []
       }
-      plan_completions: {
+      personal_records: {
         Row: {
-          completed_at: string
+          achieved_at: string
+          created_at: string
           id: string
-          plan_item_id: string
+          movement_id: string
+          record_type: string
+          reps: number | null
+          set_log_id: string | null
           user_id: string
+          weight: number | null
         }
         Insert: {
-          completed_at?: string
+          achieved_at: string
+          created_at?: string
           id?: string
-          plan_item_id: string
+          movement_id: string
+          record_type: string
+          reps?: number | null
+          set_log_id?: string | null
           user_id: string
+          weight?: number | null
         }
         Update: {
-          completed_at?: string
+          achieved_at?: string
+          created_at?: string
           id?: string
-          plan_item_id?: string
+          movement_id?: string
+          record_type?: string
+          reps?: number | null
+          set_log_id?: string | null
           user_id?: string
+          weight?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "plan_completions_plan_item_id_fkey"
-            columns: ["plan_item_id"]
+            foreignKeyName: "personal_records_movement_id_fkey"
+            columns: ["movement_id"]
             isOneToOne: false
-            referencedRelation: "plan_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      plan_items: {
-        Row: {
-          attachment_url: string | null
-          created_at: string
-          day_of_week: number
-          id: string
-          item_type: Database["public"]["Enums"]["plan_item_type"]
-          notes: string | null
-          plan_id: string
-          title: string
-          workout_id: string | null
-        }
-        Insert: {
-          attachment_url?: string | null
-          created_at?: string
-          day_of_week: number
-          id?: string
-          item_type: Database["public"]["Enums"]["plan_item_type"]
-          notes?: string | null
-          plan_id: string
-          title: string
-          workout_id?: string | null
-        }
-        Update: {
-          attachment_url?: string | null
-          created_at?: string
-          day_of_week?: number
-          id?: string
-          item_type?: Database["public"]["Enums"]["plan_item_type"]
-          notes?: string | null
-          plan_id?: string
-          title?: string
-          workout_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "plan_items_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
+            referencedRelation: "movements"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "plan_items_workout_id_fkey"
-            columns: ["workout_id"]
+            foreignKeyName: "personal_records_set_log_id_fkey"
+            columns: ["set_log_id"]
             isOneToOne: false
-            referencedRelation: "workouts"
+            referencedRelation: "set_logs"
             referencedColumns: ["id"]
           },
         ]
-      }
-      plans: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          updated_at: string
-          user_id: string
-          week_start_date: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          updated_at?: string
-          user_id: string
-          week_start_date: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          updated_at?: string
-          user_id?: string
-          week_start_date?: string
-        }
-        Relationships: []
       }
       posts: {
         Row: {
@@ -1638,49 +1629,59 @@ export type Database = {
           },
         ]
       }
-      pt_consult_notes: {
+      program_tag_map: {
         Row: {
-          attachments: Json | null
-          consult_request_id: string
-          created_at: string
-          follow_up_plan: string | null
-          id: string
-          modifications: string | null
-          recommendations: string | null
-          red_flags: string | null
-          summary: string | null
+          program_id: string
+          tag_id: string
         }
         Insert: {
-          attachments?: Json | null
-          consult_request_id: string
-          created_at?: string
-          follow_up_plan?: string | null
-          id?: string
-          modifications?: string | null
-          recommendations?: string | null
-          red_flags?: string | null
-          summary?: string | null
+          program_id: string
+          tag_id: string
         }
         Update: {
-          attachments?: Json | null
-          consult_request_id?: string
-          created_at?: string
-          follow_up_plan?: string | null
-          id?: string
-          modifications?: string | null
-          recommendations?: string | null
-          red_flags?: string | null
-          summary?: string | null
+          program_id?: string
+          tag_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "pt_consult_notes_consult_request_id_fkey"
-            columns: ["consult_request_id"]
+            foreignKeyName: "program_tag_map_program_id_fkey"
+            columns: ["program_id"]
             isOneToOne: false
-            referencedRelation: "pt_consult_requests"
+            referencedRelation: "workout_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_tag_map_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "program_tags"
             referencedColumns: ["id"]
           },
         ]
+      }
+      program_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
       }
       pt_consult_requests: {
         Row: {
@@ -1714,45 +1715,6 @@ export type Database = {
           preferred_times?: Json | null
           scheduled_at?: string | null
           status?: Database["public"]["Enums"]["pt_consult_status"] | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      pt_intakes: {
-        Row: {
-          completed_at: string
-          consent_given: boolean | null
-          contraindications: string | null
-          equipment_available: string[] | null
-          id: string
-          injury_history: string | null
-          main_goal: string | null
-          pain_area: string | null
-          pain_scale: number | null
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string
-          consent_given?: boolean | null
-          contraindications?: string | null
-          equipment_available?: string[] | null
-          id?: string
-          injury_history?: string | null
-          main_goal?: string | null
-          pain_area?: string | null
-          pain_scale?: number | null
-          user_id: string
-        }
-        Update: {
-          completed_at?: string
-          consent_given?: boolean | null
-          contraindications?: string | null
-          equipment_available?: string[] | null
-          id?: string
-          injury_history?: string | null
-          main_goal?: string | null
-          pain_area?: string | null
-          pain_scale?: number | null
           user_id?: string
         }
         Relationships: []
@@ -1880,6 +1842,7 @@ export type Database = {
           exercise_log_id: string
           id: string
           is_superset_set: boolean
+          rpe: number | null
           set_number: number
           target_reps: string | null
           weight: number | null
@@ -1891,6 +1854,7 @@ export type Database = {
           exercise_log_id: string
           id?: string
           is_superset_set?: boolean
+          rpe?: number | null
           set_number?: number
           target_reps?: string | null
           weight?: number | null
@@ -1902,6 +1866,7 @@ export type Database = {
           exercise_log_id?: string
           id?: string
           is_superset_set?: boolean
+          rpe?: number | null
           set_number?: number
           target_reps?: string | null
           weight?: number | null
@@ -2151,39 +2116,6 @@ export type Database = {
           },
         ]
       }
-      weekly_reflections: {
-        Row: {
-          cravings_intensity: number
-          created_at: string
-          energy_rating: number
-          id: string
-          notes: string | null
-          protein_consistency: number
-          user_id: string
-          week_start: string
-        }
-        Insert: {
-          cravings_intensity?: number
-          created_at?: string
-          energy_rating?: number
-          id?: string
-          notes?: string | null
-          protein_consistency?: number
-          user_id: string
-          week_start: string
-        }
-        Update: {
-          cravings_intensity?: number
-          created_at?: string
-          energy_rating?: number
-          id?: string
-          notes?: string | null
-          protein_consistency?: number
-          user_id?: string
-          week_start?: string
-        }
-        Relationships: []
-      }
       workout_completions: {
         Row: {
           completed_at: string
@@ -2253,6 +2185,7 @@ export type Database = {
       }
       workout_programs: {
         Row: {
+          access_type: Database["public"]["Enums"]["program_access_type"]
           admin_days_of_week: number[] | null
           cover_image_url: string | null
           created_at: string
@@ -2261,13 +2194,16 @@ export type Database = {
           ebook_url: string | null
           frequency_per_week: number
           id: string
+          price_cents: number | null
           published: boolean
           schedule_mode: Database["public"]["Enums"]["schedule_mode"]
+          stripe_price_id: string | null
           title: string
           updated_at: string
           weeks: number
         }
         Insert: {
+          access_type?: Database["public"]["Enums"]["program_access_type"]
           admin_days_of_week?: number[] | null
           cover_image_url?: string | null
           created_at?: string
@@ -2276,13 +2212,16 @@ export type Database = {
           ebook_url?: string | null
           frequency_per_week?: number
           id?: string
+          price_cents?: number | null
           published?: boolean
           schedule_mode?: Database["public"]["Enums"]["schedule_mode"]
+          stripe_price_id?: string | null
           title: string
           updated_at?: string
           weeks?: number
         }
         Update: {
+          access_type?: Database["public"]["Enums"]["program_access_type"]
           admin_days_of_week?: number[] | null
           cover_image_url?: string | null
           created_at?: string
@@ -2291,8 +2230,10 @@ export type Database = {
           ebook_url?: string | null
           frequency_per_week?: number
           id?: string
+          price_cents?: number | null
           published?: boolean
           schedule_mode?: Database["public"]["Enums"]["schedule_mode"]
+          stripe_price_id?: string | null
           title?: string
           updated_at?: string
           weeks?: number
@@ -2439,6 +2380,7 @@ export type Database = {
       order_status: "pending" | "paid" | "fulfilled" | "cancelled"
       plan_item_type: "workout" | "nutrition"
       product_type: "digital" | "physical"
+      program_access_type: "free" | "membership" | "one_time_purchase"
       pt_consult_status:
         | "pending"
         | "approved"
@@ -2586,6 +2528,7 @@ export const Constants = {
       order_status: ["pending", "paid", "fulfilled", "cancelled"],
       plan_item_type: ["workout", "nutrition"],
       product_type: ["digital", "physical"],
+      program_access_type: ["free", "membership", "one_time_purchase"],
       pt_consult_status: [
         "pending",
         "approved",
