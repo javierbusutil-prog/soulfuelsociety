@@ -13,7 +13,6 @@ import { HydrationTracker } from '@/components/nutrition/HydrationTracker';
 import { EnergyMoodCheckin } from '@/components/nutrition/EnergyMoodCheckin';
 import { WeeklyTrends } from '@/components/nutrition/WeeklyTrends';
 
-import { WeeklyReflection } from '@/components/nutrition/WeeklyReflection';
 import { SmartInsights } from '@/components/nutrition/SmartInsights';
 import { FastingTimer } from '@/components/calendar/FastingTimer';
 import { MacroCalculator } from '@/components/nutrition/MacroCalculator';
@@ -106,9 +105,6 @@ export default function Nutrition() {
           entry={nutrition.entry}
           setCheckin={nutrition.setCheckin}
         />
-
-        {/* Weekly Reflection */}
-        <WeeklyReflection />
 
         {/* Smart Insights (shows after 14+ days of data) */}
         <SmartInsights

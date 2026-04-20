@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Event, EventCompletion, EventType } from '@/types/database';
+import { Event, EventType } from '@/types/database';
 import { CalendarEvent } from '@/types/workoutPrograms';
 import { CreateEventDialog } from '@/components/calendar/CreateEventDialog';
 import { EditEventDialog } from '@/components/calendar/EditEventDialog';
@@ -114,7 +114,6 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<Event[]>([]);
-  const [completions, setCompletions] = useState<EventCompletion[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
@@ -237,18 +236,8 @@ export default function Calendar() {
     setLoading(false);
   }, [currentDate]);
 
-  const fetchCompletions = useCallback(async () => {
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('event_completions')
-      .select('*')
-      .eq('user_id', user.id);
-
-    if (data) {
-      setCompletions(data as EventCompletion[]);
-    }
-  }, [user]);
+  // event_completions table removed - completion tracking handled via calendar_events
+  const completions: { id: string; event_id: string; user_id: string; completed_at: string }[] = [];
 
   const fetchWorkoutLogs = useCallback(async () => {
     if (!user) return;
@@ -267,26 +256,13 @@ export default function Calendar() {
   useEffect(() => {
     fetchEvents();
     if (user) {
-      fetchCompletions();
       fetchWorkoutLogs();
     }
-  }, [user, fetchEvents, fetchCompletions, fetchWorkoutLogs]);
+  }, [user, fetchEvents, fetchWorkoutLogs]);
 
-  const handleComplete = async (eventId: string) => {
-    if (!user) return;
-
-    const existing = completions.find(c => c.event_id === eventId);
-
-    if (existing) {
-      await supabase.from('event_completions').delete().eq('id', existing.id);
-    } else {
-      await supabase.from('event_completions').insert({
-        event_id: eventId,
-        user_id: user.id,
-      });
-    }
-
-    fetchCompletions();
+  // Completion toggling for global events removed (event_completions table dropped)
+  const handleComplete = async (_eventId: string) => {
+    // no-op
   };
 
   const days = eachDayOfInterval({
