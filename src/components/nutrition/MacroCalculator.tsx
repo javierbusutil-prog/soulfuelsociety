@@ -90,7 +90,6 @@ export function MacroCalculator() {
 
   // Inputs
   const [weight, setWeight] = useState('');
-  const [unit, setUnit] = useState<'lbs' | 'kg'>('lbs');
   const [goal, setGoal] = useState<string>('maintain');
   const [activity, setActivity] = useState<string>('moderate');
   const [advanced, setAdvanced] = useState(false);
@@ -123,18 +122,18 @@ export function MacroCalculator() {
     }
   };
 
-  // Conversions
+  // Conversions — weight is always entered in pounds.
+  // Internal kg value is only used by Mifflin-St Jeor BMR equation, which requires kg.
   const weightLbs = useMemo(() => {
     const w = parseFloat(weight);
     if (!w || w <= 0) return 0;
-    return unit === 'kg' ? w * 2.20462 : w;
-  }, [weight, unit]);
+    return w;
+  }, [weight]);
 
   const weightKg = useMemo(() => {
-    const w = parseFloat(weight);
-    if (!w || w <= 0) return 0;
-    return unit === 'lbs' ? w / 2.20462 : w;
-  }, [weight, unit]);
+    if (weightLbs <= 0) return 0;
+    return weightLbs / 2.20462;
+  }, [weightLbs]);
 
   const heightCm = useMemo(() => {
     const h = parseFloat(height);
@@ -298,17 +297,13 @@ export function MacroCalculator() {
             <>
               {/* Weight */}
               <div className="space-y-2">
-                <Label>Weight</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="text" inputMode="decimal"
-                    value={weight}
-                    onChange={e => { if (/^\d{0,4}(\.\d{0,1})?$/.test(e.target.value)) setWeight(e.target.value); }}
-                    placeholder={unit === 'lbs' ? '150' : '68'}
-                    className="flex-1"
-                  />
-                  <UnitToggle value={unit} options={['lbs', 'kg']} onChange={v => setUnit(v as any)} />
-                </div>
+                <Label>Weight (lb)</Label>
+                <Input
+                  type="text" inputMode="decimal"
+                  value={weight}
+                  onChange={e => { if (/^\d{0,4}(\.\d{0,1})?$/.test(e.target.value)) setWeight(e.target.value); }}
+                  placeholder="150"
+                />
               </div>
 
               {/* Goal */}
