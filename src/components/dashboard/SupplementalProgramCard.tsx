@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, ChevronDown, ChevronRight, Minus } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Minus, Play, RotateCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfWeek, differenceInWeeks } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
 import { MovementExerciseRow } from './MovementExerciseRow';
+import { ProgramSessionView } from './ProgramSessionView';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
