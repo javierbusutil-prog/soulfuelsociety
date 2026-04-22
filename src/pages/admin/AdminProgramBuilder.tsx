@@ -414,16 +414,16 @@ export default function AdminProgramBuilder() {
                                 ))}
                                 <div className="flex flex-wrap gap-2 pt-1">
                                   <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'strength')}>
-                                    <Dumbbell className="w-3 h-3" /> Strength
+                                    <Dumbbell className="w-3 h-3" /> + New Strength block
                                   </Button>
                                   <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'cardio')}>
-                                    <Bike className="w-3 h-3" /> Cardio
+                                    <Bike className="w-3 h-3" /> + New Cardio block
                                   </Button>
                                   <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'mobility')}>
-                                    <Heart className="w-3 h-3" /> Mobility
+                                    <Heart className="w-3 h-3" /> + New Mobility block
                                   </Button>
                                   <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'nutrition')}>
-                                    <Apple className="w-3 h-3" /> Nutrition
+                                    <Apple className="w-3 h-3" /> + New Nutrition block
                                   </Button>
                                 </div>
                               </div>
@@ -596,8 +596,8 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
           <Input placeholder="Coaching note (optional)" value={ex.note} onChange={e => updateExercise(idx, { note: e.target.value })} className="h-8 text-sm" />
         </div>
       ))}
-      <Button size="sm" variant="ghost" className="text-xs gap-1" onClick={addExercise}>
-        <Plus className="w-3 h-3" /> Add exercise
+      <Button size="sm" variant="default" className="text-xs gap-1 w-full" onClick={addExercise}>
+        <Plus className="w-3 h-3" /> Add exercise to this block
       </Button>
     </div>
   );
