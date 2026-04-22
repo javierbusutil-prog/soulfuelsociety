@@ -1,0 +1,1 @@
+ALTER TABLE public.check_ins RENAME COLUMN weight_kg TO weight_lb;

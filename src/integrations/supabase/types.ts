@@ -150,7 +150,7 @@ export type Database = {
           sleep_hours: number | null
           stress_level: number | null
           user_id: string
-          weight_kg: number | null
+          weight_lb: number | null
         }
         Insert: {
           back_photo_url?: string | null
@@ -168,7 +168,7 @@ export type Database = {
           sleep_hours?: number | null
           stress_level?: number | null
           user_id: string
-          weight_kg?: number | null
+          weight_lb?: number | null
         }
         Update: {
           back_photo_url?: string | null
@@ -186,7 +186,7 @@ export type Database = {
           sleep_hours?: number | null
           stress_level?: number | null
           user_id?: string
-          weight_kg?: number | null
+          weight_lb?: number | null
         }
         Relationships: []
       }
