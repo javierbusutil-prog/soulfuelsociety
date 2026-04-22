@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, ChevronDown, ChevronRight, Minus, Play, RotateCw } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Minus, Play, RotateCw, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfWeek, differenceInWeeks } from 'date-fns';
@@ -64,6 +64,7 @@ export function SupplementalProgramCard() {
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [inProgressDays, setInProgressDays] = useState<Set<number>>(new Set());
+  const [completedDays, setCompletedDays] = useState<Set<number>>(new Set());
   const [activeSession, setActiveSession] = useState<{ week: number; day: number } | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -92,13 +93,19 @@ export function SupplementalProgramCard() {
 
           const { data: logs } = await (supabase as any)
             .from('workout_logs')
-            .select('program_day')
+            .select('program_day, completed_at')
             .eq('user_id', user.id)
             .eq('coaching_program_id', data.id)
-            .eq('program_week', idx)
-            .is('completed_at', null);
+            .eq('program_week', idx);
           if (logs) {
-            setInProgressDays(new Set(logs.map((l: any) => l.program_day)));
+            const inProgress = new Set<number>();
+            const completed = new Set<number>();
+            for (const l of logs as any[]) {
+              if (l.completed_at) completed.add(l.program_day);
+              else inProgress.add(l.program_day);
+            }
+            setInProgressDays(inProgress);
+            setCompletedDays(completed);
           }
         }
       }
@@ -138,7 +145,11 @@ export function SupplementalProgramCard() {
               )}
               <span className="text-sm font-medium w-20 shrink-0">{DAY_NAMES[di]}</span>
               <span className="text-xs text-muted-foreground flex-1 truncate">{getDaySummary(day)}</span>
-              {day.isRest && <Minus className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />}
+              {day.isRest ? (
+                <Minus className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+              ) : completedDays.has(di) ? (
+                <CheckCircle2 className="w-4 h-4 text-primary fill-primary/15 shrink-0" />
+              ) : null}
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="ml-7 mr-3 mb-2 space-y-2">
