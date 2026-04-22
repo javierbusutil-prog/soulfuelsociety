@@ -41,6 +41,12 @@ interface ExerciseState {
   sets: SetRow[];
 }
 
+interface PrevHint {
+  weight: number | null;
+  reps: number | null;
+  rpe: number | null;
+}
+
 interface CardioState {
   blockIndex: number;
   activity: string;
@@ -107,6 +113,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
   const [cardioState, setCardioState] = useState<CardioState[]>(() => buildInitialCardioState(dayBlocks));
   const [movementCache, setMovementCache] = useState<Record<string, Movement>>({});
   const [openMovement, setOpenMovement] = useState<Movement | null>(null);
+  const [prevHints, setPrevHints] = useState<Record<string, PrevHint>>({});
 
   // Find or create the in-progress workout_log on mount.
   useEffect(() => {
@@ -180,6 +187,39 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
       }
     })();
   }, [exerciseState]);
+
+  // Fetch most recent completed set for each movement (last-time hint)
+  useEffect(() => {
+    if (!user) return;
+    const ids = Array.from(
+      new Set(exerciseState.map(e => e.movementId).filter((id): id is string => !!id))
+    );
+    if (ids.length === 0) return;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from('exercise_logs')
+        .select('movement_id, workout_log_id, set_logs(weight, completed_reps, rpe, completed, created_at), workout_logs!inner(user_id, completed_at)')
+        .in('movement_id', ids)
+        .eq('workout_logs.user_id', user.id)
+        .not('workout_logs.completed_at', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (!data) return;
+      const out: Record<string, PrevHint> = {};
+      for (const row of data as any[]) {
+        const mid = row.movement_id;
+        if (!mid || out[mid]) continue;
+        if (workoutLogId && row.workout_log_id === workoutLogId) continue;
+        const completedSets = (row.set_logs || []).filter((s: any) => s.completed);
+        if (completedSets.length === 0) continue;
+        const latest = completedSets.sort((a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0];
+        out[mid] = { weight: latest.weight, reps: latest.completed_reps, rpe: latest.rpe };
+      }
+      setPrevHints(out);
+    })();
+  }, [user, exerciseState, workoutLogId]);
 
   const hydrateFromExistingLog = async (logId: string) => {
     const { data: exLogs } = await (supabase as any)
