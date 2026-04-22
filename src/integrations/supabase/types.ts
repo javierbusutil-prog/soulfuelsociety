@@ -1244,6 +1244,7 @@ export type Database = {
           equipment: string
           form_cues: string[]
           id: string
+          is_bodyweight: boolean
           muscle_group: string
           name: string
           progressions: string[]
@@ -1264,6 +1265,7 @@ export type Database = {
           equipment?: string
           form_cues?: string[]
           id?: string
+          is_bodyweight?: boolean
           muscle_group?: string
           name: string
           progressions?: string[]
@@ -1284,6 +1286,7 @@ export type Database = {
           equipment?: string
           form_cues?: string[]
           id?: string
+          is_bodyweight?: boolean
           muscle_group?: string
           name?: string
           progressions?: string[]
@@ -2147,33 +2150,49 @@ export type Database = {
       }
       workout_logs: {
         Row: {
+          coaching_program_id: string | null
           completed_at: string | null
           created_at: string
           id: string
           notes: string | null
+          program_day: number | null
+          program_week: number | null
           started_at: string
           user_id: string
-          workout_id: string
+          workout_id: string | null
         }
         Insert: {
+          coaching_program_id?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
           notes?: string | null
+          program_day?: number | null
+          program_week?: number | null
           started_at?: string
           user_id: string
-          workout_id: string
+          workout_id?: string | null
         }
         Update: {
+          coaching_program_id?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
           notes?: string | null
+          program_day?: number | null
+          program_week?: number | null
           started_at?: string
           user_id?: string
-          workout_id?: string
+          workout_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "workout_logs_coaching_program_id_fkey"
+            columns: ["coaching_program_id"]
+            isOneToOne: false
+            referencedRelation: "coaching_programs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workout_logs_workout_id_fkey"
             columns: ["workout_id"]

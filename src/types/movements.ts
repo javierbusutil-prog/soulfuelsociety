@@ -16,6 +16,7 @@ export interface Movement {
   safety_notes: string | null;
   tags: string[];
   published: boolean;
+  is_bodyweight: boolean;
   created_by: string | null;
   created_at: string;
   updated_at: string;

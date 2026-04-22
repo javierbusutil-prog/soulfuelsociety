@@ -414,16 +414,16 @@ export default function AdminProgramBuilder() {
                                 ))}
                                 <div className="flex flex-wrap gap-2 pt-1">
                                   <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'strength')}>
-                                    <Dumbbell className="w-3 h-3" /> Strength
+                                    <Dumbbell className="w-3 h-3" /> + New Strength block
                                   </Button>
                                   <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'cardio')}>
-                                    <Bike className="w-3 h-3" /> Cardio
+                                    <Bike className="w-3 h-3" /> + New Cardio block
                                   </Button>
                                   <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'mobility')}>
-                                    <Heart className="w-3 h-3" /> Mobility
+                                    <Heart className="w-3 h-3" /> + New Mobility block
                                   </Button>
                                   <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => addBlock(wi, di, 'nutrition')}>
-                                    <Apple className="w-3 h-3" /> Nutrition
+                                    <Apple className="w-3 h-3" /> + New Nutrition block
                                   </Button>
                                 </div>
                               </div>
@@ -476,7 +476,7 @@ export default function AdminProgramBuilder() {
                             <CardTitle className="text-xs font-semibold">{dayName}</CardTitle>
                           </CardHeader>
                           <CardContent className="p-2.5 pt-0 space-y-1.5">
-                            {day.blocks.map((block, bi) => (
+                            {mergeAdjacentBlocks(day.blocks).map((block, bi) => (
                               <PreviewBlock key={bi} block={block} />
                             ))}
                           </CardContent>
@@ -596,8 +596,8 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
           <Input placeholder="Coaching note (optional)" value={ex.note} onChange={e => updateExercise(idx, { note: e.target.value })} className="h-8 text-sm" />
         </div>
       ))}
-      <Button size="sm" variant="ghost" className="text-xs gap-1" onClick={addExercise}>
-        <Plus className="w-3 h-3" /> Add exercise
+      <Button size="sm" variant="default" className="text-xs gap-1 w-full" onClick={addExercise}>
+        <Plus className="w-3 h-3" /> Add exercise to this block
       </Button>
     </div>
   );
@@ -670,6 +670,25 @@ function MobilityEditor({ block, onUpdate }: { block: MobilityBlock; onUpdate: (
 }
 
 /* ========= Preview Block ========= */
+/**
+ * Display-only: merge consecutive blocks of the same type (strength/mobility)
+ * so coaches see "Strength · 3 exercises" instead of three separate blocks.
+ * Cardio/nutrition stay as-is (each instance is conceptually distinct).
+ */
+function mergeAdjacentBlocks(blocks: Block[]): Block[] {
+  const out: Block[] = [];
+  for (const b of blocks) {
+    const last = out[out.length - 1];
+    if (last && last.type === b.type && (b.type === 'strength' || b.type === 'mobility')) {
+      (last as any).exercises = [...(last as any).exercises, ...(b as any).exercises];
+    } else {
+      // Deep clone to avoid mutating original
+      out.push(JSON.parse(JSON.stringify(b)));
+    }
+  }
+  return out;
+}
+
 function PreviewBlock({ block }: { block: Block }) {
   if (block.type === 'strength') {
     return (

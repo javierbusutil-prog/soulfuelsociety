@@ -41,6 +41,12 @@ interface ExerciseState {
   sets: SetRow[];
 }
 
+interface PrevHint {
+  weight: number | null;
+  reps: number | null;
+  rpe: number | null;
+}
+
 interface CardioState {
   blockIndex: number;
   activity: string;
@@ -107,6 +113,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
   const [cardioState, setCardioState] = useState<CardioState[]>(() => buildInitialCardioState(dayBlocks));
   const [movementCache, setMovementCache] = useState<Record<string, Movement>>({});
   const [openMovement, setOpenMovement] = useState<Movement | null>(null);
+  const [prevHints, setPrevHints] = useState<Record<string, PrevHint>>({});
 
   // Find or create the in-progress workout_log on mount.
   useEffect(() => {
@@ -180,6 +187,39 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
       }
     })();
   }, [exerciseState]);
+
+  // Fetch most recent completed set for each movement (last-time hint)
+  useEffect(() => {
+    if (!user) return;
+    const ids = Array.from(
+      new Set(exerciseState.map(e => e.movementId).filter((id): id is string => !!id))
+    );
+    if (ids.length === 0) return;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from('exercise_logs')
+        .select('movement_id, workout_log_id, set_logs(weight, completed_reps, rpe, completed, created_at), workout_logs!inner(user_id, completed_at)')
+        .in('movement_id', ids)
+        .eq('workout_logs.user_id', user.id)
+        .not('workout_logs.completed_at', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (!data) return;
+      const out: Record<string, PrevHint> = {};
+      for (const row of data as any[]) {
+        const mid = row.movement_id;
+        if (!mid || out[mid]) continue;
+        if (workoutLogId && row.workout_log_id === workoutLogId) continue;
+        const completedSets = (row.set_logs || []).filter((s: any) => s.completed);
+        if (completedSets.length === 0) continue;
+        const latest = completedSets.sort((a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0];
+        out[mid] = { weight: latest.weight, reps: latest.completed_reps, rpe: latest.rpe };
+      }
+      setPrevHints(out);
+    })();
+  }, [user, exerciseState, workoutLogId]);
 
   const hydrateFromExistingLog = async (logId: string) => {
     const { data: exLogs } = await (supabase as any)
@@ -256,6 +296,33 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
 
   const handleFinish = async () => {
     if (!user || !workoutLogId) return;
+
+    // Guard: any data anywhere?
+    const hasStrengthData = exerciseState.some(ex =>
+      ex.sets.some(s => s.weight || s.reps || s.rpe || s.completed)
+    );
+    const hasCardioData = cardioState.some(c => c.completed || c.duration || c.notes);
+    if (!hasStrengthData && !hasCardioData) {
+      toast.error('Nothing to log. Complete at least one set or mark a cardio activity.');
+      // Drop the empty stub so we don't leave orphan in-progress logs
+      await (supabase as any).from('workout_logs').delete().eq('id', workoutLogId);
+      setWorkoutLogId(null);
+      onBack();
+      return;
+    }
+
+    // Validate RPE before any writes
+    for (const ex of exerciseState) {
+      for (const s of ex.sets) {
+        if (!s.rpe) continue;
+        const n = parseFloat(s.rpe);
+        if (isNaN(n) || n < 1 || n > 10) {
+          toast.error('RPE must be between 1 and 10.');
+          return;
+        }
+      }
+    }
+
     setSubmitting(true);
 
     // Clear any previously saved logs for this workout_log so re-finishes don't duplicate
@@ -272,6 +339,8 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
     // Strength + mobility exercises
     for (let i = 0; i < exerciseState.length; i++) {
       const ex = exerciseState[i];
+      const movement = ex.movementId ? movementCache[ex.movementId] : undefined;
+      const isBodyweight = !!movement?.is_bodyweight;
       const filledSets = ex.sets.filter(s => s.weight || s.reps || s.rpe || s.completed);
       if (filledSets.length === 0) continue;
 
@@ -301,7 +370,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
         set_number: si + 1,
         target_reps: ex.prescribedReps || null,
         completed_reps: s.reps ? parseInt(s.reps, 10) || null : null,
-        weight: s.weight ? parseFloat(s.weight) || null : null,
+        weight: isBodyweight ? null : (s.weight ? parseFloat(s.weight) || null : null),
         rpe: s.rpe ? parseFloat(s.rpe) || null : null,
         completed: s.completed,
       }));
@@ -353,6 +422,14 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
     .map((b, bi) => ({ block: b, bi }))
     .filter(x => x.block.type === 'nutrition');
 
+  const hasInvalidRpe = exerciseState.some(ex =>
+    ex.sets.some(s => {
+      if (!s.rpe) return false;
+      const n = parseFloat(s.rpe);
+      return isNaN(n) || n < 1 || n > 10;
+    })
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -373,6 +450,8 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
       {/* Strength + Mobility exercises */}
       {exerciseState.map((ex, exIdx) => {
         const movement = ex.movementId ? movementCache[ex.movementId] : undefined;
+        const isBodyweight = !!movement?.is_bodyweight;
+        const hint = ex.movementId ? prevHints[ex.movementId] : undefined;
         return (
           <Card key={`ex-${exIdx}`} className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-2">
@@ -390,14 +469,26 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                       <PlayCircle className="w-4 h-4" />
                     </button>
                   )}
+                  {isBodyweight && (
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Bodyweight</Badge>
+                  )}
                 </div>
                 {ex.prescribedReps && (
                   <p className="text-[11px] text-muted-foreground">Prescribed: {ex.sets.length}×{ex.prescribedReps}</p>
                 )}
+                {hint && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Last time:{' '}
+                    {hint.weight != null ? `${hint.weight}kg` : 'BW'}
+                    {hint.reps != null ? ` × ${hint.reps}` : ''}
+                    {hint.rpe != null ? ` @ RPE ${hint.rpe}` : ''}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            {/* Desktop / tablet: horizontal table */}
+            <div className="hidden sm:block space-y-1.5">
               <div className="grid grid-cols-[24px_1fr_1fr_1fr_28px_28px] gap-1.5 items-center text-[10px] uppercase tracking-wider text-muted-foreground px-1">
                 <span>#</span>
                 <span>Weight</span>
@@ -406,52 +497,146 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                 <span></span>
                 <span></span>
               </div>
-              {ex.sets.map((s, si) => (
-                <div key={si} className="grid grid-cols-[24px_1fr_1fr_1fr_28px_28px] gap-1.5 items-center">
-                  <span className="text-xs text-muted-foreground text-center">{si + 1}</span>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    placeholder="0"
-                    value={s.weight}
-                    onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
-                    className="h-8 text-sm"
-                  />
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    placeholder={ex.prescribedReps || '0'}
-                    value={s.reps}
-                    onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
-                    className="h-8 text-sm"
-                  />
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    placeholder="—"
-                    min="1"
-                    max="10"
-                    value={s.rpe}
-                    onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
-                    className="h-8 text-sm"
-                  />
-                  <div className="flex items-center justify-center">
-                    <Checkbox
-                      checked={s.completed}
-                      onCheckedChange={v => updateSet(exIdx, si, { completed: !!v })}
+              {ex.sets.map((s, si) => {
+                const rpeNum = s.rpe ? parseFloat(s.rpe) : null;
+                const rpeInvalid = s.rpe !== '' && (rpeNum === null || isNaN(rpeNum) || rpeNum < 1 || rpeNum > 10);
+                return (
+                  <div key={si} className="grid grid-cols-[24px_1fr_1fr_1fr_28px_28px] gap-1.5 items-start">
+                    <span className="text-xs text-muted-foreground text-center pt-2">{si + 1}</span>
+                    {isBodyweight ? (
+                      <div className="h-8 flex items-center px-2 rounded-md border border-dashed border-border bg-muted/30 text-[11px] text-muted-foreground italic">
+                        Bodyweight
+                      </div>
+                    ) : (
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        placeholder="0"
+                        value={s.weight}
+                        onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
+                        className="h-8 text-sm"
+                      />
+                    )}
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder={ex.prescribedReps || '0'}
+                      value={s.reps}
+                      onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
+                      className="h-8 text-sm"
                     />
+                    <div>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        placeholder="—"
+                        min={1}
+                        max={10}
+                        step={0.5}
+                        value={s.rpe}
+                        onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
+                        className={`h-8 text-sm ${rpeInvalid ? 'border-destructive' : ''}`}
+                        aria-invalid={rpeInvalid}
+                      />
+                      {rpeInvalid && <p className="text-[10px] text-destructive mt-0.5">1–10</p>}
+                    </div>
+                    <div className="flex items-center justify-center pt-2">
+                      <Checkbox
+                        checked={s.completed}
+                        onCheckedChange={v => updateSet(exIdx, si, { completed: !!v })}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeSet(exIdx, si)}
+                      disabled={ex.sets.length <= 1}
+                      className="text-muted-foreground hover:text-destructive disabled:opacity-30 pt-2"
+                      aria-label="Remove set"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeSet(exIdx, si)}
-                    disabled={ex.sets.length <= 1}
-                    className="text-muted-foreground hover:text-destructive disabled:opacity-30"
-                    aria-label="Remove set"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+
+            {/* Mobile: stacked compact cards */}
+            <div className="sm:hidden space-y-2">
+              {ex.sets.map((s, si) => {
+                const rpeNum = s.rpe ? parseFloat(s.rpe) : null;
+                const rpeInvalid = s.rpe !== '' && (rpeNum === null || isNaN(rpeNum) || rpeNum < 1 || rpeNum > 10);
+                return (
+                  <div key={si} className="rounded-md border border-border p-2 space-y-2 bg-card">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Set {si + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeSet(exIdx, si)}
+                        disabled={ex.sets.length <= 1}
+                        className="text-muted-foreground hover:text-destructive disabled:opacity-30"
+                        aria-label="Remove set"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Weight</label>
+                        {isBodyweight ? (
+                          <div className="h-8 flex items-center px-2 rounded-md border border-dashed border-border bg-muted/30 text-[11px] text-muted-foreground italic">
+                            Bodyweight
+                          </div>
+                        ) : (
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={s.weight}
+                            onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
+                            className="h-8 text-sm"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Reps</label>
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          placeholder={ex.prescribedReps || '0'}
+                          value={s.reps}
+                          onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 items-end">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">RPE (1–10)</label>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          placeholder="—"
+                          min={1}
+                          max={10}
+                          step={0.5}
+                          value={s.rpe}
+                          onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
+                          className={`h-8 text-sm ${rpeInvalid ? 'border-destructive' : ''}`}
+                          aria-invalid={rpeInvalid}
+                        />
+                        {rpeInvalid && <p className="text-[10px] text-destructive mt-0.5">1–10</p>}
+                      </div>
+                      <label className="flex items-center gap-2 h-8 px-2 rounded-md bg-muted/40">
+                        <Checkbox
+                          checked={s.completed}
+                          onCheckedChange={v => updateSet(exIdx, si, { completed: !!v })}
+                        />
+                        <span className="text-xs">Complete</span>
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <Button variant="outline" size="sm" onClick={() => addSet(exIdx)} className="w-full text-xs gap-1">
@@ -512,7 +697,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
         <Button variant="outline" onClick={onBack} disabled={submitting} className="flex-1">
           Save & exit
         </Button>
-        <Button onClick={handleFinish} disabled={submitting} className="flex-1 gap-1.5">
+        <Button onClick={handleFinish} disabled={submitting || hasInvalidRpe} className="flex-1 gap-1.5">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
           Finish workout
         </Button>
