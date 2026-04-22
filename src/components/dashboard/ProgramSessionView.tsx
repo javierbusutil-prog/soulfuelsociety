@@ -590,7 +590,6 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
           Save & exit
         </Button>
         <Button onClick={handleFinish} disabled={submitting} className="flex-1 gap-1.5">
-        <Button onClick={handleFinish} disabled={submitting || hasInvalidRpe} className="flex-1 gap-1.5">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
           Finish workout
         </Button>
