@@ -300,10 +300,26 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
     // Guard: any data anywhere?
     // NOTE: `reps` is pre-seeded from the prescription, so it does NOT count
     // as a user-entered signal. Only weight / rpe / completed indicate intent.
-    const hasStrengthData = exerciseState.some(ex =>
-      ex.sets.some(s => s.weight || s.rpe || s.completed)
-    );
-    const hasCardioData = cardioState.some(c => c.completed || c.duration || c.notes);
+    // A weight of "0" is NOT a real entry — require parseFloat > 0.
+    const isSetFilled = (s: SetRow) => {
+      const w = parseFloat(s.weight);
+      const r = parseFloat(s.rpe);
+      return (
+        (s.weight.trim() !== '' && !isNaN(w) && w > 0) ||
+        (s.rpe.trim() !== '' && !isNaN(r)) ||
+        s.completed === true
+      );
+    };
+    const isCardioFilled = (c: CardioState) => {
+      const d = parseFloat(c.duration);
+      return (
+        c.completed === true ||
+        (c.duration.trim() !== '' && !isNaN(d) && d > 0) ||
+        c.notes.trim() !== ''
+      );
+    };
+    const hasStrengthData = exerciseState.some(ex => ex.sets.some(isSetFilled));
+    const hasCardioData = cardioState.some(isCardioFilled);
     if (!hasStrengthData && !hasCardioData) {
       toast.error('Nothing to log. Complete at least one set or mark a cardio activity.');
       // Drop the empty stub so we don't leave orphan in-progress logs
@@ -343,7 +359,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
       const ex = exerciseState[i];
       const movement = ex.movementId ? movementCache[ex.movementId] : undefined;
       const isBodyweight = !!movement?.is_bodyweight;
-      const filledSets = ex.sets.filter(s => s.weight || s.rpe || s.completed);
+      const filledSets = ex.sets.filter(isSetFilled);
       if (filledSets.length === 0) continue;
 
       const anyCompleted = filledSets.some(s => s.completed);
@@ -383,7 +399,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
     // Cardio
     for (let i = 0; i < cardioState.length; i++) {
       const c = cardioState[i];
-      if (!c.completed && !c.duration && !c.notes) continue;
+      if (!isCardioFilled(c)) continue;
       const sortOrder = exerciseState.length + i;
       const { error: cErr } = await (supabase as any).from('exercise_logs').insert({
         workout_log_id: workoutLogId,
