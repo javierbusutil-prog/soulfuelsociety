@@ -25,13 +25,33 @@ interface WeekPlan {
   days: DayPlan[];
 }
 
+function mergeAdjacentBlocks(blocks: any[]): any[] {
+  const out: any[] = [];
+  for (const b of blocks) {
+    const last = out[out.length - 1];
+    if (last && last.type === b.type && (b.type === 'strength' || b.type === 'mobility')) {
+      last.exercises = [...(last.exercises || []), ...(b.exercises || [])];
+    } else {
+      out.push(JSON.parse(JSON.stringify(b)));
+    }
+  }
+  return out;
+}
+
 function getDaySummary(day: DayPlan): string {
   if (day.isRest) return 'Rest day';
+  const merged = mergeAdjacentBlocks(day.blocks);
   const parts: string[] = [];
-  for (const block of day.blocks) {
-    if (block.type === 'strength') parts.push(`Strength · ${block.exercises?.length || 0} exercises`);
+  for (const block of merged) {
+    if (block.type === 'strength') {
+      const c = block.exercises?.length || 0;
+      parts.push(`Strength · ${c} exercise${c !== 1 ? 's' : ''}`);
+    }
     else if (block.type === 'cardio') parts.push('Cardio');
-    else if (block.type === 'mobility') parts.push('Mobility');
+    else if (block.type === 'mobility') {
+      const c = block.exercises?.length || 0;
+      parts.push(`Mobility${c ? ` · ${c} exercise${c !== 1 ? 's' : ''}` : ''}`);
+    }
     else if (block.type === 'nutrition') parts.push('Nutrition');
   }
   return parts.join(' + ') || 'Active day';
@@ -125,7 +145,7 @@ export function SupplementalProgramCard() {
                 {day.isRest ? (
                   <p className="text-xs text-muted-foreground italic">{day.restNote || 'Rest and recover.'}</p>
                 ) : (
-                  day.blocks.map((block: any, bi: number) => (
+                  mergeAdjacentBlocks(day.blocks).map((block: any, bi: number) => (
                     <div key={bi} className="bg-muted/40 rounded-lg p-2.5 space-y-1.5">
                       <p className="text-[10px] uppercase tracking-wider text-primary font-medium">{block.type}</p>
                       {block.type === 'strength' && block.exercises?.map((ex: any, ei: number) => (
