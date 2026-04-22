@@ -298,8 +298,10 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
     if (!user || !workoutLogId) return;
 
     // Guard: any data anywhere?
+    // NOTE: `reps` is pre-seeded from the prescription, so it does NOT count
+    // as a user-entered signal. Only weight / rpe / completed indicate intent.
     const hasStrengthData = exerciseState.some(ex =>
-      ex.sets.some(s => s.weight || s.reps || s.rpe || s.completed)
+      ex.sets.some(s => s.weight || s.rpe || s.completed)
     );
     const hasCardioData = cardioState.some(c => c.completed || c.duration || c.notes);
     if (!hasStrengthData && !hasCardioData) {
@@ -341,7 +343,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
       const ex = exerciseState[i];
       const movement = ex.movementId ? movementCache[ex.movementId] : undefined;
       const isBodyweight = !!movement?.is_bodyweight;
-      const filledSets = ex.sets.filter(s => s.weight || s.reps || s.rpe || s.completed);
+      const filledSets = ex.sets.filter(s => s.weight || s.rpe || s.completed);
       if (filledSets.length === 0) continue;
 
       const anyCompleted = filledSets.some(s => s.completed);
