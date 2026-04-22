@@ -53,17 +53,20 @@ function getDaySummary(day: DayPlan): string {
 
 export function OnlineProgramCard() {
   const { user } = useAuth();
-  const [program, setProgram] = useState<{ weeks: WeekPlan[]; created_at: string } | null>(null);
+  const [program, setProgram] = useState<{ id: string; weeks: WeekPlan[]; created_at: string } | null>(null);
   const [currentWeekIdx, setCurrentWeekIdx] = useState(0);
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inProgressDays, setInProgressDays] = useState<Set<number>>(new Set());
+  const [activeSession, setActiveSession] = useState<{ week: number; day: number } | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     const fetch = async () => {
       const { data } = await supabase
         .from('coaching_programs')
-        .select('program_data, created_at')
+        .select('id, program_data, created_at')
         .eq('user_id', user.id)
         .eq('is_active', true)
         .eq('plan_type', 'online' as any)
@@ -79,13 +82,25 @@ export function OnlineProgramCard() {
           const weekDiff = differenceInWeeks(now, programStart);
           const idx = Math.max(0, Math.min(weekDiff, pd.weeks.length - 1));
           setCurrentWeekIdx(idx);
-          setProgram({ weeks: pd.weeks, created_at: data.created_at });
+          setProgram({ id: data.id, weeks: pd.weeks, created_at: data.created_at });
+
+          // Look up any in-progress workout_logs for the current week
+          const { data: logs } = await (supabase as any)
+            .from('workout_logs')
+            .select('program_day')
+            .eq('user_id', user.id)
+            .eq('coaching_program_id', data.id)
+            .eq('program_week', idx)
+            .is('completed_at', null);
+          if (logs) {
+            setInProgressDays(new Set(logs.map((l: any) => l.program_day)));
+          }
         }
       }
       setLoading(false);
     };
     fetch();
-  }, [user]);
+  }, [user, reloadKey]);
 
   if (loading) return null;
 
