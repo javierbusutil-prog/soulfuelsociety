@@ -1244,6 +1244,7 @@ export type Database = {
           equipment: string
           form_cues: string[]
           id: string
+          is_bodyweight: boolean
           muscle_group: string
           name: string
           progressions: string[]
@@ -1264,6 +1265,7 @@ export type Database = {
           equipment?: string
           form_cues?: string[]
           id?: string
+          is_bodyweight?: boolean
           muscle_group?: string
           name: string
           progressions?: string[]
@@ -1284,6 +1286,7 @@ export type Database = {
           equipment?: string
           form_cues?: string[]
           id?: string
+          is_bodyweight?: boolean
           muscle_group?: string
           name?: string
           progressions?: string[]
