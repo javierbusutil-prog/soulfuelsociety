@@ -422,6 +422,14 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
     .map((b, bi) => ({ block: b, bi }))
     .filter(x => x.block.type === 'nutrition');
 
+  const hasInvalidRpe = exerciseState.some(ex =>
+    ex.sets.some(s => {
+      if (!s.rpe) return false;
+      const n = parseFloat(s.rpe);
+      return isNaN(n) || n < 1 || n > 10;
+    })
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -582,6 +590,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
           Save & exit
         </Button>
         <Button onClick={handleFinish} disabled={submitting} className="flex-1 gap-1.5">
+        <Button onClick={handleFinish} disabled={submitting || hasInvalidRpe} className="flex-1 gap-1.5">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
           Finish workout
         </Button>
