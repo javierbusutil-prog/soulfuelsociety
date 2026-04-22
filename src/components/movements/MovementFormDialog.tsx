@@ -35,6 +35,7 @@ export function MovementFormDialog({ onSubmit, initial, trigger }: Props) {
   const [safetyNotes, setSafetyNotes] = useState(initial?.safety_notes || '');
   const [tags, setTags] = useState<string[]>(initial?.tags || []);
   const [published, setPublished] = useState(initial?.published ?? false);
+  const [isBodyweight, setIsBodyweight] = useState(initial?.is_bodyweight ?? false);
 
   const toArray = (text: string) => text.split('\n').map(s => s.trim()).filter(Boolean);
 
@@ -59,6 +60,7 @@ export function MovementFormDialog({ onSubmit, initial, trigger }: Props) {
       safety_notes: safetyNotes.trim() || null,
       tags,
       published,
+      is_bodyweight: isBodyweight,
     });
     setSaving(false);
     if (!err) {
@@ -180,6 +182,14 @@ export function MovementFormDialog({ onSubmit, initial, trigger }: Props) {
                 </Badge>
               ))}
             </div>
+          </div>
+
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <Label>Bodyweight exercise</Label>
+              <p className="text-[11px] text-muted-foreground">Hides the weight input when members log this movement.</p>
+            </div>
+            <Switch checked={isBodyweight} onCheckedChange={setIsBodyweight} />
           </div>
 
           <div className="flex items-center justify-between py-2">
