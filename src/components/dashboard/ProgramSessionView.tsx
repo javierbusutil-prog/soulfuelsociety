@@ -497,7 +497,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                 {hint && (
                   <p className="text-[11px] text-muted-foreground">
                     Last time:{' '}
-                    {hint.weight != null ? `${hint.weight}kg` : 'BW'}
+                    {hint.weight != null ? `${hint.weight} lb` : 'BW'}
                     {hint.reps != null ? ` × ${hint.reps}` : ''}
                     {hint.rpe != null ? ` @ RPE ${hint.rpe}` : ''}
                   </p>
@@ -509,7 +509,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
             <div className="hidden sm:block space-y-1.5">
               <div className="grid grid-cols-[24px_1fr_1fr_1fr_28px_28px] gap-1.5 items-center text-[10px] uppercase tracking-wider text-muted-foreground px-1">
                 <span>#</span>
-                <span>Weight</span>
+                <span>Weight (lb)</span>
                 <span>Reps</span>
                 <span>RPE</span>
                 <span></span>

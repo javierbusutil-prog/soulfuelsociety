@@ -604,7 +604,7 @@ function TrackingBlock({
             <span>Set</span>
             <span>Target</span>
             <span>Reps</span>
-            <span>Weight</span>
+            <span>Weight (lb)</span>
             <span></span>
           </div>
           {sets.map((set, setIdx) => (
@@ -623,7 +623,7 @@ function TrackingBlock({
               />
               <Input
                 type="number"
-                placeholder="lbs"
+                placeholder="lb"
                 className="h-8 text-xs text-center px-1"
                 value={set.weight ?? ''}
                 onChange={(e) => onUpdateSet(setIdx, 'weight', e.target.value ? parseFloat(e.target.value) : null)}

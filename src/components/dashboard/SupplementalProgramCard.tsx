@@ -153,7 +153,7 @@ export function SupplementalProgramCard() {
                           key={ei}
                           name={ex.name}
                           movementId={ex.movementId}
-                          meta={`${ex.sets}×${ex.reps}${ex.weight ? ` @ ${ex.weight}` : ''}`}
+                          meta={`${ex.sets}×${ex.reps}${ex.weight ? ` @ ${ex.weight} lb` : ''}`}
                         />
                       ))}
                       {block.type === 'cardio' && <p className="text-xs">{block.activity} — {block.duration}</p>}

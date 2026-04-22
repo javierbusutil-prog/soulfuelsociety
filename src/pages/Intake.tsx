@@ -209,8 +209,8 @@ export default function Intake() {
               ]},
               { num: '05', title: 'Fitness Goals', fields: [
                 { label: 'Primary Goal', value: primaryGoal },
-                { label: 'Current Weight', value: currentWeight ? `${currentWeight} lbs` : 'Not provided' },
-                { label: 'Goal Weight', value: goalWeight ? `${goalWeight} lbs` : 'Not provided' },
+                { label: 'Current Weight', value: currentWeight ? `${currentWeight} lb` : 'Not provided' },
+                { label: 'Goal Weight', value: goalWeight ? `${goalWeight} lb` : 'Not provided' },
                 { label: 'Target Timeframe', value: timeframe || 'Not provided' },
                 { label: 'Goal Description', value: goalDescription || 'Not provided' },
               ]},
@@ -439,10 +439,10 @@ export default function Intake() {
             </div>
           </Field>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Current Weight (lbs)">
+            <Field label="Current Weight (lb)">
               <input type="number" className={inputCls} value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} style={{ borderColor: '#d1cbc4' }} />
             </Field>
-            <Field label="Goal Weight (lbs)">
+            <Field label="Goal Weight (lb)">
               <input type="number" className={inputCls} value={goalWeight} onChange={e => setGoalWeight(e.target.value)} style={{ borderColor: '#d1cbc4' }} />
             </Field>
           </div>

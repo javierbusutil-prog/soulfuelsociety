@@ -376,7 +376,7 @@ function HistorySetsTable({ label, sets }: { label: string; sets: { set_number: 
           <span>{set.set_number}</span>
           <span>{set.target_reps || '—'}</span>
           <span>{set.completed_reps ?? '—'}</span>
-          <span>{set.weight ? `${set.weight} lbs` : '—'}</span>
+          <span>{set.weight ? `${set.weight} lb` : '—'}</span>
         </div>
       ))}
     </div>
