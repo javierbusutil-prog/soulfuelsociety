@@ -476,7 +476,7 @@ export default function AdminProgramBuilder() {
                             <CardTitle className="text-xs font-semibold">{dayName}</CardTitle>
                           </CardHeader>
                           <CardContent className="p-2.5 pt-0 space-y-1.5">
-                            {day.blocks.map((block, bi) => (
+                            {mergeAdjacentBlocks(day.blocks).map((block, bi) => (
                               <PreviewBlock key={bi} block={block} />
                             ))}
                           </CardContent>
@@ -670,6 +670,25 @@ function MobilityEditor({ block, onUpdate }: { block: MobilityBlock; onUpdate: (
 }
 
 /* ========= Preview Block ========= */
+/**
+ * Display-only: merge consecutive blocks of the same type (strength/mobility)
+ * so coaches see "Strength · 3 exercises" instead of three separate blocks.
+ * Cardio/nutrition stay as-is (each instance is conceptually distinct).
+ */
+function mergeAdjacentBlocks(blocks: Block[]): Block[] {
+  const out: Block[] = [];
+  for (const b of blocks) {
+    const last = out[out.length - 1];
+    if (last && last.type === b.type && (b.type === 'strength' || b.type === 'mobility')) {
+      (last as any).exercises = [...(last as any).exercises, ...(b as any).exercises];
+    } else {
+      // Deep clone to avoid mutating original
+      out.push(JSON.parse(JSON.stringify(b)));
+    }
+  }
+  return out;
+}
+
 function PreviewBlock({ block }: { block: Block }) {
   if (block.type === 'strength') {
     return (
