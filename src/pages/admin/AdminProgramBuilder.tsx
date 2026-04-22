@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
+import { MovementPicker } from '@/components/movements/MovementPicker';
 import {
   ArrowLeft, Plus, Trash2, Dumbbell, Heart, Bike,
   Apple, Eye, Send, ChevronDown, ChevronRight, AlertTriangle,
@@ -26,6 +27,7 @@ type BlockType = 'strength' | 'cardio' | 'mobility' | 'nutrition';
 
 interface StrengthExercise {
   name: string;
+  movementId?: string | null;
   sets: string;
   reps: string;
   weight: string;
@@ -34,7 +36,13 @@ interface StrengthExercise {
 
 interface StrengthBlock { type: 'strength'; exercises: StrengthExercise[]; }
 interface CardioBlock { type: 'cardio'; activity: string; duration: string; intensity: string; note: string; }
-interface MobilityExercise { name: string; duration: string; side: string; note: string; }
+interface MobilityExercise {
+  name: string;
+  movementId?: string | null;
+  duration: string;
+  side: string;
+  note: string;
+}
 interface MobilityBlock { type: 'mobility'; exercises: MobilityExercise[]; }
 interface NutritionBlock { type: 'nutrition'; content: string; }
 type Block = StrengthBlock | CardioBlock | MobilityBlock | NutritionBlock;
@@ -149,11 +157,11 @@ export default function AdminProgramBuilder() {
 
   const addBlock = (wi: number, di: number, type: BlockType) => {
     const newBlock: Block = type === 'strength'
-      ? { type: 'strength', exercises: [{ name: '', sets: '3', reps: '10', weight: '', note: '' }] }
+      ? { type: 'strength', exercises: [{ name: '', movementId: null, sets: '3', reps: '10', weight: '', note: '' }] }
       : type === 'cardio'
       ? { type: 'cardio', activity: '', duration: '', intensity: '', note: '' }
       : type === 'mobility'
-      ? { type: 'mobility', exercises: [{ name: '', duration: '', side: 'both', note: '' }] }
+      ? { type: 'mobility', exercises: [{ name: '', movementId: null, duration: '', side: 'both', note: '' }] }
       : { type: 'nutrition', content: '' };
     updateDay(wi, di, d => ({ ...d, blocks: [...d.blocks, newBlock] }));
   };
