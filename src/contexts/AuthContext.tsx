@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { User, Session, RealtimeChannel } from '@supabase/supabase-js';
+import debounce from 'lodash.debounce';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, UserRole, AppRole } from '@/types/database';
 
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<{ userId: string; channel: RealtimeChannel } | null>(null);
 
   const fetchProfile = async (userId: string) => {
     const { data: profileData } = await supabase
@@ -70,6 +72,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Debounced refetch — collapses near-simultaneous role + profile change events into one fetch
+    const debouncedFetch = debounce((uid: string) => {
+      fetchProfile(uid);
+    }, 200);
+
+    const subscribeUserState = (uid: string) => {
+      // Guard against double-subscribing (e.g., on TOKEN_REFRESHED for the same user)
+      if (channelRef.current?.userId === uid) return;
+      // Tear down any existing channel for a previous user
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current.channel);
+        channelRef.current = null;
+      }
+      const channel = supabase
+        .channel(`user-state-${uid}`)
+        .on(
+          'postgres_changes' as any,
+          { event: '*', schema: 'public', table: 'user_roles', filter: `user_id=eq.${uid}` },
+          () => debouncedFetch(uid)
+        )
+        .on(
+          'postgres_changes' as any,
+          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${uid}` },
+          () => debouncedFetch(uid)
+        )
+        .subscribe();
+      channelRef.current = { userId: uid, channel };
+    };
+
+    const teardownChannel = () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current.channel);
+        channelRef.current = null;
+      }
+    };
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -82,11 +120,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setTimeout(async () => {
             await fetchProfile(session.user.id);
             checkSubscription();
+            subscribeUserState(session.user.id);
             setLoading(false);
           }, 0);
         } else {
           setProfile(null);
           setRoles([]);
+          teardownChannel();
           setLoading(false);
         }
       }
@@ -100,12 +140,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         await fetchProfile(session.user.id);
         checkSubscription();
+        subscribeUserState(session.user.id);
       }
       
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      debouncedFetch.cancel();
+      teardownChannel();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
