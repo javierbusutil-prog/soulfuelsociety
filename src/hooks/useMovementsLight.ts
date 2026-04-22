@@ -13,15 +13,13 @@ const listeners = new Set<(movements: Movement[]) => void>();
 async function load(): Promise<Movement[]> {
   if (cache) return cache;
   if (inflight) return inflight;
-  inflight = supabase
-    .from('movements')
-    .select('*')
-    .then(({ data }) => {
-      cache = (data as unknown as Movement[]) || [];
-      inflight = null;
-      listeners.forEach(l => l(cache!));
-      return cache;
-    });
+  inflight = (async () => {
+    const { data } = await supabase.from('movements').select('*');
+    cache = (data as unknown as Movement[]) || [];
+    inflight = null;
+    listeners.forEach(l => l(cache!));
+    return cache;
+  })();
   return inflight;
 }
 
