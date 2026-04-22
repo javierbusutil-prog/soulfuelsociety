@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronsUpDown, Plus, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
@@ -33,10 +32,11 @@ export function MovementPicker({
   placeholder = 'Search exercise…',
   className,
 }: Props) {
-  const { movements, createMovement, refetch } = useMovements();
+  const { movements, createMovement } = useMovements();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [pendingNewName, setPendingNewName] = useState<string | null>(null);
+  const createTriggerRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const linkedMovement = useMemo<Movement | null>(
@@ -75,40 +75,25 @@ export function MovementPicker({
     onChange({ name: text, movementId: null });
   };
 
-  const handleCreated = async (partial: Partial<Movement>) => {
-    const err = await createMovement(partial);
-    if (err) return err;
-    // Re-fetch and auto-select the newly created movement by name match
-    await refetch();
-    // Best-effort: locate the new movement by name (latest created_at)
-    // since createMovement does not return the row.
-    setTimeout(() => {
-      // movements state will have updated by the next tick
-      const created = (cache => cache && [...cache].reverse().find(m => m.name === partial.name))(
-        // we read from the freshly fetched list via closure on next tick
-        undefined as any,
-      );
-      // Fallback to onChange with the typed name if we cannot find it instantly
-      if (created) {
-        onChange({ name: created.name, movementId: created.id });
-      } else if (partial.name) {
-        onChange({ name: partial.name, movementId: null });
-      }
-      setCreateDialogOpen(false);
-      setOpen(false);
-    }, 0);
-    return undefined;
+  const openCreateDialog = (name: string) => {
+    setPendingNewName(name);
+    setOpen(false);
+    // Defer click so popover closes first
+    setTimeout(() => createTriggerRef.current?.click(), 50);
   };
 
-  // Effect: when movements list updates after a create, attempt to link
-  // by name if we have a typed query but no movementId.
+  // After a new movement is created, auto-link by name match.
   useEffect(() => {
-    if (!movementId && query) {
-      const match = movements.find(m => m.name.toLowerCase() === query.trim().toLowerCase());
-      if (match) onChange({ name: match.name, movementId: match.id });
+    if (!pendingNewName) return;
+    const match = movements.find(
+      m => m.name.toLowerCase() === pendingNewName.toLowerCase(),
+    );
+    if (match) {
+      onChange({ name: match.name, movementId: match.id });
+      setPendingNewName(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [movements]);
+  }, [movements, pendingNewName]);
 
   return (
     <>
@@ -202,7 +187,7 @@ export function MovementPicker({
             {query && !exactMatch && (
               <button
                 type="button"
-                onClick={() => setCreateDialogOpen(true)}
+                onClick={() => openCreateDialog(query.trim())}
                 className="w-full flex items-center gap-2 px-2 py-2 mt-1 border-t border-border text-left hover:bg-primary/5 transition-colors"
               >
                 <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
@@ -222,76 +207,24 @@ export function MovementPicker({
         </PopoverContent>
       </Popover>
 
-      {/* Hidden trigger MovementFormDialog — controlled via open state. */}
-      {createDialogOpen && (
-        <CreateMovementDialog
-          initialName={query.trim()}
-          onClose={() => setCreateDialogOpen(false)}
-          onCreated={async (movement) => {
-            const err = await createMovement(movement);
-            if (!err) {
-              await refetch();
-              setCreateDialogOpen(false);
-              setOpen(false);
-            }
-            return err;
-          }}
-        />
-      )}
+      {/* Hidden trigger that opens the create-movement form.
+          We use a key on pendingNewName so the form remounts and picks up
+          the prefilled name each time. */}
+      <MovementFormDialog
+        key={pendingNewName || 'no-pending'}
+        onSubmit={async (m) => {
+          const err = await createMovement(m);
+          return err;
+        }}
+        trigger={
+          <button
+            ref={createTriggerRef}
+            type="button"
+            className="hidden"
+            aria-hidden="true"
+          />
+        }
+      />
     </>
-  );
-}
-
-// Wrapper around MovementFormDialog that opens immediately and prefills name.
-function CreateMovementDialog({
-  initialName,
-  onCreated,
-  onClose,
-}: {
-  initialName: string;
-  onCreated: (m: Partial<Movement>) => Promise<any>;
-  onClose: () => void;
-}) {
-  // We render MovementFormDialog with a hidden trigger and click it on mount
-  // via a ref. Since MovementFormDialog uses internal state, we instead
-  // render it always-open by composing a Dialog wrapper. Simpler: render
-  // the existing dialog with a transparent trigger and auto-open.
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    triggerRef.current?.click();
-  }, []);
-
-  return (
-    <MovementFormDialog
-      onSubmit={async (m) => {
-        const err = await onCreated({ ...m, name: m.name || initialName });
-        if (!err) onClose();
-        return err;
-      }}
-      initial={{
-        // Prefill name only — other fields use form defaults
-        id: '',
-        name: initialName,
-        video_url: null,
-        thumbnail_url: null,
-        muscle_group: 'full body',
-        category: 'mobility',
-        equipment: 'bodyweight',
-        difficulty: 'beginner',
-        form_cues: [],
-        common_mistakes: [],
-        regressions: [],
-        progressions: [],
-        safety_notes: null,
-        tags: [],
-        published: true,
-        created_by: null,
-        created_at: '',
-        updated_at: '',
-      }}
-      trigger={
-        <button ref={triggerRef} type="button" className="hidden" aria-hidden="true" />
-      }
-    />
   );
 }
