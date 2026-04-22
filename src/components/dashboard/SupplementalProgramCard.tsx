@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { startOfWeek, differenceInWeeks } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
+import { MovementExerciseRow } from './MovementExerciseRow';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -112,17 +113,21 @@ export function SupplementalProgramCard() {
                     <div key={bi} className="bg-muted/40 rounded-lg p-2.5 space-y-1.5">
                       <p className="text-[10px] uppercase tracking-wider text-primary font-medium">{block.type}</p>
                       {block.type === 'strength' && block.exercises?.map((ex: any, ei: number) => (
-                        <div key={ei} className="flex items-baseline justify-between">
-                          <span className="text-xs font-medium">{ex.name}</span>
-                          <span className="text-[11px] text-muted-foreground">{ex.sets}×{ex.reps}{ex.weight ? ` @ ${ex.weight}` : ''}</span>
-                        </div>
+                        <MovementExerciseRow
+                          key={ei}
+                          name={ex.name}
+                          movementId={ex.movementId}
+                          meta={`${ex.sets}×${ex.reps}${ex.weight ? ` @ ${ex.weight}` : ''}`}
+                        />
                       ))}
                       {block.type === 'cardio' && <p className="text-xs">{block.activity} — {block.duration}</p>}
                       {block.type === 'mobility' && block.exercises?.map((ex: any, ei: number) => (
-                        <div key={ei} className="flex items-baseline justify-between">
-                          <span className="text-xs font-medium">{ex.name}</span>
-                          <span className="text-[11px] text-muted-foreground">{ex.duration}</span>
-                        </div>
+                        <MovementExerciseRow
+                          key={ei}
+                          name={ex.name}
+                          movementId={ex.movementId}
+                          meta={ex.duration}
+                        />
                       ))}
                       {block.type === 'nutrition' && (
                         <>

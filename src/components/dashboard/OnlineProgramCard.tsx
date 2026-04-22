@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { startOfWeek, differenceInWeeks, format, addDays } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
+import { MovementExerciseRow } from './MovementExerciseRow';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -150,12 +151,12 @@ export function OnlineProgramCard() {
                         <>
                           <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Strength</p>
                           {block.exercises?.map((ex: any, ei: number) => (
-                            <div key={ei} className="flex items-baseline justify-between">
-                              <span className="text-xs font-medium">{ex.name || 'Exercise'}</span>
-                              <span className="text-[11px] text-muted-foreground">
-                                {ex.sets}×{ex.reps}{ex.weight ? ` @ ${ex.weight}` : ''}
-                              </span>
-                            </div>
+                            <MovementExerciseRow
+                              key={ei}
+                              name={ex.name || 'Exercise'}
+                              movementId={ex.movementId}
+                              meta={`${ex.sets}×${ex.reps}${ex.weight ? ` @ ${ex.weight}` : ''}`}
+                            />
                           ))}
                         </>
                       )}
@@ -172,10 +173,12 @@ export function OnlineProgramCard() {
                         <>
                           <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Mobility</p>
                           {block.exercises?.map((ex: any, ei: number) => (
-                            <div key={ei} className="flex items-baseline justify-between">
-                              <span className="text-xs font-medium">{ex.name || 'Stretch'}</span>
-                              <span className="text-[11px] text-muted-foreground">{ex.duration}{ex.side && ex.side !== 'both' ? ` (${ex.side})` : ''}</span>
-                            </div>
+                            <MovementExerciseRow
+                              key={ei}
+                              name={ex.name || 'Stretch'}
+                              movementId={ex.movementId}
+                              meta={`${ex.duration}${ex.side && ex.side !== 'both' ? ` (${ex.side})` : ''}`}
+                            />
                           ))}
                         </>
                       )}
