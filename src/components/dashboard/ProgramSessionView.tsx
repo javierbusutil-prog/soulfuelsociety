@@ -450,6 +450,8 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
       {/* Strength + Mobility exercises */}
       {exerciseState.map((ex, exIdx) => {
         const movement = ex.movementId ? movementCache[ex.movementId] : undefined;
+        const isBodyweight = !!movement?.is_bodyweight;
+        const hint = ex.movementId ? prevHints[ex.movementId] : undefined;
         return (
           <Card key={`ex-${exIdx}`} className="p-4 space-y-3">
             <div className="flex items-start justify-between gap-2">
@@ -467,14 +469,26 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                       <PlayCircle className="w-4 h-4" />
                     </button>
                   )}
+                  {isBodyweight && (
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Bodyweight</Badge>
+                  )}
                 </div>
                 {ex.prescribedReps && (
                   <p className="text-[11px] text-muted-foreground">Prescribed: {ex.sets.length}×{ex.prescribedReps}</p>
                 )}
+                {hint && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Last time:{' '}
+                    {hint.weight != null ? `${hint.weight}kg` : 'BW'}
+                    {hint.reps != null ? ` × ${hint.reps}` : ''}
+                    {hint.rpe != null ? ` @ RPE ${hint.rpe}` : ''}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            {/* Desktop / tablet: horizontal table */}
+            <div className="hidden sm:block space-y-1.5">
               <div className="grid grid-cols-[24px_1fr_1fr_1fr_28px_28px] gap-1.5 items-center text-[10px] uppercase tracking-wider text-muted-foreground px-1">
                 <span>#</span>
                 <span>Weight</span>
@@ -483,52 +497,146 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                 <span></span>
                 <span></span>
               </div>
-              {ex.sets.map((s, si) => (
-                <div key={si} className="grid grid-cols-[24px_1fr_1fr_1fr_28px_28px] gap-1.5 items-center">
-                  <span className="text-xs text-muted-foreground text-center">{si + 1}</span>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    placeholder="0"
-                    value={s.weight}
-                    onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
-                    className="h-8 text-sm"
-                  />
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    placeholder={ex.prescribedReps || '0'}
-                    value={s.reps}
-                    onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
-                    className="h-8 text-sm"
-                  />
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    placeholder="—"
-                    min="1"
-                    max="10"
-                    value={s.rpe}
-                    onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
-                    className="h-8 text-sm"
-                  />
-                  <div className="flex items-center justify-center">
-                    <Checkbox
-                      checked={s.completed}
-                      onCheckedChange={v => updateSet(exIdx, si, { completed: !!v })}
+              {ex.sets.map((s, si) => {
+                const rpeNum = s.rpe ? parseFloat(s.rpe) : null;
+                const rpeInvalid = s.rpe !== '' && (rpeNum === null || isNaN(rpeNum) || rpeNum < 1 || rpeNum > 10);
+                return (
+                  <div key={si} className="grid grid-cols-[24px_1fr_1fr_1fr_28px_28px] gap-1.5 items-start">
+                    <span className="text-xs text-muted-foreground text-center pt-2">{si + 1}</span>
+                    {isBodyweight ? (
+                      <div className="h-8 flex items-center px-2 rounded-md border border-dashed border-border bg-muted/30 text-[11px] text-muted-foreground italic">
+                        Bodyweight
+                      </div>
+                    ) : (
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        placeholder="0"
+                        value={s.weight}
+                        onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
+                        className="h-8 text-sm"
+                      />
+                    )}
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder={ex.prescribedReps || '0'}
+                      value={s.reps}
+                      onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
+                      className="h-8 text-sm"
                     />
+                    <div>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        placeholder="—"
+                        min={1}
+                        max={10}
+                        step={0.5}
+                        value={s.rpe}
+                        onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
+                        className={`h-8 text-sm ${rpeInvalid ? 'border-destructive' : ''}`}
+                        aria-invalid={rpeInvalid}
+                      />
+                      {rpeInvalid && <p className="text-[10px] text-destructive mt-0.5">1–10</p>}
+                    </div>
+                    <div className="flex items-center justify-center pt-2">
+                      <Checkbox
+                        checked={s.completed}
+                        onCheckedChange={v => updateSet(exIdx, si, { completed: !!v })}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeSet(exIdx, si)}
+                      disabled={ex.sets.length <= 1}
+                      className="text-muted-foreground hover:text-destructive disabled:opacity-30 pt-2"
+                      aria-label="Remove set"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeSet(exIdx, si)}
-                    disabled={ex.sets.length <= 1}
-                    className="text-muted-foreground hover:text-destructive disabled:opacity-30"
-                    aria-label="Remove set"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+
+            {/* Mobile: stacked compact cards */}
+            <div className="sm:hidden space-y-2">
+              {ex.sets.map((s, si) => {
+                const rpeNum = s.rpe ? parseFloat(s.rpe) : null;
+                const rpeInvalid = s.rpe !== '' && (rpeNum === null || isNaN(rpeNum) || rpeNum < 1 || rpeNum > 10);
+                return (
+                  <div key={si} className="rounded-md border border-border p-2 space-y-2 bg-card">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Set {si + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeSet(exIdx, si)}
+                        disabled={ex.sets.length <= 1}
+                        className="text-muted-foreground hover:text-destructive disabled:opacity-30"
+                        aria-label="Remove set"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Weight</label>
+                        {isBodyweight ? (
+                          <div className="h-8 flex items-center px-2 rounded-md border border-dashed border-border bg-muted/30 text-[11px] text-muted-foreground italic">
+                            Bodyweight
+                          </div>
+                        ) : (
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={s.weight}
+                            onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
+                            className="h-8 text-sm"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Reps</label>
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          placeholder={ex.prescribedReps || '0'}
+                          value={s.reps}
+                          onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 items-end">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">RPE (1–10)</label>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          placeholder="—"
+                          min={1}
+                          max={10}
+                          step={0.5}
+                          value={s.rpe}
+                          onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
+                          className={`h-8 text-sm ${rpeInvalid ? 'border-destructive' : ''}`}
+                          aria-invalid={rpeInvalid}
+                        />
+                        {rpeInvalid && <p className="text-[10px] text-destructive mt-0.5">1–10</p>}
+                      </div>
+                      <label className="flex items-center gap-2 h-8 px-2 rounded-md bg-muted/40">
+                        <Checkbox
+                          checked={s.completed}
+                          onCheckedChange={v => updateSet(exIdx, si, { completed: !!v })}
+                        />
+                        <span className="text-xs">Complete</span>
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <Button variant="outline" size="sm" onClick={() => addSet(exIdx)} className="w-full text-xs gap-1">
