@@ -559,11 +559,11 @@ function BlockEditor({
 
 /* ========= Strength Editor ========= */
 function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (b: StrengthBlock) => void }) {
-  const updateExercise = (idx: number, field: keyof StrengthExercise, value: string) => {
-    const exercises = block.exercises.map((e, i) => i === idx ? { ...e, [field]: value } : e);
+  const updateExercise = (idx: number, patch: Partial<StrengthExercise>) => {
+    const exercises = block.exercises.map((e, i) => i === idx ? { ...e, ...patch } : e);
     onUpdate({ ...block, exercises });
   };
-  const addExercise = () => onUpdate({ ...block, exercises: [...block.exercises, { name: '', sets: '3', reps: '10', weight: '', note: '' }] });
+  const addExercise = () => onUpdate({ ...block, exercises: [...block.exercises, { name: '', movementId: null, sets: '3', reps: '10', weight: '', note: '' }] });
   const removeExercise = (idx: number) => {
     if (block.exercises.length <= 1) return;
     onUpdate({ ...block, exercises: block.exercises.filter((_, i) => i !== idx) });
@@ -574,7 +574,14 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
       {block.exercises.map((ex, idx) => (
         <div key={idx} className="space-y-2 pb-2 border-b border-border/50 last:border-0 last:pb-0">
           <div className="flex gap-2">
-            <Input placeholder="Exercise name" value={ex.name} onChange={e => updateExercise(idx, 'name', e.target.value)} className="flex-1 h-8 text-sm" />
+            <div className="flex-1">
+              <MovementPicker
+                value={ex.name}
+                movementId={ex.movementId}
+                onChange={({ name, movementId }) => updateExercise(idx, { name, movementId })}
+                placeholder="Exercise name"
+              />
+            </div>
             {block.exercises.length > 1 && (
               <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeExercise(idx)}>
                 <Trash2 className="w-3 h-3" />
@@ -582,11 +589,11 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
             )}
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <Input placeholder="Sets" value={ex.sets} onChange={e => updateExercise(idx, 'sets', e.target.value)} className="h-8 text-sm" />
-            <Input placeholder="Reps" value={ex.reps} onChange={e => updateExercise(idx, 'reps', e.target.value)} className="h-8 text-sm" />
-            <Input placeholder="Weight/guidance" value={ex.weight} onChange={e => updateExercise(idx, 'weight', e.target.value)} className="h-8 text-sm" />
+            <Input placeholder="Sets" value={ex.sets} onChange={e => updateExercise(idx, { sets: e.target.value })} className="h-8 text-sm" />
+            <Input placeholder="Reps" value={ex.reps} onChange={e => updateExercise(idx, { reps: e.target.value })} className="h-8 text-sm" />
+            <Input placeholder="Weight/guidance" value={ex.weight} onChange={e => updateExercise(idx, { weight: e.target.value })} className="h-8 text-sm" />
           </div>
-          <Input placeholder="Coaching note (optional)" value={ex.note} onChange={e => updateExercise(idx, 'note', e.target.value)} className="h-8 text-sm" />
+          <Input placeholder="Coaching note (optional)" value={ex.note} onChange={e => updateExercise(idx, { note: e.target.value })} className="h-8 text-sm" />
         </div>
       ))}
       <Button size="sm" variant="ghost" className="text-xs gap-1" onClick={addExercise}>
@@ -612,11 +619,11 @@ function CardioEditor({ block, onUpdate }: { block: CardioBlock; onUpdate: (b: C
 
 /* ========= Mobility Editor ========= */
 function MobilityEditor({ block, onUpdate }: { block: MobilityBlock; onUpdate: (b: MobilityBlock) => void }) {
-  const updateExercise = (idx: number, field: string, value: string) => {
-    const exercises = block.exercises.map((e, i) => i === idx ? { ...e, [field]: value } : e);
+  const updateExercise = (idx: number, patch: Partial<MobilityExercise>) => {
+    const exercises = block.exercises.map((e, i) => i === idx ? { ...e, ...patch } : e);
     onUpdate({ ...block, exercises });
   };
-  const addExercise = () => onUpdate({ ...block, exercises: [...block.exercises, { name: '', duration: '', side: 'both', note: '' }] });
+  const addExercise = () => onUpdate({ ...block, exercises: [...block.exercises, { name: '', movementId: null, duration: '', side: 'both', note: '' }] });
   const removeExercise = (idx: number) => {
     if (block.exercises.length <= 1) return;
     onUpdate({ ...block, exercises: block.exercises.filter((_, i) => i !== idx) });
@@ -625,23 +632,34 @@ function MobilityEditor({ block, onUpdate }: { block: MobilityBlock; onUpdate: (
   return (
     <div className="space-y-3">
       {block.exercises.map((ex, idx) => (
-        <div key={idx} className="flex gap-2 items-start">
-          <Input placeholder="Exercise/stretch" value={ex.name} onChange={e => updateExercise(idx, 'name', e.target.value)} className="flex-1 h-8 text-sm" />
-          <Input placeholder="Duration/reps" value={ex.duration} onChange={e => updateExercise(idx, 'duration', e.target.value)} className="w-24 h-8 text-sm" />
-          <select
-            value={ex.side}
-            onChange={e => updateExercise(idx, 'side', e.target.value)}
-            className="h-8 text-sm rounded-md border border-input bg-background px-2"
-          >
-            <option value="both">Both</option>
-            <option value="left">Left</option>
-            <option value="right">Right</option>
-          </select>
-          {block.exercises.length > 1 && (
-            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeExercise(idx)}>
-              <Trash2 className="w-3 h-3" />
-            </Button>
-          )}
+        <div key={idx} className="space-y-2 pb-2 border-b border-border/50 last:border-0 last:pb-0">
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <MovementPicker
+                value={ex.name}
+                movementId={ex.movementId}
+                onChange={({ name, movementId }) => updateExercise(idx, { name, movementId })}
+                placeholder="Exercise / stretch"
+              />
+            </div>
+            {block.exercises.length > 1 && (
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeExercise(idx)}>
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Input placeholder="Duration/reps" value={ex.duration} onChange={e => updateExercise(idx, { duration: e.target.value })} className="flex-1 h-8 text-sm" />
+            <select
+              value={ex.side}
+              onChange={e => updateExercise(idx, { side: e.target.value })}
+              className="h-8 text-sm rounded-md border border-input bg-background px-2"
+            >
+              <option value="both">Both</option>
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+            </select>
+          </div>
         </div>
       ))}
       <Button size="sm" variant="ghost" className="text-xs gap-1" onClick={addExercise}>
