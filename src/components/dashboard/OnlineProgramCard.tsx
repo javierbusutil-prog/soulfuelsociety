@@ -181,7 +181,7 @@ export function OnlineProgramCard() {
                     {day.restNote || 'Rest and recover.'}
                   </p>
                 ) : (
-                  day.blocks.map((block, bi) => (
+                  mergeAdjacentBlocks(day.blocks).map((block, bi) => (
                     <div key={bi} className="bg-muted/40 rounded-lg p-2.5 space-y-1.5">
                       {block.type === 'strength' && (
                         <>
