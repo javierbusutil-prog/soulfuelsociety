@@ -154,6 +154,24 @@ export function SupplementalProgramCard() {
                     </div>
                   ))
                 )}
+                {!day.isRest && day.blocks.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant={inProgressDays.has(di) ? 'secondary' : 'default'}
+                    className="w-full text-xs gap-1.5 mt-2"
+                    onClick={() => setActiveSession({ week: currentWeekIdx, day: di })}
+                  >
+                    {inProgressDays.has(di) ? (
+                      <>
+                        <RotateCw className="w-3.5 h-3.5" /> Resume workout
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5" /> Start workout
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </CollapsibleContent>
           </Collapsible>
@@ -165,6 +183,32 @@ export function SupplementalProgramCard() {
           <Link to="/workouts">View full program</Link>
         </Button>
       </div>
+
+      {activeSession && program && (
+        <Dialog open={!!activeSession} onOpenChange={o => !o && setActiveSession(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-base">
+                {DAY_NAMES[activeSession.day]} · Week {activeSession.week + 1}
+              </DialogTitle>
+            </DialogHeader>
+            <ProgramSessionView
+              programId={program.id}
+              week={activeSession.week}
+              day={activeSession.day}
+              dayBlocks={program.weeks[activeSession.week].days[activeSession.day].blocks}
+              onBack={() => {
+                setActiveSession(null);
+                setReloadKey(k => k + 1);
+              }}
+              onComplete={() => {
+                setActiveSession(null);
+                setReloadKey(k => k + 1);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }
