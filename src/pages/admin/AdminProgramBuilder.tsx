@@ -591,7 +591,7 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
           <div className="grid grid-cols-3 gap-2">
             <Input placeholder="Sets" value={ex.sets} onChange={e => updateExercise(idx, { sets: e.target.value })} className="h-8 text-sm" />
             <Input placeholder="Reps" value={ex.reps} onChange={e => updateExercise(idx, { reps: e.target.value })} className="h-8 text-sm" />
-            <Input placeholder="Weight/guidance" value={ex.weight} onChange={e => updateExercise(idx, { weight: e.target.value })} className="h-8 text-sm" />
+            <Input placeholder="Weight (lb)" value={ex.weight} onChange={e => updateExercise(idx, { weight: e.target.value })} className="h-8 text-sm" />
           </div>
           <Input placeholder="Coaching note (optional)" value={ex.note} onChange={e => updateExercise(idx, { note: e.target.value })} className="h-8 text-sm" />
         </div>
@@ -699,7 +699,7 @@ function PreviewBlock({ block }: { block: Block }) {
         {block.exercises.map((ex, i) => (
           <div key={i} className="text-sm pl-4">
             <span className="font-medium">{ex.name || 'Unnamed'}</span>
-            <span className="text-muted-foreground"> — {ex.sets}×{ex.reps}{ex.weight ? ` @ ${ex.weight}` : ''}</span>
+            <span className="text-muted-foreground"> — {ex.sets}×{ex.reps}{ex.weight ? ` @ ${ex.weight} lb` : ''}</span>
             {ex.note && <p className="text-xs text-muted-foreground italic">{ex.note}</p>}
           </div>
         ))}

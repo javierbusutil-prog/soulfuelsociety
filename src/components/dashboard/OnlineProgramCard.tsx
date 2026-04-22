@@ -191,7 +191,7 @@ export function OnlineProgramCard() {
                               key={ei}
                               name={ex.name || 'Exercise'}
                               movementId={ex.movementId}
-                              meta={`${ex.sets}×${ex.reps}${ex.weight ? ` @ ${ex.weight}` : ''}`}
+                              meta={`${ex.sets}×${ex.reps}${ex.weight ? ` @ ${ex.weight} lb` : ''}`}
                             />
                           ))}
                         </>

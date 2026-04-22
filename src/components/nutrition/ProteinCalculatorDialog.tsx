@@ -13,8 +13,6 @@ const activityLevels = [
   { value: 'muscle', label: 'Muscle Building', multiplier: 0.95 },
 ] as const;
 
-type Unit = 'lbs' | 'kg';
-
 interface Props {
   currentGoal: number;
   onSetGoal: (grams: number) => void;
@@ -23,7 +21,6 @@ interface Props {
 export function ProteinCalculatorDialog({ currentGoal, onSetGoal }: Props) {
   const [open, setOpen] = useState(false);
   const [weight, setWeight] = useState('');
-  const [unit, setUnit] = useState<Unit>('lbs');
   const [activity, setActivity] = useState<string>('moderate');
   const [result, setResult] = useState<number | null>(null);
 
@@ -31,7 +28,7 @@ export function ProteinCalculatorDialog({ currentGoal, onSetGoal }: Props) {
     const w = parseFloat(weight);
     if (!w || w <= 0 || w > 1000) return;
 
-    const weightInLbs = unit === 'kg' ? w * 2.20462 : w;
+    const weightInLbs = w;
     const level = activityLevels.find(l => l.value === activity);
     if (!level) return;
 
@@ -74,39 +71,16 @@ export function ProteinCalculatorDialog({ currentGoal, onSetGoal }: Props) {
         <div className="space-y-5 mt-2">
           {/* Weight input */}
           <div className="space-y-2">
-            <Label htmlFor="body-weight">Body Weight</Label>
-            <div className="flex gap-2">
-              <Input
-                id="body-weight"
-                type="text"
-                inputMode="decimal"
-                value={weight}
-                onChange={e => handleWeightChange(e.target.value)}
-                placeholder="150"
-                className="flex-1"
-                aria-label="Body weight"
-              />
-              <div className="flex rounded-xl border border-input overflow-hidden">
-                <button
-                  onClick={() => { setUnit('lbs'); setResult(null); }}
-                  className={`px-3 py-2 text-sm font-medium transition-colors ${
-                    unit === 'lbs' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'
-                  }`}
-                  aria-pressed={unit === 'lbs'}
-                >
-                  lbs
-                </button>
-                <button
-                  onClick={() => { setUnit('kg'); setResult(null); }}
-                  className={`px-3 py-2 text-sm font-medium transition-colors ${
-                    unit === 'kg' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-foreground'
-                  }`}
-                  aria-pressed={unit === 'kg'}
-                >
-                  kg
-                </button>
-              </div>
-            </div>
+            <Label htmlFor="body-weight">Body Weight (lb)</Label>
+            <Input
+              id="body-weight"
+              type="text"
+              inputMode="decimal"
+              value={weight}
+              onChange={e => handleWeightChange(e.target.value)}
+              placeholder="150"
+              aria-label="Body weight in pounds"
+            />
           </div>
 
           {/* Activity level */}
