@@ -296,6 +296,33 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
 
   const handleFinish = async () => {
     if (!user || !workoutLogId) return;
+
+    // Guard: any data anywhere?
+    const hasStrengthData = exerciseState.some(ex =>
+      ex.sets.some(s => s.weight || s.reps || s.rpe || s.completed)
+    );
+    const hasCardioData = cardioState.some(c => c.completed || c.duration || c.notes);
+    if (!hasStrengthData && !hasCardioData) {
+      toast.error('Nothing to log. Complete at least one set or mark a cardio activity.');
+      // Drop the empty stub so we don't leave orphan in-progress logs
+      await (supabase as any).from('workout_logs').delete().eq('id', workoutLogId);
+      setWorkoutLogId(null);
+      onBack();
+      return;
+    }
+
+    // Validate RPE before any writes
+    for (const ex of exerciseState) {
+      for (const s of ex.sets) {
+        if (!s.rpe) continue;
+        const n = parseFloat(s.rpe);
+        if (isNaN(n) || n < 1 || n > 10) {
+          toast.error('RPE must be between 1 and 10.');
+          return;
+        }
+      }
+    }
+
     setSubmitting(true);
 
     // Clear any previously saved logs for this workout_log so re-finishes don't duplicate
@@ -312,6 +339,8 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
     // Strength + mobility exercises
     for (let i = 0; i < exerciseState.length; i++) {
       const ex = exerciseState[i];
+      const movement = ex.movementId ? movementCache[ex.movementId] : undefined;
+      const isBodyweight = !!movement?.is_bodyweight;
       const filledSets = ex.sets.filter(s => s.weight || s.reps || s.rpe || s.completed);
       if (filledSets.length === 0) continue;
 
@@ -341,7 +370,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
         set_number: si + 1,
         target_reps: ex.prescribedReps || null,
         completed_reps: s.reps ? parseInt(s.reps, 10) || null : null,
-        weight: s.weight ? parseFloat(s.weight) || null : null,
+        weight: isBodyweight ? null : (s.weight ? parseFloat(s.weight) || null : null),
         rpe: s.rpe ? parseFloat(s.rpe) || null : null,
         completed: s.completed,
       }));
