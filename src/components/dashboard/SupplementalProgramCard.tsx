@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, ChevronDown, ChevronRight, Minus } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronRight, Minus, Play, RotateCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfWeek, differenceInWeeks } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
 import { MovementExerciseRow } from './MovementExerciseRow';
+import { ProgramSessionView } from './ProgramSessionView';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -37,17 +39,20 @@ function getDaySummary(day: DayPlan): string {
 
 export function SupplementalProgramCard() {
   const { user } = useAuth();
-  const [program, setProgram] = useState<{ weeks: WeekPlan[]; created_at: string } | null>(null);
+  const [program, setProgram] = useState<{ id: string; weeks: WeekPlan[]; created_at: string } | null>(null);
   const [currentWeekIdx, setCurrentWeekIdx] = useState(0);
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inProgressDays, setInProgressDays] = useState<Set<number>>(new Set());
+  const [activeSession, setActiveSession] = useState<{ week: number; day: number } | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     const fetch = async () => {
       const { data } = await supabase
         .from('coaching_programs')
-        .select('program_data, created_at')
+        .select('id, program_data, created_at')
         .eq('user_id', user.id)
         .eq('is_active', true)
         .eq('plan_type', 'inperson_supplemental' as any)
@@ -63,13 +68,24 @@ export function SupplementalProgramCard() {
           const weekDiff = differenceInWeeks(now, programStart);
           const idx = Math.max(0, Math.min(weekDiff, pd.weeks.length - 1));
           setCurrentWeekIdx(idx);
-          setProgram({ weeks: pd.weeks, created_at: data.created_at });
+          setProgram({ id: data.id, weeks: pd.weeks, created_at: data.created_at });
+
+          const { data: logs } = await (supabase as any)
+            .from('workout_logs')
+            .select('program_day')
+            .eq('user_id', user.id)
+            .eq('coaching_program_id', data.id)
+            .eq('program_week', idx)
+            .is('completed_at', null);
+          if (logs) {
+            setInProgressDays(new Set(logs.map((l: any) => l.program_day)));
+          }
         }
       }
       setLoading(false);
     };
     fetch();
-  }, [user]);
+  }, [user, reloadKey]);
 
   if (loading || !program) return null;
 
@@ -138,6 +154,24 @@ export function SupplementalProgramCard() {
                     </div>
                   ))
                 )}
+                {!day.isRest && day.blocks.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant={inProgressDays.has(di) ? 'secondary' : 'default'}
+                    className="w-full text-xs gap-1.5 mt-2"
+                    onClick={() => setActiveSession({ week: currentWeekIdx, day: di })}
+                  >
+                    {inProgressDays.has(di) ? (
+                      <>
+                        <RotateCw className="w-3.5 h-3.5" /> Resume workout
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5" /> Start workout
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </CollapsibleContent>
           </Collapsible>
@@ -149,6 +183,32 @@ export function SupplementalProgramCard() {
           <Link to="/workouts">View full program</Link>
         </Button>
       </div>
+
+      {activeSession && program && (
+        <Dialog open={!!activeSession} onOpenChange={o => !o && setActiveSession(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-base">
+                {DAY_NAMES[activeSession.day]} · Week {activeSession.week + 1}
+              </DialogTitle>
+            </DialogHeader>
+            <ProgramSessionView
+              programId={program.id}
+              week={activeSession.week}
+              day={activeSession.day}
+              dayBlocks={program.weeks[activeSession.week].days[activeSession.day].blocks}
+              onBack={() => {
+                setActiveSession(null);
+                setReloadKey(k => k + 1);
+              }}
+              onComplete={() => {
+                setActiveSession(null);
+                setReloadKey(k => k + 1);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }
