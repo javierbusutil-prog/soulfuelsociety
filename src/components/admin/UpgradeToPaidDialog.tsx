@@ -126,14 +126,26 @@ export function UpgradeToPaidDialog({ open, onOpenChange, memberId, memberName, 
         return;
       }
 
-      // Update user role to paid
-      const { error: roleErr } = await supabase
+      // Set user role to paid: clear any existing rows for this user, then insert 'paid'.
+      // This guarantees exactly one row regardless of prior state (free, paid, or none).
+      const { error: roleDeleteErr } = await supabase
         .from('user_roles')
-        .update({ role: 'paid' } as any)
+        .delete()
         .eq('user_id', memberId);
 
-      if (roleErr) {
-        console.error('Role update error:', roleErr);
+      if (roleDeleteErr) {
+        console.error('Role clear error:', roleDeleteErr);
+      }
+
+      const { error: roleInsertErr } = await supabase
+        .from('user_roles')
+        .insert({ user_id: memberId, role: 'paid' } as any);
+
+      if (roleInsertErr) {
+        console.error('Role insert error:', roleInsertErr);
+        toast.error('Member plan updated but role assignment failed. Please retry.');
+        setSubmitting(false);
+        return;
       }
 
       // Insert cash payment record
