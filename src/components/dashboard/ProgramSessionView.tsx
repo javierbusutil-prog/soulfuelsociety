@@ -114,13 +114,50 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
   const [movementCache, setMovementCache] = useState<Record<string, Movement>>({});
   const [openMovement, setOpenMovement] = useState<Movement | null>(null);
   const [prevHints, setPrevHints] = useState<Record<string, PrevHint>>({});
+  const [readOnly, setReadOnly] = useState(false);
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
 
   // Find or create the in-progress workout_log on mount.
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     const init = async () => {
-      // Resume in-progress log if one exists
+      // 1) Prefer a COMPLETED log for this (user, program, week, day) → read-only view
+      const { data: completed } = await (supabase as any)
+        .from('workout_logs')
+        .select('id, completed_at')
+        .eq('user_id', user.id)
+        .eq('coaching_program_id', programId)
+        .eq('program_week', week)
+        .eq('program_day', day)
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (completed?.id) {
+        // Clean up any orphan in-progress logs for the same day
+        await (supabase as any)
+          .from('workout_logs')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('coaching_program_id', programId)
+          .eq('program_week', week)
+          .eq('program_day', day)
+          .is('completed_at', null);
+
+        if (cancelled) return;
+        setWorkoutLogId(completed.id);
+        setCompletedAt(completed.completed_at);
+        setReadOnly(true);
+        await hydrateFromExistingLog(completed.id);
+        if (!cancelled) setInitializing(false);
+        return;
+      }
+
+      // 2) Otherwise resume an in-progress log if one exists
       const { data: existing } = await (supabase as any)
         .from('workout_logs')
         .select('id')
@@ -137,7 +174,6 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
 
       if (existing?.id) {
         setWorkoutLogId(existing.id);
-        // Try to hydrate any previously saved set_logs (in case Finish was hit then user came back)
         await hydrateFromExistingLog(existing.id);
       } else {
         const { data: created, error } = await (supabase as any)
