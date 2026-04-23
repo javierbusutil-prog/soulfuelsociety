@@ -578,6 +578,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                         value={s.weight}
                         onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
                         className="h-8 text-sm"
+                        disabled={readOnly}
                       />
                     )}
                     <Input
@@ -587,6 +588,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                       value={s.reps}
                       onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
                       className="h-8 text-sm"
+                      disabled={readOnly}
                     />
                     <div>
                       <Input
@@ -599,6 +601,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                         value={s.rpe}
                         onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
                         className={`h-8 text-sm ${rpeInvalid ? 'border-destructive' : ''}`}
+                        disabled={readOnly}
                         aria-invalid={rpeInvalid}
                       />
                       {rpeInvalid && <p className="text-[10px] text-destructive mt-0.5">1–10</p>}
@@ -607,17 +610,22 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                       <Checkbox
                         checked={s.completed}
                         onCheckedChange={v => updateSet(exIdx, si, { completed: !!v })}
+                        disabled={readOnly}
                       />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeSet(exIdx, si)}
-                      disabled={ex.sets.length <= 1}
-                      className="text-muted-foreground hover:text-destructive disabled:opacity-30 pt-2"
-                      aria-label="Remove set"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {readOnly ? (
+                      <span />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => removeSet(exIdx, si)}
+                        disabled={ex.sets.length <= 1}
+                        className="text-muted-foreground hover:text-destructive disabled:opacity-30 pt-2"
+                        aria-label="Remove set"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -632,15 +640,17 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                   <div key={si} className="rounded-md border border-border p-2 space-y-2 bg-card">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Set {si + 1}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeSet(exIdx, si)}
-                        disabled={ex.sets.length <= 1}
-                        className="text-muted-foreground hover:text-destructive disabled:opacity-30"
-                        aria-label="Remove set"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          onClick={() => removeSet(exIdx, si)}
+                          disabled={ex.sets.length <= 1}
+                          className="text-muted-foreground hover:text-destructive disabled:opacity-30"
+                          aria-label="Remove set"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
@@ -657,6 +667,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                             value={s.weight}
                             onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
                             className="h-8 text-sm"
+                            disabled={readOnly}
                           />
                         )}
                       </div>
@@ -669,6 +680,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                           value={s.reps}
                           onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
                           className="h-8 text-sm"
+                          disabled={readOnly}
                         />
                       </div>
                     </div>
@@ -685,6 +697,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                           value={s.rpe}
                           onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
                           className={`h-8 text-sm ${rpeInvalid ? 'border-destructive' : ''}`}
+                          disabled={readOnly}
                           aria-invalid={rpeInvalid}
                         />
                         {rpeInvalid && <p className="text-[10px] text-destructive mt-0.5">1–10</p>}
@@ -693,6 +706,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                         <Checkbox
                           checked={s.completed}
                           onCheckedChange={v => updateSet(exIdx, si, { completed: !!v })}
+                          disabled={readOnly}
                         />
                         <span className="text-xs">Complete</span>
                       </label>
@@ -702,9 +716,11 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
               })}
             </div>
 
-            <Button variant="outline" size="sm" onClick={() => addSet(exIdx)} className="w-full text-xs gap-1">
-              <Plus className="w-3.5 h-3.5" /> Add set
-            </Button>
+            {!readOnly && (
+              <Button variant="outline" size="sm" onClick={() => addSet(exIdx)} className="w-full text-xs gap-1">
+                <Plus className="w-3.5 h-3.5" /> Add set
+              </Button>
+            )}
           </Card>
         );
       })}
