@@ -501,6 +501,15 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
         </Card>
       )}
 
+      {readOnly && (
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-primary" />
+          <p className="text-xs text-primary font-medium">
+            Completed{completedAt ? ` on ${new Date(completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+          </p>
+        </div>
+      )}
+
       {/* Strength + Mobility exercises */}
       {exerciseState.map((ex, exIdx) => {
         const movement = ex.movementId ? movementCache[ex.movementId] : undefined;
