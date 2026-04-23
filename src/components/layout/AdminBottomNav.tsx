@@ -10,6 +10,7 @@ import {
   ArrowLeftRight,
   MessagesSquare,
   Activity,
+  Sunrise,
 } from 'lucide-react';
 import { useCoachCommunityNotifications } from '@/hooks/useCoachCommunityNotifications';
 
@@ -17,6 +18,7 @@ const navItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/admin/members', icon: Users, label: 'Members' },
   { path: '/admin/movements', icon: Activity, label: 'Moves' },
+  { path: '/admin/daily-dose', icon: Sunrise, label: 'Dose' },
   { path: '/admin/community', icon: MessagesSquare, label: 'Community', hasBadge: true },
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
