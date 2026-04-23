@@ -114,13 +114,50 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
   const [movementCache, setMovementCache] = useState<Record<string, Movement>>({});
   const [openMovement, setOpenMovement] = useState<Movement | null>(null);
   const [prevHints, setPrevHints] = useState<Record<string, PrevHint>>({});
+  const [readOnly, setReadOnly] = useState(false);
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
 
   // Find or create the in-progress workout_log on mount.
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     const init = async () => {
-      // Resume in-progress log if one exists
+      // 1) Prefer a COMPLETED log for this (user, program, week, day) → read-only view
+      const { data: completed } = await (supabase as any)
+        .from('workout_logs')
+        .select('id, completed_at')
+        .eq('user_id', user.id)
+        .eq('coaching_program_id', programId)
+        .eq('program_week', week)
+        .eq('program_day', day)
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (completed?.id) {
+        // Clean up any orphan in-progress logs for the same day
+        await (supabase as any)
+          .from('workout_logs')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('coaching_program_id', programId)
+          .eq('program_week', week)
+          .eq('program_day', day)
+          .is('completed_at', null);
+
+        if (cancelled) return;
+        setWorkoutLogId(completed.id);
+        setCompletedAt(completed.completed_at);
+        setReadOnly(true);
+        await hydrateFromExistingLog(completed.id);
+        if (!cancelled) setInitializing(false);
+        return;
+      }
+
+      // 2) Otherwise resume an in-progress log if one exists
       const { data: existing } = await (supabase as any)
         .from('workout_logs')
         .select('id')
@@ -137,7 +174,6 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
 
       if (existing?.id) {
         setWorkoutLogId(existing.id);
-        // Try to hydrate any previously saved set_logs (in case Finish was hit then user came back)
         await hydrateFromExistingLog(existing.id);
       } else {
         const { data: created, error } = await (supabase as any)
@@ -465,6 +501,15 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
         </Card>
       )}
 
+      {readOnly && (
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-primary" />
+          <p className="text-xs text-primary font-medium">
+            Completed{completedAt ? ` on ${new Date(completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
+          </p>
+        </div>
+      )}
+
       {/* Strength + Mobility exercises */}
       {exerciseState.map((ex, exIdx) => {
         const movement = ex.movementId ? movementCache[ex.movementId] : undefined;
@@ -533,6 +578,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                         value={s.weight}
                         onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
                         className="h-8 text-sm"
+                        disabled={readOnly}
                       />
                     )}
                     <Input
@@ -542,6 +588,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                       value={s.reps}
                       onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
                       className="h-8 text-sm"
+                      disabled={readOnly}
                     />
                     <div>
                       <Input
@@ -554,6 +601,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                         value={s.rpe}
                         onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
                         className={`h-8 text-sm ${rpeInvalid ? 'border-destructive' : ''}`}
+                        disabled={readOnly}
                         aria-invalid={rpeInvalid}
                       />
                       {rpeInvalid && <p className="text-[10px] text-destructive mt-0.5">1–10</p>}
@@ -562,17 +610,22 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                       <Checkbox
                         checked={s.completed}
                         onCheckedChange={v => updateSet(exIdx, si, { completed: !!v })}
+                        disabled={readOnly}
                       />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeSet(exIdx, si)}
-                      disabled={ex.sets.length <= 1}
-                      className="text-muted-foreground hover:text-destructive disabled:opacity-30 pt-2"
-                      aria-label="Remove set"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {readOnly ? (
+                      <span />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => removeSet(exIdx, si)}
+                        disabled={ex.sets.length <= 1}
+                        className="text-muted-foreground hover:text-destructive disabled:opacity-30 pt-2"
+                        aria-label="Remove set"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -587,15 +640,17 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                   <div key={si} className="rounded-md border border-border p-2 space-y-2 bg-card">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Set {si + 1}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeSet(exIdx, si)}
-                        disabled={ex.sets.length <= 1}
-                        className="text-muted-foreground hover:text-destructive disabled:opacity-30"
-                        aria-label="Remove set"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          onClick={() => removeSet(exIdx, si)}
+                          disabled={ex.sets.length <= 1}
+                          className="text-muted-foreground hover:text-destructive disabled:opacity-30"
+                          aria-label="Remove set"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
@@ -612,6 +667,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                             value={s.weight}
                             onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
                             className="h-8 text-sm"
+                            disabled={readOnly}
                           />
                         )}
                       </div>
@@ -624,6 +680,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                           value={s.reps}
                           onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
                           className="h-8 text-sm"
+                          disabled={readOnly}
                         />
                       </div>
                     </div>
@@ -640,6 +697,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                           value={s.rpe}
                           onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
                           className={`h-8 text-sm ${rpeInvalid ? 'border-destructive' : ''}`}
+                          disabled={readOnly}
                           aria-invalid={rpeInvalid}
                         />
                         {rpeInvalid && <p className="text-[10px] text-destructive mt-0.5">1–10</p>}
@@ -648,6 +706,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                         <Checkbox
                           checked={s.completed}
                           onCheckedChange={v => updateSet(exIdx, si, { completed: !!v })}
+                          disabled={readOnly}
                         />
                         <span className="text-xs">Complete</span>
                       </label>
@@ -657,9 +716,11 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
               })}
             </div>
 
-            <Button variant="outline" size="sm" onClick={() => addSet(exIdx)} className="w-full text-xs gap-1">
-              <Plus className="w-3.5 h-3.5" /> Add set
-            </Button>
+            {!readOnly && (
+              <Button variant="outline" size="sm" onClick={() => addSet(exIdx)} className="w-full text-xs gap-1">
+                <Plus className="w-3.5 h-3.5" /> Add set
+              </Button>
+            )}
           </Card>
         );
       })}
@@ -681,6 +742,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                 value={c.duration}
                 onChange={e => updateCardio(ci, { duration: e.target.value })}
                 className="h-8 text-sm"
+                disabled={readOnly}
               />
             </div>
             <div className="flex items-center gap-2 pt-4">
@@ -688,6 +750,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                 id={`cardio-done-${ci}`}
                 checked={c.completed}
                 onCheckedChange={v => updateCardio(ci, { completed: !!v })}
+                disabled={readOnly}
               />
               <label htmlFor={`cardio-done-${ci}`} className="text-xs">Completed</label>
             </div>
@@ -697,6 +760,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
             value={c.notes}
             onChange={e => updateCardio(ci, { notes: e.target.value })}
             className="min-h-[60px] text-sm"
+            disabled={readOnly}
           />
         </Card>
       ))}
@@ -711,15 +775,23 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
         </Card>
       ))}
 
-      <div className="flex gap-2 pt-2">
-        <Button variant="outline" onClick={onBack} disabled={submitting} className="flex-1">
-          Save & exit
-        </Button>
-        <Button onClick={handleFinish} disabled={submitting || hasInvalidRpe} className="flex-1 gap-1.5">
-          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-          Finish workout
-        </Button>
-      </div>
+      {readOnly ? (
+        <div className="pt-2">
+          <Button variant="outline" onClick={onBack} className="w-full">
+            Close
+          </Button>
+        </div>
+      ) : (
+        <div className="flex gap-2 pt-2">
+          <Button variant="outline" onClick={onBack} disabled={submitting} className="flex-1">
+            Save & exit
+          </Button>
+          <Button onClick={handleFinish} disabled={submitting || hasInvalidRpe} className="flex-1 gap-1.5">
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            Finish workout
+          </Button>
+        </div>
+      )}
 
       {openMovement && (
         <Dialog open={!!openMovement} onOpenChange={o => !o && setOpenMovement(null)}>
