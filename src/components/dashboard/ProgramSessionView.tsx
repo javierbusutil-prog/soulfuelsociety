@@ -742,6 +742,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                 value={c.duration}
                 onChange={e => updateCardio(ci, { duration: e.target.value })}
                 className="h-8 text-sm"
+                disabled={readOnly}
               />
             </div>
             <div className="flex items-center gap-2 pt-4">
@@ -749,6 +750,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
                 id={`cardio-done-${ci}`}
                 checked={c.completed}
                 onCheckedChange={v => updateCardio(ci, { completed: !!v })}
+                disabled={readOnly}
               />
               <label htmlFor={`cardio-done-${ci}`} className="text-xs">Completed</label>
             </div>
@@ -758,6 +760,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
             value={c.notes}
             onChange={e => updateCardio(ci, { notes: e.target.value })}
             className="min-h-[60px] text-sm"
+            disabled={readOnly}
           />
         </Card>
       ))}
@@ -772,15 +775,23 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
         </Card>
       ))}
 
-      <div className="flex gap-2 pt-2">
-        <Button variant="outline" onClick={onBack} disabled={submitting} className="flex-1">
-          Save & exit
-        </Button>
-        <Button onClick={handleFinish} disabled={submitting || hasInvalidRpe} className="flex-1 gap-1.5">
-          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-          Finish workout
-        </Button>
-      </div>
+      {readOnly ? (
+        <div className="pt-2">
+          <Button variant="outline" onClick={onBack} className="w-full">
+            Close
+          </Button>
+        </div>
+      ) : (
+        <div className="flex gap-2 pt-2">
+          <Button variant="outline" onClick={onBack} disabled={submitting} className="flex-1">
+            Save & exit
+          </Button>
+          <Button onClick={handleFinish} disabled={submitting || hasInvalidRpe} className="flex-1 gap-1.5">
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            Finish workout
+          </Button>
+        </div>
+      )}
 
       {openMovement && (
         <Dialog open={!!openMovement} onOpenChange={o => !o && setOpenMovement(null)}>
