@@ -542,6 +542,45 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_dose_posts: {
+        Row: {
+          coach_note: string | null
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_published: boolean
+          published_date: string
+          title: string
+          updated_at: string
+          workout_data: Json
+        }
+        Insert: {
+          coach_note?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          published_date: string
+          title: string
+          updated_at?: string
+          workout_data: Json
+        }
+        Update: {
+          coach_note?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          published_date?: string
+          title?: string
+          updated_at?: string
+          workout_data?: Json
+        }
+        Relationships: []
+      }
       daily_nutrition: {
         Row: {
           created_at: string
@@ -2153,6 +2192,7 @@ export type Database = {
           coaching_program_id: string | null
           completed_at: string | null
           created_at: string
+          daily_dose_post_id: string | null
           id: string
           notes: string | null
           program_day: number | null
@@ -2165,6 +2205,7 @@ export type Database = {
           coaching_program_id?: string | null
           completed_at?: string | null
           created_at?: string
+          daily_dose_post_id?: string | null
           id?: string
           notes?: string | null
           program_day?: number | null
@@ -2177,6 +2218,7 @@ export type Database = {
           coaching_program_id?: string | null
           completed_at?: string | null
           created_at?: string
+          daily_dose_post_id?: string | null
           id?: string
           notes?: string | null
           program_day?: number | null
@@ -2191,6 +2233,13 @@ export type Database = {
             columns: ["coaching_program_id"]
             isOneToOne: false
             referencedRelation: "coaching_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_logs_daily_dose_post_id_fkey"
+            columns: ["daily_dose_post_id"]
+            isOneToOne: false
+            referencedRelation: "daily_dose_posts"
             referencedColumns: ["id"]
           },
           {
