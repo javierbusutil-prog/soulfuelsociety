@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock, ShieldCheck } from 'lucide-react';
+import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock, ShieldCheck, Sunrise } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -8,6 +8,7 @@ const navItems = [
   { path: '/nutrition', icon: Apple, label: 'Nutrition' },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/workouts', icon: Dumbbell, label: 'Workouts', paidOnly: true },
+  { path: '/daily-dose', icon: Sunrise, label: 'Daily Dose' },
   { path: '/coach', icon: MessageCircle, label: 'Coach', paidOnly: true },
   { path: '/train', icon: Flame, label: 'The Team' },
   { path: '/profile', icon: User, label: 'Profile' },
@@ -19,7 +20,7 @@ export function BottomNav() {
 
   return (
     <nav className="tab-bar z-50" role="navigation" aria-label="Main navigation">
-      <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+      <div className="flex items-center justify-around h-16 max-w-lg mx-auto overflow-x-auto">
         {navItems.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
           const isLocked = item.paidOnly && !isPaidMember;
