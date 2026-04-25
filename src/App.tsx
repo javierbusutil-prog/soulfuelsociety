@@ -26,6 +26,7 @@ import Invite from "./pages/Invite";
 import JoinGroup from "./pages/JoinGroup";
 import Waiver from "./pages/Waiver";
 import Intake from "./pages/Intake";
+import DailyDose from "./pages/DailyDose";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -165,6 +166,7 @@ function AppRoutes() {
       <Route path="/nutrition" element={<ProtectedRoute><Nutrition /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       <Route path="/workouts" element={<ProtectedRoute><Workouts /></ProtectedRoute>} />
+      <Route path="/daily-dose" element={<ProtectedRoute><DailyDose /></ProtectedRoute>} />
       <Route path="/coach" element={<ProtectedRoute><Coach /></ProtectedRoute>} />
       <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
       <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />
