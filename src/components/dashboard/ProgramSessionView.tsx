@@ -55,13 +55,44 @@ interface CardioState {
   completed: boolean;
 }
 
+export type SessionSource =
+  | { kind: 'coaching_program'; programId: string; week: number; day: number }
+  | { kind: 'daily_dose'; postId: string };
+
 interface Props {
-  programId: string;
-  week: number;
-  day: number; // 0-6, Monday=0
+  source: SessionSource;
   dayBlocks: Block[];
   onBack: () => void;
   onComplete: () => void;
+}
+
+/** Apply the source-specific WHERE filters to a workout_logs query builder. */
+function applySourceFilter(query: any, source: SessionSource) {
+  if (source.kind === 'coaching_program') {
+    return query
+      .eq('coaching_program_id', source.programId)
+      .eq('program_week', source.week)
+      .eq('program_day', source.day);
+  }
+  return query.eq('daily_dose_post_id', source.postId);
+}
+
+/** Build the insert payload for a new workout_log row for this source. */
+function buildInsertPayload(source: SessionSource, userId: string) {
+  if (source.kind === 'coaching_program') {
+    return {
+      user_id: userId,
+      workout_id: null,
+      coaching_program_id: source.programId,
+      program_week: source.week,
+      program_day: source.day,
+    };
+  }
+  return {
+    user_id: userId,
+    workout_id: null,
+    daily_dose_post_id: source.postId,
+  };
 }
 
 function makeEmptyRow(reps: string): SetRow {
@@ -104,7 +135,7 @@ function buildInitialCardioState(blocks: Block[]): CardioState[] {
   return out;
 }
 
-export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, onComplete }: Props) {
+export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Props) {
   const { user } = useAuth();
   const [workoutLogId, setWorkoutLogId] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
@@ -122,31 +153,31 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
     if (!user) return;
     let cancelled = false;
     const init = async () => {
-      // 1) Prefer a COMPLETED log for this (user, program, week, day) → read-only view
-      const { data: completed } = await (supabase as any)
-        .from('workout_logs')
-        .select('id, completed_at')
-        .eq('user_id', user.id)
-        .eq('coaching_program_id', programId)
-        .eq('program_week', week)
-        .eq('program_day', day)
+      // 1) Prefer a COMPLETED log for this source → read-only view
+      const completedQuery = applySourceFilter(
+        (supabase as any)
+          .from('workout_logs')
+          .select('id, completed_at')
+          .eq('user_id', user.id),
+        source,
+      )
         .not('completed_at', 'is', null)
         .order('completed_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+      const { data: completed } = await completedQuery;
 
       if (cancelled) return;
 
       if (completed?.id) {
         // Clean up any orphan in-progress logs for the same day
-        await (supabase as any)
-          .from('workout_logs')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('coaching_program_id', programId)
-          .eq('program_week', week)
-          .eq('program_day', day)
-          .is('completed_at', null);
+        await applySourceFilter(
+          (supabase as any)
+            .from('workout_logs')
+            .delete()
+            .eq('user_id', user.id),
+          source,
+        ).is('completed_at', null);
 
         if (cancelled) return;
         setWorkoutLogId(completed.id);
@@ -158,13 +189,13 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
       }
 
       // 2) Otherwise resume an in-progress log if one exists
-      const { data: existing } = await (supabase as any)
-        .from('workout_logs')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('coaching_program_id', programId)
-        .eq('program_week', week)
-        .eq('program_day', day)
+      const { data: existing } = await applySourceFilter(
+        (supabase as any)
+          .from('workout_logs')
+          .select('id')
+          .eq('user_id', user.id),
+        source,
+      )
         .is('completed_at', null)
         .order('started_at', { ascending: false })
         .limit(1)
@@ -178,13 +209,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
       } else {
         const { data: created, error } = await (supabase as any)
           .from('workout_logs')
-          .insert({
-            user_id: user.id,
-            workout_id: null,
-            coaching_program_id: programId,
-            program_week: week,
-            program_day: day,
-          })
+          .insert(buildInsertPayload(source, user.id))
           .select('id')
           .single();
 
@@ -202,7 +227,7 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, programId, week, day]);
+  }, [user, source.kind, (source as any).programId, (source as any).postId, (source as any).week, (source as any).day]);
 
   // Preload referenced movements for the play-icon links + detail dialog
   useEffect(() => {
@@ -490,9 +515,13 @@ export function ProgramSessionView({ programId, week, day, dayBlocks, onBack, on
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
-        <Badge variant="outline" className="text-[10px]">
-          Week {week + 1} · Day {day + 1}
-        </Badge>
+        {source.kind === 'coaching_program' ? (
+          <Badge variant="outline" className="text-[10px]">
+            Week {source.week + 1} · Day {source.day + 1}
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-[10px]">Daily Dose</Badge>
+        )}
       </div>
 
       {exerciseState.length === 0 && cardioState.length === 0 && nutritionBlocks.length === 0 && (

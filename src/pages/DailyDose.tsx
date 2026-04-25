@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { format, parseISO, differenceInCalendarDays, subDays } from 'date-fns';
-import { Sunrise, ChevronDown, ChevronRight, Bike, Dumbbell, Heart } from 'lucide-react';
+import { Sunrise, ChevronRight, Bike, Dumbbell, Heart, CheckCircle2, Play } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MovementExerciseRow } from '@/components/dashboard/MovementExerciseRow';
+import { ProgramSessionView } from '@/components/dashboard/ProgramSessionView';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 interface DailyDosePost {
@@ -117,24 +119,28 @@ function BlockDetail({ blocks }: { blocks: any[] }) {
   );
 }
 
-function LogButton() {
+function LogButton({ logged, onClick }: { logged: boolean; onClick: () => void }) {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span tabIndex={0} className="block w-full">
-            <Button disabled className="w-full" size="sm">
-              Log this workout
-            </Button>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>Logging coming soon.</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Button
+      onClick={onClick}
+      className="w-full gap-1.5"
+      size="sm"
+      variant={logged ? 'outline' : 'default'}
+    >
+      {logged ? (
+        <>
+          <CheckCircle2 className="w-3.5 h-3.5" /> View logged workout
+        </>
+      ) : (
+        <>
+          <Play className="w-3.5 h-3.5" /> Log this workout
+        </>
+      )}
+    </Button>
   );
 }
 
-function TodayCard({ post }: { post: DailyDosePost }) {
+function TodayCard({ post, logged, onLog }: { post: DailyDosePost; logged: boolean; onLog: () => void }) {
   const blocks = getBlocks(post.workout_data);
   return (
     <Card className="overflow-hidden border-primary/40 border-2 shadow-sm">
@@ -146,20 +152,27 @@ function TodayCard({ post }: { post: DailyDosePost }) {
         />
       )}
       <div className="p-5 space-y-4">
-        <Badge className="bg-primary text-primary-foreground hover:bg-primary text-[10px] tracking-wider">TODAY</Badge>
+        <div className="flex items-center gap-2">
+          <Badge className="bg-primary text-primary-foreground hover:bg-primary text-[10px] tracking-wider">TODAY</Badge>
+          {logged && (
+            <Badge variant="outline" className="text-[10px] gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Logged
+            </Badge>
+          )}
+        </div>
         <h2 className="text-2xl font-bold leading-tight">{post.title}</h2>
         {post.coach_note && (
           <p className="text-sm italic text-muted-foreground whitespace-pre-wrap">{post.coach_note}</p>
         )}
         <p className="text-xs text-muted-foreground">{getBlockSummary(blocks)}</p>
         <BlockDetail blocks={blocks} />
-        <LogButton />
+        <LogButton logged={logged} onClick={onLog} />
       </div>
     </Card>
   );
 }
 
-function RecentCard({ post }: { post: DailyDosePost }) {
+function RecentCard({ post, logged, onLog }: { post: DailyDosePost; logged: boolean; onLog: () => void }) {
   const [open, setOpen] = useState(false);
   const blocks = getBlocks(post.workout_data);
   return (
@@ -177,6 +190,9 @@ function RecentCard({ post }: { post: DailyDosePost }) {
               <h3 className="text-base font-semibold mt-0.5">{post.title}</h3>
               <p className="text-xs text-muted-foreground mt-1">{getBlockSummary(blocks)}</p>
             </div>
+            {logged && (
+              <CheckCircle2 className="w-4 h-4 text-primary fill-primary/15 shrink-0 mt-1" />
+            )}
           </div>
         </CollapsibleTrigger>
         <CollapsibleContent>
@@ -185,7 +201,7 @@ function RecentCard({ post }: { post: DailyDosePost }) {
               <p className="text-sm italic text-muted-foreground whitespace-pre-wrap">{post.coach_note}</p>
             )}
             <BlockDetail blocks={blocks} />
-            <LogButton />
+            <LogButton logged={logged} onClick={onLog} />
           </div>
         </CollapsibleContent>
       </Collapsible>
@@ -194,38 +210,60 @@ function RecentCard({ post }: { post: DailyDosePost }) {
 }
 
 export default function DailyDose() {
+  const { user } = useAuth();
   const [today, setToday] = useState<DailyDosePost | null>(null);
   const [recent, setRecent] = useState<DailyDosePost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loggedPostIds, setLoggedPostIds] = useState<Set<string>>(new Set());
+  const [activePost, setActivePost] = useState<DailyDosePost | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const todayStr = todayIso();
+    const fourteenAgo = format(subDays(new Date(), 14), 'yyyy-MM-dd');
+
+    const [todayRes, recentRes] = await Promise.all([
+      (supabase as any)
+        .from('daily_dose_posts')
+        .select('*')
+        .eq('is_published', true)
+        .eq('published_date', todayStr)
+        .maybeSingle(),
+      (supabase as any)
+        .from('daily_dose_posts')
+        .select('*')
+        .eq('is_published', true)
+        .lt('published_date', todayStr)
+        .gte('published_date', fourteenAgo)
+        .order('published_date', { ascending: false }),
+    ]);
+
+    const todayPost = (todayRes?.data as DailyDosePost | null) ?? null;
+    const recentPosts = ((recentRes?.data as DailyDosePost[]) ?? []);
+    setToday(todayPost);
+    setRecent(recentPosts);
+
+    if (user) {
+      const allIds = [todayPost?.id, ...recentPosts.map(p => p.id)].filter(Boolean) as string[];
+      if (allIds.length) {
+        const { data: logs } = await (supabase as any)
+          .from('workout_logs')
+          .select('daily_dose_post_id')
+          .eq('user_id', user.id)
+          .in('daily_dose_post_id', allIds)
+          .not('completed_at', 'is', null);
+        setLoggedPostIds(new Set(((logs as any[]) || []).map(l => l.daily_dose_post_id)));
+      } else {
+        setLoggedPostIds(new Set());
+      }
+    }
+    setLoading(false);
+  }, [user]);
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const todayStr = todayIso();
-      const fourteenAgo = format(subDays(new Date(), 14), 'yyyy-MM-dd');
-
-      const [todayRes, recentRes] = await Promise.all([
-        (supabase as any)
-          .from('daily_dose_posts')
-          .select('*')
-          .eq('is_published', true)
-          .eq('published_date', todayStr)
-          .maybeSingle(),
-        (supabase as any)
-          .from('daily_dose_posts')
-          .select('*')
-          .eq('is_published', true)
-          .lt('published_date', todayStr)
-          .gte('published_date', fourteenAgo)
-          .order('published_date', { ascending: false }),
-      ]);
-
-      setToday((todayRes?.data as DailyDosePost | null) ?? null);
-      setRecent(((recentRes?.data as DailyDosePost[]) ?? []));
-      setLoading(false);
-    };
     load();
-  }, []);
+  }, [load, reloadKey]);
 
   return (
     <AppLayout title="Daily Dose">
@@ -246,7 +284,11 @@ export default function DailyDose() {
         ) : (
           <>
             {today ? (
-              <TodayCard post={today} />
+              <TodayCard
+                post={today}
+                logged={loggedPostIds.has(today.id)}
+                onLog={() => setActivePost(today)}
+              />
             ) : (
               <Card className="p-6 text-center">
                 <Sunrise className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
@@ -265,12 +307,39 @@ export default function DailyDose() {
                 </h2>
                 <div className="space-y-3">
                   {recent.map(post => (
-                    <RecentCard key={post.id} post={post} />
+                    <RecentCard
+                      key={post.id}
+                      post={post}
+                      logged={loggedPostIds.has(post.id)}
+                      onLog={() => setActivePost(post)}
+                    />
                   ))}
                 </div>
               </section>
             )}
           </>
+        )}
+
+        {activePost && (
+          <Dialog open={!!activePost} onOpenChange={o => !o && setActivePost(null)}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-base">{activePost.title}</DialogTitle>
+              </DialogHeader>
+              <ProgramSessionView
+                source={{ kind: 'daily_dose', postId: activePost.id }}
+                dayBlocks={getBlocks(activePost.workout_data)}
+                onBack={() => {
+                  setActivePost(null);
+                  setReloadKey(k => k + 1);
+                }}
+                onComplete={() => {
+                  setActivePost(null);
+                  setReloadKey(k => k + 1);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </AppLayout>
