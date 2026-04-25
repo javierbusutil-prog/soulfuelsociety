@@ -224,9 +224,7 @@ export function SupplementalProgramCard() {
               </DialogTitle>
             </DialogHeader>
             <ProgramSessionView
-              programId={program.id}
-              week={activeSession.week}
-              day={activeSession.day}
+              source={{ kind: 'coaching_program', programId: program.id, week: activeSession.week, day: activeSession.day }}
               dayBlocks={program.weeks[activeSession.week].days[activeSession.day].blocks}
               onBack={() => {
                 setActiveSession(null);
