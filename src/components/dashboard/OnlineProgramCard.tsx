@@ -9,9 +9,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfWeek, differenceInWeeks, format, addDays } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
-import { MovementExerciseRow } from './MovementExerciseRow';
 import { ProgramSessionView } from './ProgramSessionView';
+import { mergeAdjacentBlocks, summarizeBlocks } from '@/lib/workoutBlocks';
+import { WorkoutBlocksDisplay } from '@/components/workouts/WorkoutBlocksDisplay';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
