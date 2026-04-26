@@ -1122,6 +1122,42 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          recorded_by: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          notes?: string | null
+          payment_date: string
+          payment_method?: string
+          recorded_by: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          recorded_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_logs: {
         Row: {
           created_at: string
@@ -1592,6 +1628,7 @@ export type Database = {
           phone: string | null
           selected_plan: string | null
           session_count: number | null
+          sessions_remaining: number | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_status:
@@ -1618,6 +1655,7 @@ export type Database = {
           phone?: string | null
           selected_plan?: string | null
           session_count?: number | null
+          sessions_remaining?: number | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?:
@@ -1644,6 +1682,7 @@ export type Database = {
           phone?: string | null
           selected_plan?: string | null
           session_count?: number | null
+          sessions_remaining?: number | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_status?:
