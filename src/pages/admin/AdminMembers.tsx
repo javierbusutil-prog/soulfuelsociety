@@ -8,8 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
+import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
 
 interface MemberRow {
   id: string;
@@ -21,16 +23,20 @@ interface MemberRow {
   created_at: string;
   program_delivered: boolean;
   isPaid: boolean;
+  sessions_remaining: number | null;
+  membership_expires_at: string | null;
 }
 
 export default function AdminMembers() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [memberTypeFilter, setMemberTypeFilter] = useState('all');
+  const [paymentDialogMember, setPaymentDialogMember] = useState<MemberRow | null>(null);
 
   useEffect(() => {
     fetchMembers();
@@ -41,7 +47,7 @@ export default function AdminMembers() {
 
     // Fetch all profiles and paid roles in parallel
     const [profilesRes, rolesRes, memberProfilesRes] = await Promise.all([
-      supabase.from('profiles').select('id, full_name, avatar_url, selected_plan, session_count, group_size, created_at'),
+      supabase.from('profiles').select('id, full_name, avatar_url, selected_plan, session_count, group_size, created_at, sessions_remaining, membership_expires_at'),
       supabase.from('user_roles').select('user_id, role'),
       supabase.from('member_profiles').select('user_id, program_delivered'),
     ]);
@@ -69,6 +75,8 @@ export default function AdminMembers() {
         created_at: p.created_at,
         program_delivered: deliveredMap.get(p.id) ?? false,
         isPaid: paidSet.has(p.id),
+        sessions_remaining: (p as any).sessions_remaining ?? null,
+        membership_expires_at: (p as any).membership_expires_at ?? null,
       }));
 
     // Sort paid first, then by name
@@ -102,6 +110,46 @@ export default function AdminMembers() {
     if (size === '2') return 'Partner';
     if (size === '3') return 'Trio';
     return 'Solo';
+  };
+
+  const renderManualStatusBadge = (m: MemberRow) => {
+    const sessions = m.sessions_remaining;
+    const expires = m.membership_expires_at ? new Date(m.membership_expires_at) : null;
+    const now = new Date();
+
+    if (sessions !== null && sessions > 0) {
+      return (
+        <Badge className="bg-blue-500/15 text-blue-600 border-blue-500/30 text-[10px]">
+          {sessions} sessions left
+        </Badge>
+      );
+    }
+    if (sessions === 0) {
+      return (
+        <Badge className="bg-red-500/15 text-red-600 border-red-500/30 text-[10px]">
+          Sessions exhausted
+        </Badge>
+      );
+    }
+    if (expires && expires.getTime() > now.getTime()) {
+      return (
+        <Badge className="bg-green-500/15 text-green-600 border-green-500/30 text-[10px]">
+          Active until {format(expires, 'MMM d')}
+        </Badge>
+      );
+    }
+    if (expires && expires.getTime() <= now.getTime()) {
+      return (
+        <Badge className="bg-red-500/15 text-red-600 border-red-500/30 text-[10px]">
+          Expired
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-muted-foreground/30 text-muted-foreground">
+        No payment recorded
+      </Badge>
+    );
   };
 
   const filtered = members.filter(m => {
@@ -211,6 +259,7 @@ export default function AdminMembers() {
                           {getGroupLabel(member.group_size)}
                         </Badge>
                       )}
+                      {renderManualStatusBadge(member)}
                       <span className="text-[10px] text-muted-foreground hidden sm:inline">
                         Since {format(new Date(member.created_at), 'MMM yyyy')}
                       </span>
@@ -225,6 +274,18 @@ export default function AdminMembers() {
                         <Badge className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30 text-[10px]">Pending</Badge>
                       )
                     ) : null}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 gap-1 text-[11px]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPaymentDialogMember(member);
+                      }}
+                    >
+                      <DollarSign className="w-3 h-3" />
+                      Record Payment
+                    </Button>
                     <ChevronRight className="w-4 h-4 text-muted-foreground hidden sm:block" />
                   </div>
                 </div>
@@ -233,6 +294,20 @@ export default function AdminMembers() {
           )}
         </div>
       </div>
+
+      {paymentDialogMember && user && (
+        <RecordPaymentDialog
+          open={!!paymentDialogMember}
+          onOpenChange={(open) => !open && setPaymentDialogMember(null)}
+          memberId={paymentDialogMember.id}
+          memberName={paymentDialogMember.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => {
+            setPaymentDialogMember(null);
+            fetchMembers();
+          }}
+        />
+      )}
     </AdminLayout>
   );
 }
