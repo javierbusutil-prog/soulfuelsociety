@@ -624,6 +624,17 @@ export default function AdminMemberDetail() {
         paymentId={deletePaymentId || ''}
         onSuccess={() => id && fetchAll(id)}
       />
+
+      {profile && user && (
+        <RecordPaymentDialog
+          open={recordPaymentOpen}
+          onOpenChange={setRecordPaymentOpen}
+          memberId={profile.id}
+          memberName={profile.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => id && fetchAll(id)}
+        />
+      )}
     </AdminLayout>
   );
 }
