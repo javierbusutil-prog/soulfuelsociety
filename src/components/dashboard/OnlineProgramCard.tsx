@@ -33,41 +33,9 @@ interface WeekPlan {
   nutritionNote?: string;
 }
 
-/**
- * Display-only: merge consecutive blocks of the same type (strength/mobility)
- * so members see one combined section instead of repeated headers.
- */
-function mergeAdjacentBlocks(blocks: Block[]): Block[] {
-  const out: Block[] = [];
-  for (const b of blocks) {
-    const last = out[out.length - 1];
-    if (last && last.type === b.type && (b.type === 'strength' || b.type === 'mobility')) {
-      (last as any).exercises = [...((last as any).exercises || []), ...((b as any).exercises || [])];
-    } else {
-      out.push(JSON.parse(JSON.stringify(b)));
-    }
-  }
-  return out;
-}
-
 function getDaySummary(day: DayPlan): string {
   if (day.isRest) return 'Rest day';
-  const merged = mergeAdjacentBlocks(day.blocks);
-  const parts: string[] = [];
-  for (const block of merged) {
-    if (block.type === 'strength') {
-      const count = block.exercises?.length || 0;
-      parts.push(`Strength · ${count} exercise${count !== 1 ? 's' : ''}`);
-    } else if (block.type === 'cardio') {
-      parts.push(`Cardio${block.activity ? ` · ${block.activity}` : ''}`);
-    } else if (block.type === 'mobility') {
-      const count = block.exercises?.length || 0;
-      parts.push(`Mobility${count ? ` · ${count} exercise${count !== 1 ? 's' : ''}` : ''}`);
-    } else if (block.type === 'nutrition') {
-      parts.push('Nutrition guidance');
-    }
-  }
-  return parts.join(' + ') || 'Active day';
+  return summarizeBlocks(day.blocks as any, { merge: true });
 }
 
 export function OnlineProgramCard() {
