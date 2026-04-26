@@ -13,6 +13,7 @@ import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Cale
 import { toast } from 'sonner';
 import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
 import { DeletePaymentDialog } from '@/components/admin/DeletePaymentDialog';
+import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
 
 interface ProfileData {
   id: string;
@@ -24,6 +25,16 @@ interface ProfileData {
   created_at: string;
   subscription_status: string | null;
   phone: string | null;
+}
+
+interface ManualPaymentRecord {
+  id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  description: string;
+  notes: string | null;
+  created_at: string;
 }
 
 interface MemberProfileData {
@@ -71,6 +82,8 @@ export default function AdminMemberDetail() {
   const [cashPayments, setCashPayments] = useState<CashPaymentRecord[]>([]);
   const [editingPayment, setEditingPayment] = useState<CashPaymentRecord | null>(null);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+  const [manualPayments, setManualPayments] = useState<ManualPaymentRecord[]>([]);
+  const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
 
   useEffect(() => {
     if (id) fetchAll(id);
@@ -102,6 +115,14 @@ export default function AdminMemberDetail() {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     if (payments) setCashPayments(payments as unknown as CashPaymentRecord[]);
+
+    // Manual payments
+    const { data: manualPays } = await supabase
+      .from('manual_payments' as any)
+      .select('id, amount, payment_date, payment_method, description, notes, created_at')
+      .eq('user_id', userId)
+      .order('payment_date', { ascending: false });
+    if (manualPays) setManualPayments(manualPays as unknown as ManualPaymentRecord[]);
 
     // Enrolled program
     const { data: enrollment } = await supabase
@@ -312,6 +333,14 @@ export default function AdminMemberDetail() {
                     <ArrowUpCircle className="w-4 h-4" /> Upgrade to Paid
                   </Button>
                 )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 ml-2 gap-1.5"
+                  onClick={() => setRecordPaymentOpen(true)}
+                >
+                  <DollarSign className="w-4 h-4" /> Record Payment
+                </Button>
               </div>
             </div>
 
@@ -373,6 +402,35 @@ export default function AdminMemberDetail() {
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* SECTION — Manual Payments */}
+        {manualPayments.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground" /> Manual Payment History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {manualPayments.map(payment => (
+                  <div key={payment.id} className="py-2 border-b border-border last:border-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">${Number(payment.amount).toFixed(2)}</p>
+                      <Badge variant="outline" className="text-[10px]">{payment.payment_method}</Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Paid {format(new Date(payment.payment_date), 'MMM d, yyyy')} · {payment.description}
+                    </p>
+                    {payment.notes && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5 italic">{payment.notes}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -566,6 +624,17 @@ export default function AdminMemberDetail() {
         paymentId={deletePaymentId || ''}
         onSuccess={() => id && fetchAll(id)}
       />
+
+      {profile && user && (
+        <RecordPaymentDialog
+          open={recordPaymentOpen}
+          onOpenChange={setRecordPaymentOpen}
+          memberId={profile.id}
+          memberName={profile.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => id && fetchAll(id)}
+        />
+      )}
     </AdminLayout>
   );
 }
