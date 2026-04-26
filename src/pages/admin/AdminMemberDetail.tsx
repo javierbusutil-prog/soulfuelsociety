@@ -333,6 +333,14 @@ export default function AdminMemberDetail() {
                     <ArrowUpCircle className="w-4 h-4" /> Upgrade to Paid
                   </Button>
                 )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 ml-2 gap-1.5"
+                  onClick={() => setRecordPaymentOpen(true)}
+                >
+                  <DollarSign className="w-4 h-4" /> Record Payment
+                </Button>
               </div>
             </div>
 
@@ -394,6 +402,35 @@ export default function AdminMemberDetail() {
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* SECTION — Manual Payments */}
+        {manualPayments.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground" /> Manual Payment History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {manualPayments.map(payment => (
+                  <div key={payment.id} className="py-2 border-b border-border last:border-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">${Number(payment.amount).toFixed(2)}</p>
+                      <Badge variant="outline" className="text-[10px]">{payment.payment_method}</Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Paid {format(new Date(payment.payment_date), 'MMM d, yyyy')} · {payment.description}
+                    </p>
+                    {payment.notes && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5 italic">{payment.notes}</p>
+                    )}
                   </div>
                 ))}
               </div>
