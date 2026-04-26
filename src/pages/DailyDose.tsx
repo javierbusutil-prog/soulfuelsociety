@@ -1,17 +1,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import { format, parseISO, differenceInCalendarDays, subDays } from 'date-fns';
-import { Sunrise, ChevronRight, Bike, Dumbbell, Heart, CheckCircle2, Play } from 'lucide-react';
+import { Sunrise, ChevronRight, CheckCircle2, Play } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MovementExerciseRow } from '@/components/dashboard/MovementExerciseRow';
 import { ProgramSessionView } from '@/components/dashboard/ProgramSessionView';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { getBlocksFromSource, summarizeBlocks } from '@/lib/workoutBlocks';
+import { WorkoutBlocksDisplay } from '@/components/workouts/WorkoutBlocksDisplay';
 
 interface DailyDosePost {
   id: string;
@@ -32,90 +33,15 @@ function getDateLabel(dateStr: string): string {
   return format(d, 'EEE, MMM d');
 }
 
-function getBlocks(workoutData: any): any[] {
-  if (!workoutData) return [];
-  if (Array.isArray(workoutData)) return workoutData;
-  if (Array.isArray(workoutData?.blocks)) return workoutData.blocks;
-  return [];
-}
-
-function getBlockSummary(blocks: any[]): string {
-  const parts: string[] = [];
-  const strength = blocks.filter(b => b.type === 'strength');
-  const cardio = blocks.filter(b => b.type === 'cardio');
-  const mobility = blocks.filter(b => b.type === 'mobility');
-  if (strength.length) {
-    const count = strength.reduce((n, b) => n + (b.exercises?.length || 0), 0);
-    parts.push(`Strength · ${count} exercise${count !== 1 ? 's' : ''}`);
-  }
-  if (cardio.length) {
-    parts.push(`Cardio · ${cardio.length} ${cardio.length === 1 ? 'activity' : 'activities'}`);
-  }
-  if (mobility.length) {
-    const count = mobility.reduce((n, b) => n + (b.exercises?.length || 0), 0);
-    parts.push(`Mobility · ${count} exercise${count !== 1 ? 's' : ''}`);
-  }
-  return parts.join(' + ') || 'Workout';
-}
-
-function BlockDetail({ blocks }: { blocks: any[] }) {
-  if (!blocks.length) {
-    return <p className="text-xs text-muted-foreground italic">No workout details.</p>;
-  }
+function PostBlocks({ post }: { post: DailyDosePost }) {
   return (
-    <div className="space-y-2">
-      {blocks.map((block, bi) => (
-        <div key={bi} className="bg-muted/40 rounded-lg p-3 space-y-1.5">
-          {block.type === 'strength' && (
-            <>
-              <div className="flex items-center gap-1.5">
-                <Dumbbell className="w-3 h-3 text-primary" />
-                <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Strength</p>
-              </div>
-              {block.exercises?.map((ex: any, ei: number) => (
-                <MovementExerciseRow
-                  key={ei}
-                  name={ex.name || 'Exercise'}
-                  movementId={ex.movementId}
-                  meta={`${ex.sets || ''}${ex.sets && ex.reps ? '×' : ''}${ex.reps || ''}${ex.weight ? ` @ ${ex.weight} lb` : ''}`}
-                />
-              ))}
-            </>
-          )}
-          {block.type === 'cardio' && (
-            <>
-              <div className="flex items-center gap-1.5">
-                <Bike className="w-3 h-3 text-primary" />
-                <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Cardio</p>
-              </div>
-              <p className="text-xs">
-                {block.activity || 'Cardio'}{block.duration ? ` — ${block.duration}` : ''}
-              </p>
-              {block.intensity && (
-                <p className="text-[11px] text-muted-foreground">Intensity: {block.intensity}</p>
-              )}
-              {block.note && <p className="text-[11px] text-muted-foreground italic">{block.note}</p>}
-            </>
-          )}
-          {block.type === 'mobility' && (
-            <>
-              <div className="flex items-center gap-1.5">
-                <Heart className="w-3 h-3 text-primary" />
-                <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Mobility</p>
-              </div>
-              {block.exercises?.map((ex: any, ei: number) => (
-                <MovementExerciseRow
-                  key={ei}
-                  name={ex.name || 'Stretch'}
-                  movementId={ex.movementId}
-                  meta={`${ex.duration || ''}${ex.side && ex.side !== 'both' ? ` (${ex.side})` : ''}`}
-                />
-              ))}
-            </>
-          )}
-        </div>
-      ))}
-    </div>
+    <WorkoutBlocksDisplay
+      blocks={getBlocksFromSource(post.workout_data)}
+      variant="comfortable"
+      headerStyle="primary-icon"
+      showNutrition={false}
+      emptyState={<div className="text-sm text-muted-foreground">No workout details.</div>}
+    />
   );
 }
 
@@ -141,7 +67,7 @@ function LogButton({ logged, onClick }: { logged: boolean; onClick: () => void }
 }
 
 function TodayCard({ post, logged, onLog }: { post: DailyDosePost; logged: boolean; onLog: () => void }) {
-  const blocks = getBlocks(post.workout_data);
+  const blocks = getBlocksFromSource(post.workout_data);
   return (
     <Card className="overflow-hidden border-primary/40 border-2 shadow-sm">
       {post.cover_image_url && (
@@ -164,8 +90,8 @@ function TodayCard({ post, logged, onLog }: { post: DailyDosePost; logged: boole
         {post.coach_note && (
           <p className="text-sm italic text-muted-foreground whitespace-pre-wrap">{post.coach_note}</p>
         )}
-        <p className="text-xs text-muted-foreground">{getBlockSummary(blocks)}</p>
-        <BlockDetail blocks={blocks} />
+        <p className="text-xs text-muted-foreground">{summarizeBlocks(blocks, { includeNutrition: false })}</p>
+        <PostBlocks post={post} />
         <LogButton logged={logged} onClick={onLog} />
       </div>
     </Card>
@@ -174,7 +100,7 @@ function TodayCard({ post, logged, onLog }: { post: DailyDosePost; logged: boole
 
 function RecentCard({ post, logged, onLog }: { post: DailyDosePost; logged: boolean; onLog: () => void }) {
   const [open, setOpen] = useState(false);
-  const blocks = getBlocks(post.workout_data);
+  const blocks = getBlocksFromSource(post.workout_data);
   return (
     <Card className="overflow-hidden">
       <Collapsible open={open} onOpenChange={setOpen}>
@@ -188,7 +114,7 @@ function RecentCard({ post, logged, onLog }: { post: DailyDosePost; logged: bool
                 {getDateLabel(post.published_date)}
               </p>
               <h3 className="text-base font-semibold mt-0.5">{post.title}</h3>
-              <p className="text-xs text-muted-foreground mt-1">{getBlockSummary(blocks)}</p>
+              <p className="text-xs text-muted-foreground mt-1">{summarizeBlocks(blocks, { includeNutrition: false })}</p>
             </div>
             {logged && (
               <CheckCircle2 className="w-4 h-4 text-primary fill-primary/15 shrink-0 mt-1" />
@@ -200,7 +126,7 @@ function RecentCard({ post, logged, onLog }: { post: DailyDosePost; logged: bool
             {post.coach_note && (
               <p className="text-sm italic text-muted-foreground whitespace-pre-wrap">{post.coach_note}</p>
             )}
-            <BlockDetail blocks={blocks} />
+            <PostBlocks post={post} />
             <LogButton logged={logged} onClick={onLog} />
           </div>
         </CollapsibleContent>
@@ -328,7 +254,7 @@ export default function DailyDose() {
               </DialogHeader>
               <ProgramSessionView
                 source={{ kind: 'daily_dose', postId: activePost.id }}
-                dayBlocks={getBlocks(activePost.workout_data)}
+                dayBlocks={getBlocksFromSource(activePost.workout_data)}
                 onBack={() => {
                   setActivePost(null);
                   setReloadKey(k => k + 1);

@@ -9,9 +9,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfWeek, differenceInWeeks, format, addDays } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
-import { MovementExerciseRow } from './MovementExerciseRow';
 import { ProgramSessionView } from './ProgramSessionView';
+import { mergeAdjacentBlocks, summarizeBlocks } from '@/lib/workoutBlocks';
+import { WorkoutBlocksDisplay } from '@/components/workouts/WorkoutBlocksDisplay';
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -33,41 +33,9 @@ interface WeekPlan {
   nutritionNote?: string;
 }
 
-/**
- * Display-only: merge consecutive blocks of the same type (strength/mobility)
- * so members see one combined section instead of repeated headers.
- */
-function mergeAdjacentBlocks(blocks: Block[]): Block[] {
-  const out: Block[] = [];
-  for (const b of blocks) {
-    const last = out[out.length - 1];
-    if (last && last.type === b.type && (b.type === 'strength' || b.type === 'mobility')) {
-      (last as any).exercises = [...((last as any).exercises || []), ...((b as any).exercises || [])];
-    } else {
-      out.push(JSON.parse(JSON.stringify(b)));
-    }
-  }
-  return out;
-}
-
 function getDaySummary(day: DayPlan): string {
   if (day.isRest) return 'Rest day';
-  const merged = mergeAdjacentBlocks(day.blocks);
-  const parts: string[] = [];
-  for (const block of merged) {
-    if (block.type === 'strength') {
-      const count = block.exercises?.length || 0;
-      parts.push(`Strength · ${count} exercise${count !== 1 ? 's' : ''}`);
-    } else if (block.type === 'cardio') {
-      parts.push(`Cardio${block.activity ? ` · ${block.activity}` : ''}`);
-    } else if (block.type === 'mobility') {
-      const count = block.exercises?.length || 0;
-      parts.push(`Mobility${count ? ` · ${count} exercise${count !== 1 ? 's' : ''}` : ''}`);
-    } else if (block.type === 'nutrition') {
-      parts.push('Nutrition guidance');
-    }
-  }
-  return parts.join(' + ') || 'Active day';
+  return summarizeBlocks(day.blocks as any, { merge: true });
 }
 
 export function OnlineProgramCard() {
@@ -190,52 +158,12 @@ export function OnlineProgramCard() {
                     {day.restNote || 'Rest and recover.'}
                   </p>
                 ) : (
-                  mergeAdjacentBlocks(day.blocks).map((block, bi) => (
-                    <div key={bi} className="bg-muted/40 rounded-lg p-2.5 space-y-1.5">
-                      {block.type === 'strength' && (
-                        <>
-                          <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Strength</p>
-                          {block.exercises?.map((ex: any, ei: number) => (
-                            <MovementExerciseRow
-                              key={ei}
-                              name={ex.name || 'Exercise'}
-                              movementId={ex.movementId}
-                              meta={`${ex.sets}×${ex.reps}${ex.weight ? ` @ ${ex.weight} lb` : ''}`}
-                            />
-                          ))}
-                        </>
-                      )}
-                      {block.type === 'cardio' && (
-                        <>
-                          <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Cardio</p>
-                          <p className="text-xs">{block.activity || 'Cardio'} — {(block as any).duration || ''}</p>
-                          {(block as any).intensity && (
-                            <p className="text-[11px] text-muted-foreground">Intensity: {(block as any).intensity}</p>
-                          )}
-                        </>
-                      )}
-                      {block.type === 'mobility' && (
-                        <>
-                          <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Mobility</p>
-                          {block.exercises?.map((ex: any, ei: number) => (
-                            <MovementExerciseRow
-                              key={ei}
-                              name={ex.name || 'Stretch'}
-                              movementId={ex.movementId}
-                              meta={`${ex.duration}${ex.side && ex.side !== 'both' ? ` (${ex.side})` : ''}`}
-                            />
-                          ))}
-                        </>
-                      )}
-                      {block.type === 'nutrition' && (
-                        <>
-                          <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Nutrition</p>
-                          <p className="text-xs whitespace-pre-wrap">{block.content}</p>
-                          <NutritionDisclaimerLabel variant="coach-note" />
-                        </>
-                      )}
-                    </div>
-                  ))
+                  <WorkoutBlocksDisplay
+                    blocks={mergeAdjacentBlocks(day.blocks as any)}
+                    variant="compact"
+                    headerStyle="primary-text"
+                    showNutrition={true}
+                  />
                 )}
                 {!day.isRest && day.blocks.length > 0 && (
                   <Button
