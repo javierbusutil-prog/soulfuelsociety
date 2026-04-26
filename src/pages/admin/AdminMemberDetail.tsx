@@ -13,6 +13,7 @@ import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Cale
 import { toast } from 'sonner';
 import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
 import { DeletePaymentDialog } from '@/components/admin/DeletePaymentDialog';
+import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
 
 interface ProfileData {
   id: string;
@@ -24,6 +25,16 @@ interface ProfileData {
   created_at: string;
   subscription_status: string | null;
   phone: string | null;
+}
+
+interface ManualPaymentRecord {
+  id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  description: string;
+  notes: string | null;
+  created_at: string;
 }
 
 interface MemberProfileData {
@@ -71,6 +82,8 @@ export default function AdminMemberDetail() {
   const [cashPayments, setCashPayments] = useState<CashPaymentRecord[]>([]);
   const [editingPayment, setEditingPayment] = useState<CashPaymentRecord | null>(null);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+  const [manualPayments, setManualPayments] = useState<ManualPaymentRecord[]>([]);
+  const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
 
   useEffect(() => {
     if (id) fetchAll(id);
@@ -102,6 +115,14 @@ export default function AdminMemberDetail() {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     if (payments) setCashPayments(payments as unknown as CashPaymentRecord[]);
+
+    // Manual payments
+    const { data: manualPays } = await supabase
+      .from('manual_payments' as any)
+      .select('id, amount, payment_date, payment_method, description, notes, created_at')
+      .eq('user_id', userId)
+      .order('payment_date', { ascending: false });
+    if (manualPays) setManualPayments(manualPays as unknown as ManualPaymentRecord[]);
 
     // Enrolled program
     const { data: enrollment } = await supabase
