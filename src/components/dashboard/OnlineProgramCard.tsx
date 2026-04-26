@@ -158,52 +158,12 @@ export function OnlineProgramCard() {
                     {day.restNote || 'Rest and recover.'}
                   </p>
                 ) : (
-                  mergeAdjacentBlocks(day.blocks).map((block, bi) => (
-                    <div key={bi} className="bg-muted/40 rounded-lg p-2.5 space-y-1.5">
-                      {block.type === 'strength' && (
-                        <>
-                          <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Strength</p>
-                          {block.exercises?.map((ex: any, ei: number) => (
-                            <MovementExerciseRow
-                              key={ei}
-                              name={ex.name || 'Exercise'}
-                              movementId={ex.movementId}
-                              meta={`${ex.sets}×${ex.reps}${ex.weight ? ` @ ${ex.weight} lb` : ''}`}
-                            />
-                          ))}
-                        </>
-                      )}
-                      {block.type === 'cardio' && (
-                        <>
-                          <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Cardio</p>
-                          <p className="text-xs">{block.activity || 'Cardio'} — {(block as any).duration || ''}</p>
-                          {(block as any).intensity && (
-                            <p className="text-[11px] text-muted-foreground">Intensity: {(block as any).intensity}</p>
-                          )}
-                        </>
-                      )}
-                      {block.type === 'mobility' && (
-                        <>
-                          <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Mobility</p>
-                          {block.exercises?.map((ex: any, ei: number) => (
-                            <MovementExerciseRow
-                              key={ei}
-                              name={ex.name || 'Stretch'}
-                              movementId={ex.movementId}
-                              meta={`${ex.duration}${ex.side && ex.side !== 'both' ? ` (${ex.side})` : ''}`}
-                            />
-                          ))}
-                        </>
-                      )}
-                      {block.type === 'nutrition' && (
-                        <>
-                          <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Nutrition</p>
-                          <p className="text-xs whitespace-pre-wrap">{block.content}</p>
-                          <NutritionDisclaimerLabel variant="coach-note" />
-                        </>
-                      )}
-                    </div>
-                  ))
+                  <WorkoutBlocksDisplay
+                    blocks={mergeAdjacentBlocks(day.blocks as any)}
+                    variant="compact"
+                    headerStyle="primary-text"
+                    showNutrition={true}
+                  />
                 )}
                 {!day.isRest && day.blocks.length > 0 && (
                   <Button
