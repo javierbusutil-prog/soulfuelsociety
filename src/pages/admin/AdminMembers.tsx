@@ -8,10 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, ChevronRight, DollarSign } from 'lucide-react';
+import { Search, ChevronRight, DollarSign, UserPlus, Mail, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
+import { InviteClientDialog } from '@/components/admin/InviteClientDialog';
+import { toast } from 'sonner';
 
 interface MemberRow {
   id: string;
@@ -27,20 +29,68 @@ interface MemberRow {
   membership_expires_at: string | null;
 }
 
+interface PendingInvite {
+  id: string;
+  email: string;
+  full_name: string;
+  note: string | null;
+  created_at: string;
+}
+
 export default function AdminMembers() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [members, setMembers] = useState<MemberRow[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [memberTypeFilter, setMemberTypeFilter] = useState('all');
   const [paymentDialogMember, setPaymentDialogMember] = useState<MemberRow | null>(null);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMembers();
+    fetchPendingInvites();
   }, []);
+
+  const fetchPendingInvites = async () => {
+    const { data } = await supabase
+      .from('client_invitations')
+      .select('id, email, full_name, note, created_at')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+    setPendingInvites((data as PendingInvite[]) || []);
+  };
+
+  const handleResend = async (invite: PendingInvite) => {
+    setResendingId(invite.id);
+    try {
+      const { error } = await supabase.functions.invoke('send-client-invite', {
+        body: { email: invite.email, full_name: invite.full_name, note: invite.note },
+      });
+      if (error) throw error;
+      toast.success(`Invite resent to ${invite.full_name}`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Failed to resend invite');
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const handleCancelInvite = async (invite: PendingInvite) => {
+    if (!confirm(`Cancel invite for ${invite.full_name}?`)) return;
+    const { error } = await supabase.from('client_invitations').delete().eq('id', invite.id);
+    if (error) {
+      toast.error('Failed to cancel invite');
+      return;
+    }
+    toast.success('Invite cancelled');
+    fetchPendingInvites();
+  };
 
   const fetchMembers = async () => {
     setLoading(true);
@@ -169,6 +219,14 @@ export default function AdminMembers() {
   return (
     <AdminLayout title="Members">
       <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
+        {/* Invite Client */}
+        <div className="flex justify-end">
+          <Button size="sm" onClick={() => setInviteDialogOpen(true)} className="gap-2">
+            <UserPlus className="w-4 h-4" />
+            Invite Client
+          </Button>
+        </div>
+
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -293,6 +351,53 @@ export default function AdminMembers() {
             ))
           )}
         </div>
+
+        {/* Pending Invites */}
+        {pendingInvites.length > 0 && (
+          <div className="space-y-2 pt-4">
+            <h2 className="text-sm font-semibold text-muted-foreground">
+              Pending Invites ({pendingInvites.length})
+            </h2>
+            <div className="space-y-2">
+              {pendingInvites.map((invite) => (
+                <Card key={invite.id} className="p-3 md:p-4 bg-muted/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Mail className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{invite.full_name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{invite.email}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Invited {format(new Date(invite.created_at), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[11px]"
+                        disabled={resendingId === invite.id}
+                        onClick={() => handleResend(invite)}
+                      >
+                        {resendingId === invite.id ? 'Sending...' : 'Resend'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleCancelInvite(invite)}
+                        aria-label="Cancel invite"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {paymentDialogMember && user && (
@@ -306,6 +411,15 @@ export default function AdminMembers() {
             setPaymentDialogMember(null);
             fetchMembers();
           }}
+        />
+      )}
+
+      {user && (
+        <InviteClientDialog
+          open={inviteDialogOpen}
+          onOpenChange={setInviteDialogOpen}
+          coachId={user.id}
+          onSuccess={fetchPendingInvites}
         />
       )}
     </AdminLayout>
