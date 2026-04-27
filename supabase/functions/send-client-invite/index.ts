@@ -7,13 +7,21 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log("[send-client-invite] handler entered:", req.method, new Date().toISOString());
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log("[send-client-invite] env keys present:", {
+      RESEND_API_KEY: !!Deno.env.get("RESEND_API_KEY"),
+      SUPABASE_URL: !!Deno.env.get("SUPABASE_URL"),
+    });
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
+      console.error("[send-client-invite] RESEND_API_KEY missing from Deno.env");
       throw new Error("RESEND_API_KEY is not configured");
     }
 
@@ -120,9 +128,14 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: unknown) {
-    console.error("Error sending client invite email:", error);
     const msg = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ success: false, error: msg }), {
+    const stack = error instanceof Error ? error.stack : undefined;
+    console.error("[send-client-invite] Runtime error:", {
+      message: msg,
+      stack,
+      raw: error,
+    });
+    return new Response(JSON.stringify({ success: false, error: msg, stack }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
