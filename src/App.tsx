@@ -98,7 +98,7 @@ function CoachRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (!isAdmin && !isPTAdmin) {
-    return <Navigate to="/community" replace />;
+    return <Navigate to="/home" replace />;
   }
   
   return <>{children}</>;
