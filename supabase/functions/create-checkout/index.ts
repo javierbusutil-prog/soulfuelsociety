@@ -32,6 +32,13 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
 
+  // Service-role client for writing stripe_customer_id back to profiles (bypasses RLS)
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
+
   try {
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
@@ -44,11 +51,43 @@ serve(async (req) => {
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
 
-    // Find or create customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    // Find or create Stripe customer, persisting the ID to profiles to avoid duplicates
     let customerId: string | undefined;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
+
+    // 1. Check profiles for an existing stripe_customer_id
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("stripe_customer_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile?.stripe_customer_id) {
+      customerId = profile.stripe_customer_id;
+      logStep("Using stripe_customer_id from profiles", { customerId });
+    } else {
+      // 2. Look up an existing Stripe customer by email
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        logStep("Found existing Stripe customer by email", { customerId });
+      } else {
+        // 3. Create a new Stripe customer
+        const newCustomer = await stripe.customers.create({
+          email: user.email,
+          metadata: { user_id: user.id },
+        });
+        customerId = newCustomer.id;
+        logStep("Created new Stripe customer", { customerId });
+      }
+
+      // Persist the customer ID back to profiles
+      const { error: updateError } = await supabaseAdmin
+        .from("profiles")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", user.id);
+      if (updateError) {
+        logStep("Failed to persist stripe_customer_id", { error: updateError.message });
+      }
     }
 
     const origin = req.headers.get("origin") || "https://soulfuelsociety.lovable.app";
