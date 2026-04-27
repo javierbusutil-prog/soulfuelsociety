@@ -30,10 +30,20 @@ export function Header({ title }: HeaderProps) {
     <header className="sticky top-0 z-40 bg-background border-b border-border" role="banner">
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
         <Link to="/" className="flex items-center -ml-14" aria-label="Soul Fuel - Home">
-          <img 
-            src={logoWordmark} 
-            alt="Soul Fuel" 
-            className="h-10 w-auto bg-transparent mix-blend-multiply"
+          <span
+            role="img"
+            aria-label="Soul Fuel"
+            className="block h-10 w-[195px] bg-foreground"
+            style={{
+              WebkitMaskImage: `url(${logoWordmark})`,
+              maskImage: `url(${logoWordmark})`,
+              WebkitMaskRepeat: 'no-repeat',
+              maskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+              maskPosition: 'center',
+              WebkitMaskSize: 'contain',
+              maskSize: 'contain',
+            }}
           />
         </Link>
         
