@@ -87,7 +87,7 @@ export default function Signup() {
       title: 'Welcome to Soul Fuel Society!',
       description: 'Your account has been created.',
     });
-    navigate('/community');
+    navigate('/home');
   };
 
   if (step === 'waiver') {

@@ -100,7 +100,7 @@ export default function Onboarding() {
   // Gate: redirect if already onboarded
   useEffect(() => {
     if (profile && (profile as any).has_completed_onboarding) {
-      navigate('/community', { replace: true });
+      navigate('/home', { replace: true });
     }
   }, [profile, navigate]);
 
@@ -151,7 +151,7 @@ export default function Onboarding() {
       if (profileError) throw profileError;
 
       await refreshProfile();
-      navigate('/community', { replace: true });
+      navigate('/home', { replace: true });
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {
