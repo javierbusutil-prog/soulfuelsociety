@@ -33,7 +33,7 @@ export function Header({ title }: HeaderProps) {
           <img 
             src={logoWordmark} 
             alt="Soul Fuel" 
-            className="h-10 w-auto"
+            className="h-10 w-auto bg-transparent mix-blend-multiply"
           />
         </Link>
         
