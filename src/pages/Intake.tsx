@@ -104,8 +104,8 @@ export default function Intake() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate('/login', { replace: true }); return; }
-    if (!isPaidMember) { navigate('/community', { replace: true }); return; }
-    if ((profile as any)?.intake_submitted) { navigate('/community', { replace: true }); return; }
+    if (!isPaidMember) { navigate('/home', { replace: true }); return; }
+    if ((profile as any)?.intake_submitted) { navigate('/home', { replace: true }); return; }
   }, [authLoading, user, isPaidMember, profile, navigate]);
 
   const toggleMulti = (arr: string[], val: string, setter: (v: string[]) => void) => {
@@ -261,7 +261,7 @@ export default function Intake() {
 
       await refreshProfile();
       toast.success('Intake form submitted! Welcome aboard.');
-      navigate('/community', { replace: true });
+      navigate('/home', { replace: true });
     } catch (e: any) {
       toast.error(e.message || 'Failed to submit intake form.');
     } finally {
