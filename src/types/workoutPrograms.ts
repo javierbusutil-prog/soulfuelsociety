@@ -2,6 +2,8 @@
 
 export type ScheduleMode = 'admin_selected' | 'user_selected';
 
+export type ProgramAccessType = 'free' | 'membership' | 'one_time_purchase';
+
 export interface WorkoutProgram {
   id: string;
   title: string;
@@ -16,6 +18,9 @@ export interface WorkoutProgram {
   created_at: string;
   updated_at: string;
   ebook_url: string | null;
+  access_type: ProgramAccessType;
+  price_cents: number | null;
+  stripe_price_id: string | null;
 }
 
 export interface WorkoutSessionTemplate {

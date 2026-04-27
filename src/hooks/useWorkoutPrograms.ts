@@ -61,6 +61,8 @@ export function useWorkoutPrograms() {
       published: program.published || false,
       created_by: user?.id || null,
       ebook_url: program.ebook_url || null,
+      access_type: program.access_type || 'membership',
+      price_cents: program.price_cents ?? null,
     };
     
     const { data, error } = await supabase
