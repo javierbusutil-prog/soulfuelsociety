@@ -68,7 +68,7 @@ serve(async (req) => {
       status: "paid",
       limit: 100,
     });
-    totalRevenueThisMonth = invoices.data.reduce((sum, inv) => sum + (inv.amount_paid || 0), 0) / 100;
+    totalRevenueThisMonth = invoices.data.reduce((sum: number, inv: { amount_paid?: number | null }) => sum + (inv.amount_paid || 0), 0) / 100;
 
     const avgRevenue = totalActive > 0 ? totalRevenueThisMonth / totalActive : 0;
 
@@ -82,7 +82,7 @@ serve(async (req) => {
         status: "paid",
         limit: 100,
       });
-      const rev = monthInvoices.data.reduce((sum, inv) => sum + (inv.amount_paid || 0), 0) / 100;
+      const rev = monthInvoices.data.reduce((sum: number, inv: { amount_paid?: number | null }) => sum + (inv.amount_paid || 0), 0) / 100;
       monthlyRevenue.push({
         month: mStart.toLocaleString("en-US", { month: "short", year: "numeric" }),
         revenue: rev,
@@ -114,7 +114,8 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    const msg = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: msg }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
