@@ -58,6 +58,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkSubscription = async () => {
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.access_token) {
+        return;
+      }
       const { data } = await supabase.functions.invoke('check-subscription');
       if (data?.subscribed) {
         // Refresh profile to pick up updated subscription_status and role
