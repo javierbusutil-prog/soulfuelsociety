@@ -79,6 +79,12 @@ serve(async (req) => {
       </div>
     `;
 
+    const fromAddress = "Soul Fuel Society <info@soulfuelsociety.app>";
+
+    console.log("[send-client-invite] RESEND_API_KEY prefix:", RESEND_API_KEY.substring(0, 8));
+    console.log("[send-client-invite] from address:", fromAddress);
+    console.log("[send-client-invite] to:", email);
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -86,14 +92,23 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Soul Fuel Society <info@soulfuelsociety.app>",
+        from: fromAddress,
         to: [email],
         subject: "You're invited to Soul Fuel Society ✨",
         html: htmlBody,
       }),
     });
 
-    const data = await res.json();
+    const rawBody = await res.text();
+    console.log("[send-client-invite] Resend response status:", res.status);
+    console.log("[send-client-invite] Resend response body:", rawBody);
+
+    let data: any;
+    try {
+      data = JSON.parse(rawBody);
+    } catch {
+      data = { raw: rawBody };
+    }
 
     if (!res.ok) {
       console.error("Resend error:", data);
