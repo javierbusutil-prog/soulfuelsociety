@@ -261,7 +261,7 @@ export default function Intake() {
 
       await refreshProfile();
       toast.success('Intake form submitted! Welcome aboard.');
-      navigate('/community', { replace: true });
+      navigate('/home', { replace: true });
     } catch (e: any) {
       toast.error(e.message || 'Failed to submit intake form.');
     } finally {
