@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 // Pages
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
+import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
@@ -119,7 +120,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     if (isAdmin || isPTAdmin) {
       return <Navigate to="/admin" replace />;
     }
-    return <Navigate to="/community" replace />;
+    return <Navigate to="/home" replace />;
   }
   
   return <>{children}</>;
@@ -149,7 +150,7 @@ function SmartRedirect() {
   }
   if (!user) return <Landing />;
   if (isAdmin || isPTAdmin) return <Navigate to="/admin" replace />;
-  return <Navigate to="/community" replace />;
+  return <Navigate to="/home" replace />;
 }
 
 function AppRoutes() {
@@ -161,6 +162,7 @@ function AppRoutes() {
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
       
       {/* Protected member routes */}
+      <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
       <Route path="/train" element={<ProtectedRoute><TrainWithUs /></ProtectedRoute>} />
       <Route path="/nutrition" element={<ProtectedRoute><Nutrition /></ProtectedRoute>} />
