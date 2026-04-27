@@ -265,7 +265,8 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
               onChange={e => setCoachNote(e.target.value)}
               maxLength={2000}
               placeholder="Optional message to members about today's workout"
-              className="min-h-[80px]"
+              rows={6}
+              className="min-h-[160px]"
             />
             <p className="text-[10px] text-muted-foreground text-right">{coachNote.length}/2000</p>
           </div>
