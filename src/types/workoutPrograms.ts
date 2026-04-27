@@ -2,7 +2,7 @@
 
 export type ScheduleMode = 'admin_selected' | 'user_selected';
 
-export type ProgramAccessType = 'free' | 'membership' | 'standalone';
+export type ProgramAccessType = 'free' | 'membership' | 'one_time_purchase';
 
 export interface WorkoutProgram {
   id: string;
