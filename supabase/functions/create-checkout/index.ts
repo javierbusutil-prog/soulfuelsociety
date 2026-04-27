@@ -12,9 +12,6 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
-// Online training price
-const ONLINE_PRICE_ID = "price_1TG82XROBuw9pDG0gF1Hax6r";
-
 // In-person per-session rates
 const SESSION_RATES: Record<string, number> = {
   solo: 5000,    // $50/session in cents
@@ -49,7 +46,15 @@ serve(async (req) => {
     const { plan, sessionCount, groupSize, inviteToken, groupId } = await req.json();
     logStep("Checkout request", { plan, sessionCount, groupSize, email: user.email, inviteToken });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
+    const isSandbox = stripeKey.startsWith("sk_test_");
+    console.log("[create-checkout] mode:", isSandbox ? "sandbox" : "live");
+
+    const onlinePriceId = isSandbox
+      ? Deno.env.get("STRIPE_ONLINE_PRICE_ID_TEST")
+      : Deno.env.get("STRIPE_ONLINE_PRICE_ID_LIVE");
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     // Find or create Stripe customer, persisting the ID to profiles to avoid duplicates
     let customerId: string | undefined;
@@ -94,10 +99,13 @@ serve(async (req) => {
     let sessionConfig: Stripe.Checkout.SessionCreateParams;
 
     if (plan === "online") {
+      if (!onlinePriceId) {
+        throw new Error("Online price ID not configured for this environment");
+      }
       sessionConfig = {
         customer: customerId,
         customer_email: customerId ? undefined : user.email,
-        line_items: [{ price: ONLINE_PRICE_ID, quantity: 1 }],
+        line_items: [{ price: onlinePriceId, quantity: 1 }],
         mode: "subscription",
         success_url: `${origin}/onboarding?checkout=success`,
         cancel_url: `${origin}/upgrade?checkout=cancelled`,
