@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Play, Dumbbell, Target, Calendar, Clock, MapPin, ChevronRight, Sparkles } from 'lucide-react';
+import { CheckCircle2, Play, Dumbbell, Target, Calendar, Clock, MapPin, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +28,11 @@ export default function Onboarding() {
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const checkoutSuccess = searchParams.get('checkout') === 'success';
+
+  const [activating, setActivating] = useState(checkoutSuccess);
+  const [activationTimedOut, setActivationTimedOut] = useState(false);
 
   const [step, setStep] = useState(0);
   const [fitnessLevel, setFitnessLevel] = useState('Beginner');
@@ -40,6 +45,57 @@ export default function Onboarding() {
   const [saving, setSaving] = useState(false);
 
   const isInPerson = profile?.selected_plan === 'in-person';
+
+  // Poll user_roles for 'paid' role after checkout success
+  useEffect(() => {
+    if (!checkoutSuccess || !user) return;
+
+    let cancelled = false;
+    const startedAt = Date.now();
+
+    const check = async () => {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'paid')
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (data) {
+        await refreshProfile();
+        if (!cancelled) setActivating(false);
+        return true;
+      }
+      return false;
+    };
+
+    const interval = setInterval(async () => {
+      const found = await check();
+      if (found || cancelled) {
+        clearInterval(interval);
+        return;
+      }
+      if (Date.now() - startedAt >= 10000) {
+        clearInterval(interval);
+        if (!cancelled) {
+          setActivationTimedOut(true);
+          setActivating(false);
+        }
+      }
+    }, 2000);
+
+    // Run an immediate check too
+    check().then(found => {
+      if (found) clearInterval(interval);
+    });
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [checkoutSuccess, user, refreshProfile]);
 
   // Gate: redirect if already onboarded
   useEffect(() => {
@@ -110,7 +166,20 @@ export default function Onboarding() {
   };
 
   return (
+    activating ? (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+        <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+        <p className="text-foreground font-medium">Setting up your account...</p>
+      </div>
+    ) : (
     <div className="min-h-screen bg-background flex flex-col">
+      {activationTimedOut && (
+        <div className="px-6 pt-4">
+          <Card className="p-3 bg-primary/5 border-primary/20 text-sm text-foreground text-center">
+            Welcome! Your account is being activated — this usually takes just a moment.
+          </Card>
+        </div>
+      )}
       {/* Progress bar */}
       <div className="px-6 pt-6 pb-2">
         <div className="flex items-center justify-between mb-2">
@@ -383,5 +452,6 @@ export default function Onboarding() {
         </AnimatePresence>
       </div>
     </div>
+    )
   );
 }
