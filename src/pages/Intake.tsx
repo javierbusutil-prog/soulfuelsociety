@@ -104,8 +104,8 @@ export default function Intake() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate('/login', { replace: true }); return; }
-    if (!isPaidMember) { navigate('/community', { replace: true }); return; }
-    if ((profile as any)?.intake_submitted) { navigate('/community', { replace: true }); return; }
+    if (!isPaidMember) { navigate('/home', { replace: true }); return; }
+    if ((profile as any)?.intake_submitted) { navigate('/home', { replace: true }); return; }
   }, [authLoading, user, isPaidMember, profile, navigate]);
 
   const toggleMulti = (arr: string[], val: string, setter: (v: string[]) => void) => {
