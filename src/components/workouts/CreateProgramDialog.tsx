@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { WorkoutProgram, DAYS_OF_WEEK, ScheduleMode } from '@/types/workoutPrograms';
+import { WorkoutProgram, DAYS_OF_WEEK, ScheduleMode, ProgramAccessType } from '@/types/workoutPrograms';
 
 interface CreateProgramDialogProps {
   onProgramCreated: (program: Partial<WorkoutProgram>) => Promise<WorkoutProgram>;
@@ -37,6 +37,9 @@ export function CreateProgramDialog({ onProgramCreated }: CreateProgramDialogPro
   const [frequency, setFrequency] = useState(3);
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('admin_selected');
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 3, 5]); // Mon, Wed, Fri
+  const [accessType, setAccessType] = useState<ProgramAccessType>('membership');
+  const [priceDollars, setPriceDollars] = useState<string>('');
+  const [publishImmediately, setPublishImmediately] = useState(false);
 
   const toggleDay = (day: number) => {
     if (selectedDays.includes(day)) {
@@ -60,6 +63,16 @@ export function CreateProgramDialog({ onProgramCreated }: CreateProgramDialogPro
       return;
     }
 
+    let priceCents: number | null = null;
+    if (accessType === 'one_time_purchase') {
+      const parsed = parseFloat(priceDollars);
+      if (!priceDollars || isNaN(parsed) || parsed <= 0) {
+        toast({ title: 'Enter a valid price', variant: 'destructive' });
+        return;
+      }
+      priceCents = Math.round(parsed * 100);
+    }
+
     setLoading(true);
     try {
       await onProgramCreated({
@@ -69,7 +82,9 @@ export function CreateProgramDialog({ onProgramCreated }: CreateProgramDialogPro
         frequency_per_week: frequency,
         schedule_mode: scheduleMode,
         admin_days_of_week: scheduleMode === 'admin_selected' ? selectedDays : null,
-        published: false,
+        published: publishImmediately,
+        access_type: accessType,
+        price_cents: priceCents,
       });
 
       toast({ title: 'Program created!' });
@@ -89,6 +104,9 @@ export function CreateProgramDialog({ onProgramCreated }: CreateProgramDialogPro
     setFrequency(3);
     setScheduleMode('admin_selected');
     setSelectedDays([1, 3, 5]);
+    setAccessType('membership');
+    setPriceDollars('');
+    setPublishImmediately(false);
   };
 
   return (
@@ -203,6 +221,52 @@ export function CreateProgramDialog({ onProgramCreated }: CreateProgramDialogPro
               )}
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>Access Type</Label>
+            <Select value={accessType} onValueChange={(v) => setAccessType(v as ProgramAccessType)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="free">Free (all members)</SelectItem>
+                <SelectItem value="membership">Paid members only</SelectItem>
+                <SelectItem value="one_time_purchase">Standalone purchase</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {accessType === 'one_time_purchase' && (
+            <div className="space-y-2">
+              <Label htmlFor="price">Price</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                <Input
+                  id="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={priceDollars}
+                  onChange={(e) => setPriceDollars(e.target.value)}
+                  placeholder="49.00"
+                  className="pl-7"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+            <div>
+              <p className="font-medium text-sm">Publish immediately</p>
+              <p className="text-xs text-muted-foreground">
+                Make this program visible to members on creation
+              </p>
+            </div>
+            <Switch
+              checked={publishImmediately}
+              onCheckedChange={setPublishImmediately}
+            />
+          </div>
         </div>
 
         <DialogFooter>
