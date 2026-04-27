@@ -53,6 +53,7 @@ export function TodaysHabitsSection() {
       hydrationMet={hydrationMet}
       workoutCompleted={workoutCompleted}
       ringHabits={ringHabits}
+      hideHeader
     />
   );
 }
