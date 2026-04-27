@@ -27,7 +27,7 @@ export default function Waiver() {
       await supabase.from('profiles').update({ waiver_accepted: true, waiver_version: 'March 2026 v2' }).eq('id', user.id);
       await refreshProfile();
       toast({ title: 'Waiver accepted', description: 'Welcome to Soul Fuel Society!' });
-      navigate('/community');
+      navigate('/home');
     } catch (e) {
       console.error('Failed to record waiver acceptance:', e);
       toast({ title: 'Error', description: 'Failed to save waiver acceptance. Please try again.', variant: 'destructive' });

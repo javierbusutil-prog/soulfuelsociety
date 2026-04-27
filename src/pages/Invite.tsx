@@ -34,7 +34,7 @@ export default function Invite() {
 
   useEffect(() => {
     if (slotsNeeded === 0) {
-      navigate('/community', { replace: true });
+      navigate('/home', { replace: true });
       return;
     }
     loadInvites();
