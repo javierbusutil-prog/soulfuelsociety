@@ -16,6 +16,7 @@ interface Props {
   hydrationMet: boolean;
   workoutCompleted: boolean;
   ringHabits: RingHabits;
+  hideHeader?: boolean;
 }
 
 interface HabitRowProps {
@@ -50,12 +51,14 @@ function HabitRow({ label, done, onToggle, icon }: HabitRowProps) {
   );
 }
 
-export function DailyHabits({ entry, toggleHabit, fastCompleted, cycleLogged, cycleEnabled, proteinMet, hydrationMet, workoutCompleted, ringHabits }: Props) {
+export function DailyHabits({ entry, toggleHabit, fastCompleted, cycleLogged, cycleEnabled, proteinMet, hydrationMet, workoutCompleted, ringHabits, hideHeader }: Props) {
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-sans font-semibold tracking-normal">Today's Habits</CardTitle>
-      </CardHeader>
+      {!hideHeader && (
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-sans font-semibold tracking-normal">Today's Habits</CardTitle>
+        </CardHeader>
+      )}
       <CardContent className="space-y-2">
         {ringHabits.workout && (
           <HabitRow
