@@ -1836,6 +1836,63 @@ export type Database = {
         }
         Relationships: []
       }
+      pt_requests: {
+        Row: {
+          admin_notes: string | null
+          best_time: string
+          chief_complaint: string
+          created_at: string
+          date_of_birth: string
+          email: string
+          full_name: string
+          goals: string
+          id: string
+          pain_scale: number
+          phone: string
+          preferred_contact: string
+          status: string
+          symptom_duration: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          best_time: string
+          chief_complaint: string
+          created_at?: string
+          date_of_birth: string
+          email: string
+          full_name: string
+          goals: string
+          id?: string
+          pain_scale: number
+          phone: string
+          preferred_contact: string
+          status?: string
+          symptom_duration: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          best_time?: string
+          chief_complaint?: string
+          created_at?: string
+          date_of_birth?: string
+          email?: string
+          full_name?: string
+          goals?: string
+          id?: string
+          pain_scale?: number
+          phone?: string
+          preferred_contact?: string
+          status?: string
+          symptom_duration?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reactions: {
         Row: {
           created_at: string
