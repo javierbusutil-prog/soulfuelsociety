@@ -98,15 +98,15 @@ export function WorkoutBlocksDisplay({
 
             {block.type === 'cardio' && (
               <>
-                <p className="text-xs">
-                  {block.activity || 'Cardio'}
-                  {block.duration ? ` — ${block.duration}` : ''}
-                </p>
-                {block.intensity && (
-                  <p className="text-[11px] text-muted-foreground">Intensity: {block.intensity}</p>
+                <p className="font-semibold text-sm">{block.format}</p>
+                {block.scheme && (
+                  <p className="text-sm font-medium">{block.scheme}</p>
+                )}
+                {block.movements && (
+                  <p className="text-sm whitespace-pre-wrap">{block.movements}</p>
                 )}
                 {block.note && (
-                  <p className="text-[11px] text-muted-foreground italic">{block.note}</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{block.note}</p>
                 )}
               </>
             )}
