@@ -66,7 +66,6 @@ export default function Home() {
           <h1 className="font-display text-3xl tracking-editorial leading-tight">
             Hey {firstName} <span aria-hidden>👋</span>
           </h1>
-          <p className="text-muted-foreground mt-1">Here's your Soul Fuel dashboard.</p>
         </header>
 
         {/* Today's Daily Dose */}
