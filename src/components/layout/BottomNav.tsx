@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock, ShieldCheck, Sunrise, MoreHorizontal, ChevronRight } from 'lucide-react';
+import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock, ShieldCheck, Sunrise, MoreHorizontal, ChevronRight, Stethoscope, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 const navItems = [
   { path: '/daily-dose', icon: Sunrise, label: 'Daily Dose' },
-  { path: '/workouts', icon: Dumbbell, label: 'Workouts', paidOnly: true },
+  { path: '/workouts', icon: Dumbbell, label: 'My Training', paidOnly: true },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/nutrition', icon: Apple, label: 'Nutrition' },
   { path: '/community', icon: Users, label: 'Community' },
-  { path: '/profile', icon: User, label: 'Profile' },
 ];
 
 const moreItems = [
   { path: '/coach', icon: MessageCircle, label: 'Coach', paidOnly: true },
+  { path: '/workouts', icon: BookOpen, label: 'Programs' },
+  { path: '/pt-request', icon: Stethoscope, label: 'PT Request' },
   { path: '/train', icon: Flame, label: 'The Team' },
+  { path: '/profile', icon: User, label: 'Profile' },
 ];
 
 export function BottomNav() {

@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Sparkles, ArrowRight, MessageCircle, Dumbbell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { TodaysHabitsSection } from '@/components/home/TodaysHabitsSection';
 import { OnlineProgramCard } from '@/components/dashboard/OnlineProgramCard';
 import type { WorkoutProgram } from '@/types/workoutPrograms';
 
@@ -69,14 +68,6 @@ export default function Home() {
           </h1>
           <p className="text-muted-foreground mt-1">Here's your Soul Fuel dashboard.</p>
         </header>
-
-        {/* Today's Habits */}
-        <section aria-labelledby="todays-habits-heading">
-          <h2 id="todays-habits-heading" className="font-display text-xl tracking-editorial mb-3">
-            Today's Habits
-          </h2>
-          <TodaysHabitsSection />
-        </section>
 
         {/* Today's Daily Dose */}
         <section aria-labelledby="daily-dose-heading">
