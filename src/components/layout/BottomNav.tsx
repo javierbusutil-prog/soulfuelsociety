@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock, ShieldCheck, Sunrise, MoreHorizontal, ChevronRight, Stethoscope, BookOpen } from 'lucide-react';
+import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock, Sunrise, MoreHorizontal, ChevronRight, Stethoscope, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 const navItems = [
   { path: '/daily-dose', icon: Sunrise, label: 'Daily Dose' },
-  { path: '/workouts', icon: Dumbbell, label: 'My Training', paidOnly: true },
+  { path: '/workouts', icon: Dumbbell, label: 'Training', paidOnly: true },
   { path: '/calendar', icon: Calendar, label: 'Calendar' },
   { path: '/nutrition', icon: Apple, label: 'Nutrition' },
   { path: '/community', icon: Users, label: 'Community' },
@@ -24,7 +24,7 @@ const moreItems = [
 export function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isPaidMember, isAdmin } = useAuth();
+  const { isPaidMember } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const isMoreActive = moreItems.some((item) => location.pathname.startsWith(item.path));
@@ -101,15 +101,6 @@ export function BottomNav() {
             </span>
           </button>
 
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className="flex flex-col items-center justify-center w-14 h-full relative transition-colors duration-200 text-muted-foreground hover:text-foreground"
-            >
-              <ShieldCheck className="w-5 h-5 stroke-[1.5]" />
-              <span className="text-[10px] mt-1.5 font-medium tracking-wide">Coach</span>
-            </Link>
-          )}
         </div>
       </nav>
 
