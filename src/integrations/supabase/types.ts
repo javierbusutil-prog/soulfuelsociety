@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      broadcast_emails: {
+        Row: {
+          audience: string
+          body: string
+          id: string
+          recipient_count: number
+          recipient_ids: string[] | null
+          sent_at: string
+          sent_by: string | null
+          subject: string
+        }
+        Insert: {
+          audience: string
+          body: string
+          id?: string
+          recipient_count: number
+          recipient_ids?: string[] | null
+          sent_at?: string
+          sent_by?: string | null
+          subject: string
+        }
+        Update: {
+          audience?: string
+          body?: string
+          id?: string
+          recipient_count?: number
+          recipient_ids?: string[] | null
+          sent_at?: string
+          sent_by?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           booking_id: string | null
@@ -1653,6 +1686,7 @@ export type Database = {
           assigned_pt_id: string | null
           avatar_url: string | null
           created_at: string
+          email_unsubscribed: boolean
           full_name: string | null
           group_size: string | null
           has_completed_onboarding: boolean
@@ -1680,6 +1714,7 @@ export type Database = {
           assigned_pt_id?: string | null
           avatar_url?: string | null
           created_at?: string
+          email_unsubscribed?: boolean
           full_name?: string | null
           group_size?: string | null
           has_completed_onboarding?: boolean
@@ -1707,6 +1742,7 @@ export type Database = {
           assigned_pt_id?: string | null
           avatar_url?: string | null
           created_at?: string
+          email_unsubscribed?: boolean
           full_name?: string | null
           group_size?: string | null
           has_completed_onboarding?: boolean
