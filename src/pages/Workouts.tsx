@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { Search, Filter, Heart, Clock, Dumbbell, Check, Calendar, BookOpen, Pencil, Trash2, Play, History, ListChecks, CalendarDays } from 'lucide-react';
@@ -65,6 +66,7 @@ const typeIcons: Record<WorkoutType, string> = {
 
 export default function Workouts() {
   const { user, isAdmin, isPaidMember } = useAuth();
+  const navigate = useNavigate();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [completedToday, setCompletedToday] = useState<string[]>([]);
@@ -191,7 +193,7 @@ export default function Workouts() {
   // Workout history view
   if (showHistory) {
     return (
-      <AppLayout title="Workout History">
+      <AppLayout title="Training History">
         <WorkoutHistory onBack={() => setShowHistory(false)} />
       </AppLayout>
     );
@@ -219,8 +221,30 @@ export default function Workouts() {
     );
   }
 
+  // Locked state for non-paid, non-admin users
+  if (!isPaidMember && !isAdmin) {
+    return (
+      <AppLayout title="My Training">
+        <div className="max-w-lg mx-auto p-6 min-h-[70vh] flex items-center justify-center">
+          <Card className="p-8 text-center w-full">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-7 h-7 text-muted-foreground" />
+            </div>
+            <h1 className="font-display text-2xl tracking-editorial mb-2">My Training</h1>
+            <p className="text-muted-foreground mb-6">
+              Your custom training program lives here. Upgrade to get a program built specifically for you by your coach.
+            </p>
+            <Button onClick={() => navigate('/upgrade')} variant="accent" className="w-full sm:w-auto">
+              See Plans
+            </Button>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
-    <AppLayout title="Workouts">
+    <AppLayout title="My Training">
       <div className="max-w-lg mx-auto p-4">
         <div className="mb-4">
           <CoachingDashboard />
