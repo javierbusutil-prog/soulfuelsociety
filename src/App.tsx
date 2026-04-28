@@ -43,6 +43,8 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminCommunity from "./pages/admin/AdminCommunity";
 import AdminMovements from "./pages/admin/AdminMovements";
 import AdminDailyDose from "./pages/admin/AdminDailyDose";
+import AdminPTRequests from "./pages/admin/AdminPTRequests";
+import PTRequest from "./pages/PTRequest";
 
 // Booking pages
 import BookSession from "./pages/BookSession";
@@ -180,6 +182,7 @@ function AppRoutes() {
       <Route path="/intake" element={<Intake />} />
       <Route path="/book" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
       <Route path="/book/confirm/:bookingId" element={<ProtectedRoute><BookConfirm /></ProtectedRoute>} />
+      <Route path="/pt-request" element={<ProtectedRoute><PTRequest /></ProtectedRoute>} />
       
       {/* Coach admin routes */}
       <Route path="/admin" element={<CoachRoute><AdminDashboard /></CoachRoute>} />
@@ -195,6 +198,7 @@ function AppRoutes() {
       <Route path="/admin/community" element={<CoachRoute><AdminCommunity /></CoachRoute>} />
       <Route path="/admin/movements" element={<CoachRoute><AdminMovements /></CoachRoute>} />
       <Route path="/admin/daily-dose" element={<CoachRoute><AdminDailyDose /></CoachRoute>} />
+      <Route path="/admin/pt-requests" element={<CoachRoute><AdminPTRequests /></CoachRoute>} />
       
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
