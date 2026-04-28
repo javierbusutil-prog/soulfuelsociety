@@ -66,37 +66,16 @@ export default function AdminBroadcast() {
 
   async function loadMembers() {
     setLoadingMembers(true);
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, email_unsubscribed')
-      .order('full_name', { ascending: true });
-
+    const { data, error } = await supabase.functions.invoke('list-broadcast-recipients', {
+      body: {},
+    });
     if (error) {
       console.error(error);
       toast.error('Failed to load members');
       setLoadingMembers(false);
       return;
     }
-
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('user_id, role');
-
-    const paidSet = new Set(
-      (roles ?? [])
-        .filter((r: any) => ['paid', 'admin', 'pt_admin'].includes(r.role))
-        .map((r: any) => r.user_id)
-    );
-
-    setMembers(
-      (profiles ?? []).map((p: any) => ({
-        id: p.id,
-        full_name: p.full_name,
-        email: p.email,
-        is_paid: paidSet.has(p.id),
-        email_unsubscribed: !!p.email_unsubscribed,
-      }))
-    );
+    setMembers((data?.members ?? []) as Member[]);
     setLoadingMembers(false);
   }
 
