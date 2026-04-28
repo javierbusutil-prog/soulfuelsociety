@@ -15,6 +15,7 @@ import {
   Settings,
   Activity,
   Sunrise,
+  Stethoscope,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import logoWordmark from '@/assets/logo-wordmark.svg';
@@ -26,6 +27,7 @@ const navItems = [
   { path: '/admin/programs', icon: Dumbbell, label: 'Programs' },
   { path: '/admin/movements', icon: Activity, label: 'Movements' },
   { path: '/admin/daily-dose', icon: Sunrise, label: 'Daily Dose' },
+  { path: '/admin/pt-requests', icon: Stethoscope, label: 'PT Requests' },
   { path: '/admin/community', icon: MessagesSquare, label: 'Community', hasBadge: true },
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
