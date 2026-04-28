@@ -45,6 +45,7 @@ import AdminMovements from "./pages/admin/AdminMovements";
 import AdminDailyDose from "./pages/admin/AdminDailyDose";
 import AdminPTRequests from "./pages/admin/AdminPTRequests";
 import PTRequest from "./pages/PTRequest";
+import AdminBroadcast from "./pages/admin/AdminBroadcast";
 
 // Booking pages
 import BookSession from "./pages/BookSession";
@@ -199,6 +200,7 @@ function AppRoutes() {
       <Route path="/admin/movements" element={<CoachRoute><AdminMovements /></CoachRoute>} />
       <Route path="/admin/daily-dose" element={<CoachRoute><AdminDailyDose /></CoachRoute>} />
       <Route path="/admin/pt-requests" element={<CoachRoute><AdminPTRequests /></CoachRoute>} />
+      <Route path="/admin/broadcast" element={<CoachRoute><AdminBroadcast /></CoachRoute>} />
       
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
