@@ -33,9 +33,9 @@ export interface StrengthBlock {
 
 export interface CardioBlock {
   type: 'cardio';
-  activity?: string;
-  duration?: string;
-  intensity?: string;
+  format?: string;
+  movements?: string;
+  scheme?: string;
   note?: string;
 }
 

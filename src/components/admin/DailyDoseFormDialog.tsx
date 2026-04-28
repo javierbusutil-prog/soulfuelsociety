@@ -27,7 +27,7 @@ interface StrengthExercise {
   note: string;
 }
 interface StrengthBlock { type: 'strength'; exercises: StrengthExercise[]; }
-interface CardioBlock { type: 'cardio'; activity: string; duration: string; intensity: string; note: string; }
+interface CardioBlock { type: 'cardio'; format: string; movements: string; scheme: string; note: string; }
 interface MobilityExercise {
   name: string;
   movementId?: string | null;
@@ -102,7 +102,7 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
     const newBlock: Block = type === 'strength'
       ? { type: 'strength', exercises: [{ name: '', movementId: null, sets: '3', reps: '10', weight: '', note: '' }] }
       : type === 'cardio'
-      ? { type: 'cardio', activity: '', duration: '', intensity: '', note: '' }
+      ? { type: 'cardio', format: 'For Time', movements: '', scheme: '', note: '' }
       : { type: 'mobility', exercises: [{ name: '', movementId: null, duration: '', side: 'both', note: '' }] };
     setBlocks(prev => [...prev, newBlock]);
   };
@@ -124,7 +124,7 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
   const blockHasExercise = (b: Block): boolean => {
     if (b.type === 'strength') return b.exercises.some(e => e.name.trim());
     if (b.type === 'mobility') return b.exercises.some(e => e.name.trim());
-    if (b.type === 'cardio') return !!b.activity.trim();
+    if (b.type === 'cardio') return !!b.format?.trim() && !!b.movements?.trim();
     return false;
   };
 
@@ -428,12 +428,47 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
 function CardioEditor({ block, onUpdate }: { block: CardioBlock; onUpdate: (b: CardioBlock) => void }) {
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2">
-        <Input placeholder="Activity (run, row, AMRAP...)" value={block.activity} onChange={e => onUpdate({ ...block, activity: e.target.value })} className="h-8 text-sm" />
-        <Input placeholder="Duration / rounds" value={block.duration} onChange={e => onUpdate({ ...block, duration: e.target.value })} className="h-8 text-sm" />
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Format</Label>
+        <select
+          value={block.format || 'For Time'}
+          onChange={e => onUpdate({ ...block, format: e.target.value })}
+          className="w-full h-9 text-sm rounded-md border border-input bg-background px-2"
+        >
+          <option value="For Time">For Time</option>
+          <option value="AMRAP">AMRAP</option>
+          <option value="EMOM">EMOM</option>
+          <option value="Tabata">Tabata</option>
+          <option value="Straight Sets">Straight Sets</option>
+          <option value="Free Form">Free Form</option>
+        </select>
       </div>
-      <Input placeholder="Intensity guidance" value={block.intensity} onChange={e => onUpdate({ ...block, intensity: e.target.value })} className="h-8 text-sm" />
-      <Input placeholder="Coaching note (optional)" value={block.note} onChange={e => onUpdate({ ...block, note: e.target.value })} className="h-8 text-sm" />
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Movements</Label>
+        <Textarea
+          value={block.movements}
+          onChange={e => onUpdate({ ...block, movements: e.target.value })}
+          rows={4}
+          className="text-sm min-h-[100px]"
+          placeholder={"One movement per line:\nCalorie Row\nRing Dips\nPush Ups"}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Reps / Rounds / Time</Label>
+        <Input
+          placeholder="Rep scheme or time (e.g. 21-15-9, 12 min, Every 2:00)"
+          value={block.scheme}
+          onChange={e => onUpdate({ ...block, scheme: e.target.value })}
+          className="h-8 text-sm"
+        />
+      </div>
+      <Textarea
+        value={block.note}
+        onChange={e => onUpdate({ ...block, note: e.target.value })}
+        rows={3}
+        className="text-sm min-h-[72px]"
+        placeholder="Coaching note (optional)"
+      />
     </div>
   );
 }
