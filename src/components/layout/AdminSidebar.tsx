@@ -16,24 +16,48 @@ import {
   Activity,
   Sunrise,
   Stethoscope,
+  Send,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import logoWordmark from '@/assets/logo-wordmark.svg';
 import { useCoachCommunityNotifications } from '@/hooks/useCoachCommunityNotifications';
 
-const navItems = [
-  { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/admin/members', icon: Users, label: 'Members' },
-  { path: '/admin/programs', icon: Dumbbell, label: 'Programs' },
-  { path: '/admin/movements', icon: Activity, label: 'Movements' },
-  { path: '/admin/daily-dose', icon: Sunrise, label: 'Daily Dose' },
-  { path: '/admin/pt-requests', icon: Stethoscope, label: 'PT Requests' },
-  { path: '/admin/community', icon: MessagesSquare, label: 'Community', hasBadge: true },
-  { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
-  { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
-  { path: '/admin/availability', icon: Clock, label: 'Availability' },
-  { path: '/admin/revenue', icon: DollarSign, label: 'Revenue' },
-  { path: '/admin/settings', icon: Settings, label: 'Settings' },
+type NavItem = {
+  path: string;
+  icon: typeof LayoutDashboard;
+  label: string;
+  hasBadge?: boolean;
+};
+
+type NavSection = { label?: string; items: NavItem[] };
+
+const navSections: NavSection[] = [
+  {
+    items: [
+      { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+      { path: '/admin/members', icon: Users, label: 'Members' },
+      { path: '/admin/programs', icon: Dumbbell, label: 'Programs' },
+      { path: '/admin/movements', icon: Activity, label: 'Movements' },
+      { path: '/admin/daily-dose', icon: Sunrise, label: 'Daily Dose' },
+      { path: '/admin/pt-requests', icon: Stethoscope, label: 'PT Requests' },
+    ],
+  },
+  {
+    label: 'Communications',
+    items: [
+      { path: '/admin/community', icon: MessagesSquare, label: 'Community', hasBadge: true },
+      { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
+      { path: '/admin/broadcast', icon: Send, label: 'Broadcast Email' },
+    ],
+  },
+  {
+    items: [
+      { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
+      { path: '/admin/availability', icon: Clock, label: 'Availability' },
+      { path: '/admin/revenue', icon: DollarSign, label: 'Revenue' },
+      { path: '/admin/settings', icon: Settings, label: 'Settings' },
+    ],
+  },
 ];
 
 export function AdminSidebar() {
@@ -59,29 +83,40 @@ export function AdminSidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-3 px-3 space-y-0.5">
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            onClick={() => {
-              if (item.hasBadge) markAsRead();
-            }}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors relative',
-              isActive(item.path)
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+      <nav className="flex-1 py-3 px-3 overflow-y-auto">
+        {navSections.map((section, idx) => (
+          <div key={idx} className={cn(idx > 0 && 'mt-4')}>
+            {section.label && (
+              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                {section.label}
+              </p>
             )}
-          >
-            <item.icon className="w-4 h-4" />
-            {item.label}
-            {item.hasBadge && unreadCount > 0 && (
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-          </Link>
+            <div className="space-y-0.5">
+              {section.items.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => {
+                    if (item.hasBadge) markAsRead();
+                  }}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors relative',
+                    isActive(item.path)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  )}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                  {item.hasBadge && unreadCount > 0 && (
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
