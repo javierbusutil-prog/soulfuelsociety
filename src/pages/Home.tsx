@@ -5,7 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, ArrowRight, MessageCircle, Dumbbell } from 'lucide-react';
+import { Sparkles, ArrowRight, MessageCircle, Dumbbell, Stethoscope } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { OnlineProgramCard } from '@/components/dashboard/OnlineProgramCard';
@@ -186,6 +186,30 @@ export default function Home() {
             </Card>
           </section>
         )}
+
+        {/* PT consultation card — visible to all users */}
+        <section aria-labelledby="pt-heading">
+          <Card className="border-accent/40 bg-accent/5">
+            <CardHeader>
+              <div className="flex items-center gap-2 mb-1">
+                <Stethoscope className="w-4 h-4 text-accent" />
+                <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">
+                  Physical Therapy
+                </Badge>
+              </div>
+              <CardTitle id="pt-heading" className="text-lg">Got pain or an injury?</CardTitle>
+              <CardDescription>
+                Get a free 15-minute consultation with Dr. Javier Busutil, PT, DPT — Board Certified Orthopedic Specialist.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate('/pt-request')} variant="accent" className="w-full sm:w-auto">
+                Request Free Consultation
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </section>
       </div>
     </AppLayout>
   );
