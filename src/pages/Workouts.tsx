@@ -263,7 +263,7 @@ export default function Workouts() {
             >
               {!isPaidMember && !isAdmin && <Lock className="w-3 h-3" />}
               <Dumbbell className="w-3.5 h-3.5" />
-              Workouts
+              Training
             </TabsTrigger>
             <TabsTrigger value="programs" className="flex items-center gap-1.5 text-xs">
               <Calendar className="w-3.5 h-3.5" />
