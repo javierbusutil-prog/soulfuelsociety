@@ -758,7 +758,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
       {cardioState.map((c, ci) => (
         <Card key={`cardio-${ci}`} className="p-4 space-y-3">
           <div className="space-y-0.5">
-            <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Cardio</p>
+            <p className="text-[10px] uppercase tracking-wider text-primary font-medium">Conditioning</p>
             <h4 className="text-sm font-semibold">{c.activity}</h4>
           </div>
           <div className="grid grid-cols-[1fr_auto] gap-3 items-center">
