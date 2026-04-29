@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import logoWordmark from '@/assets/logo-wordmark.svg';
 
 interface HeaderProps {
   title?: string;
@@ -31,8 +30,8 @@ export function Header({ title }: HeaderProps) {
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
         <Link to="/" className="flex items-center -ml-14" aria-label="Soul Fuel - Home">
           <img
-            src={logoWordmark}
-            alt="Soul Fuel"
+            src="https://cmnbveoxckkgmhcxmwgm.supabase.co/storage/v1/object/public/coach-photos/soul_fuel_logo_transparent.png"
+            alt="Soul Fuel Society"
             className="h-10 w-auto"
           />
         </Link>
