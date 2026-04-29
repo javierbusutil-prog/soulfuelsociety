@@ -98,6 +98,7 @@ export function WorkoutBlocksDisplay({
 
             {block.type === 'cardio' && (
               <>
+                <p className="font-semibold text-sm">{block.format}</p>
                 {block.scheme && (
                   <p className="text-sm font-medium">{block.scheme}</p>
                 )}

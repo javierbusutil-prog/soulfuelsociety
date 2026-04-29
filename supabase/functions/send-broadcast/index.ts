@@ -48,7 +48,9 @@ serve(async (req) => {
     const html = `
 <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 32px 24px; background: #FBF7F4; color: #2E4A6B;">
   <div style="text-align:center; padding: 8px 0 24px;">
-    <img src="https://cmnbveoxckkgmhcxmwgm.supabase.co/storage/v1/object/public/coach-photos/soul_fuel_logo_transparent.png" alt="Soul Fuel Society" style="height:60px;width:auto;display:block;margin:0 auto 16px;" />
+    <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 28px; letter-spacing: 0.5px; color:#2E4A6B;">
+      Soul Fuel Society <span style="color:#B8973A;">🔥</span>
+    </div>
   </div>
   <div style="background:#ffffff; border-radius: 12px; padding: 28px 24px; font-size: 15px; line-height: 1.65; white-space: pre-wrap; color:#222;">
 ${escape(body)}
