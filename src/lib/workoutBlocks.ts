@@ -96,7 +96,7 @@ export interface SummarizeOpts {
 
 /**
  * One-line, count-based summary of a day's blocks.
- * Format: "Strength · 3 exercises + Cardio · 1 activity + Mobility · 2 exercises"
+ * Format: "Strength · 3 exercises + Conditioning · 1 activity + Mobility · 2 exercises"
  */
 export function summarizeBlocks(
   blocks: Block[],
@@ -151,7 +151,7 @@ export function summarizeBlocks(
       const t = source[i].type;
       if (t === 'strength' || t === 'mobility' || (t === 'nutrition' && includeNutrition)) insertAt++;
     }
-    ordered.splice(insertAt, 0, `Cardio · ${cardioCount} ${cardioCount === 1 ? 'activity' : 'activities'}`);
+    ordered.splice(insertAt, 0, `Conditioning · ${cardioCount} ${cardioCount === 1 ? 'activity' : 'activities'}`);
     return ordered.join(' + ') || 'Workout';
   }
 
