@@ -27,7 +27,7 @@ const ICONS = {
 
 const LABELS = {
   strength: 'Strength',
-  cardio: 'Cardio',
+  cardio: 'Conditioning',
   mobility: 'Mobility',
   nutrition: 'Nutrition',
 } as const;
