@@ -293,7 +293,6 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
                 <Heart className="w-3 h-3" /> + Mobility
               </Button>
             </div>
-            {blocksError && <p className="text-xs text-destructive">{blocksError}</p>}
           </div>
 
           {/* Publish toggle */}
