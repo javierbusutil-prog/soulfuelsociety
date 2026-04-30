@@ -73,7 +73,6 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
   const [saving, setSaving] = useState(false);
   const [dateError, setDateError] = useState<string | null>(null);
   const [titleError, setTitleError] = useState<string | null>(null);
-  const [blocksError, setBlocksError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -95,7 +94,6 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
     }
     setDateError(null);
     setTitleError(null);
-    setBlocksError(null);
   }, [open, post]);
 
   const addBlock = (type: BlockType) => {
@@ -121,19 +119,11 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
     setBlocks(prev => prev.map((b, i) => i === idx ? updater(b) : b));
   };
 
-  const blockHasExercise = (b: Block): boolean => {
-    if (b.type === 'strength') return b.exercises.some(e => e.name.trim());
-    if (b.type === 'mobility') return b.exercises.some(e => e.name.trim());
-    if (b.type === 'cardio') return !!b.format?.trim() && !!b.movements?.trim();
-    return false;
-  };
-
   const handleSave = async () => {
     if (!user) return;
 
     setDateError(null);
     setTitleError(null);
-    setBlocksError(null);
     let ok = true;
 
     if (!title.trim()) {
