@@ -90,9 +90,11 @@ function TodayCard({ post, logged, onLog }: { post: DailyDosePost; logged: boole
         {post.coach_note && (
           <p className="text-sm italic text-muted-foreground whitespace-pre-wrap">{post.coach_note}</p>
         )}
-        <p className="text-xs text-muted-foreground">{summarizeBlocks(blocks, { includeNutrition: false })}</p>
+        {blocks.length > 0 && (
+          <p className="text-xs text-muted-foreground">{summarizeBlocks(blocks, { includeNutrition: false })}</p>
+        )}
         <PostBlocks post={post} />
-        <LogButton logged={logged} onClick={onLog} />
+        {blocks.length > 0 && <LogButton logged={logged} onClick={onLog} />}
       </div>
     </Card>
   );
@@ -114,7 +116,9 @@ function RecentCard({ post, logged, onLog }: { post: DailyDosePost; logged: bool
                 {getDateLabel(post.published_date)}
               </p>
               <h3 className="text-base font-semibold mt-0.5">{post.title}</h3>
-              <p className="text-xs text-muted-foreground mt-1">{summarizeBlocks(blocks, { includeNutrition: false })}</p>
+              {blocks.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">{summarizeBlocks(blocks, { includeNutrition: false })}</p>
+              )}
             </div>
             {logged && (
               <CheckCircle2 className="w-4 h-4 text-primary fill-primary/15 shrink-0 mt-1" />
@@ -127,7 +131,7 @@ function RecentCard({ post, logged, onLog }: { post: DailyDosePost; logged: bool
               <p className="text-sm italic text-muted-foreground whitespace-pre-wrap">{post.coach_note}</p>
             )}
             <PostBlocks post={post} />
-            <LogButton logged={logged} onClick={onLog} />
+            {blocks.length > 0 && <LogButton logged={logged} onClick={onLog} />}
           </div>
         </CollapsibleContent>
       </Collapsible>

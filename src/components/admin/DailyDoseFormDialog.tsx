@@ -162,13 +162,7 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
       ok = false;
     }
 
-    if (publish) {
-      const hasContent = blocks.length > 0 && blocks.some(blockHasExercise);
-      if (!hasContent) {
-        setBlocksError('Add at least one block with an exercise before publishing');
-        ok = false;
-      }
-    }
+    // Workout blocks are optional — a Daily Dose post can be published with zero blocks.
 
     if (!ok) return;
 
