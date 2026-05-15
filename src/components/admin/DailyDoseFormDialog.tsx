@@ -76,7 +76,7 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
   const [dateError, setDateError] = useState<string | null>(null);
   const [titleError, setTitleError] = useState<string | null>(null);
   const [audienceUserId, setAudienceUserId] = useState<string | null>(null);
-  const [paidMembers, setPaidMembers] = useState<{ id: string; full_name: string | null; email: string | null }[]>([]);
+  const [paidMembers, setPaidMembers] = useState<{ id: string; full_name: string | null }[]>([]);
   const [audiencePopoverOpen, setAudiencePopoverOpen] = useState(false);
   const [memberPickerOpen, setMemberPickerOpen] = useState(false);
 
@@ -119,7 +119,7 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
       }
       const { data: profs } = await supabase
         .from('profiles')
-        .select('id, full_name, email')
+        .select('id, full_name')
         .in('id', ids);
       const sorted = ((profs as any[]) ?? []).sort((a, b) =>
         (a.full_name || '').localeCompare(b.full_name || '')
@@ -239,7 +239,6 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
     ? paidMembers.find(m => m.id === audienceUserId)
     : null;
   const selectedMemberLabel = selectedMember?.full_name
-    || selectedMember?.email
     || (audienceUserId ? 'Selected member' : '');
 
   const dialogTitle = audienceUserId
@@ -355,18 +354,13 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
                         {paidMembers.map(m => (
                           <CommandItem
                             key={m.id}
-                            value={`${m.full_name || ''} ${m.email || ''} ${m.id}`}
+                            value={`${m.full_name || ''} ${m.id}`}
                             onSelect={() => {
                               setAudienceUserId(m.id);
                               setMemberPickerOpen(false);
                             }}
                           >
-                            <div className="flex flex-col">
-                              <span className="text-sm">{m.full_name || 'Unnamed'}</span>
-                              {m.email && (
-                                <span className="text-[11px] text-muted-foreground">{m.email}</span>
-                              )}
-                            </div>
+                            <span className="text-sm">{m.full_name || 'Unnamed'}</span>
                             {audienceUserId === m.id && <Check className="ml-auto h-4 w-4" />}
                           </CommandItem>
                         ))}
