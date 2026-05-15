@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, DollarSign, Pencil, Trash2, Plus, FileText } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, DollarSign, Pencil, Trash2, Plus, FileText, CalendarPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
 import { DeletePaymentDialog } from '@/components/admin/DeletePaymentDialog';
@@ -394,6 +394,16 @@ export default function AdminMemberDetail() {
                 >
                   <DollarSign className="w-4 h-4" /> Record Payment
                 </Button>
+                {userRole === 'paid' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-3 ml-2 gap-1.5"
+                    onClick={() => navigate(`/admin/sessions/log?attendees=${profile.id}`)}
+                  >
+                    <CalendarPlus className="w-4 h-4" /> Log session
+                  </Button>
+                )}
               </div>
             </div>
 
