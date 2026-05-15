@@ -9,11 +9,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { ArrowLeft, Dumbbell, Send, ClipboardList, MessageSquare, Activity, Calendar, BookOpen, ArrowUpCircle, DollarSign, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, DollarSign, Pencil, Trash2, Plus, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
 import { DeletePaymentDialog } from '@/components/admin/DeletePaymentDialog';
 import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
+import { DailyDoseFormDialog, DailyDosePost } from '@/components/admin/DailyDoseFormDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ProfileData {
   id: string;
@@ -75,8 +86,6 @@ export default function AdminMemberDetail() {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [enrolledProgram, setEnrolledProgram] = useState<{ title: string; weeks: number; start_date: string } | null>(null);
-  const [hasSupplementalProgram, setHasSupplementalProgram] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
   const [cashPayments, setCashPayments] = useState<CashPaymentRecord[]>([]);
@@ -84,6 +93,10 @@ export default function AdminMemberDetail() {
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
   const [manualPayments, setManualPayments] = useState<ManualPaymentRecord[]>([]);
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
+  const [personalPosts, setPersonalPosts] = useState<DailyDosePost[]>([]);
+  const [postDialogOpen, setPostDialogOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<DailyDosePost | null>(null);
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) fetchAll(id);
@@ -124,38 +137,13 @@ export default function AdminMemberDetail() {
       .order('payment_date', { ascending: false });
     if (manualPays) setManualPayments(manualPays as unknown as ManualPaymentRecord[]);
 
-    // Enrolled program
-    const { data: enrollment } = await supabase
-      .from('user_program_enrollments')
-      .select('start_date, program_id')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (enrollment) {
-      const { data: prog } = await supabase
-        .from('workout_programs')
-        .select('title, weeks')
-        .eq('id', enrollment.program_id)
-        .single();
-      if (prog) {
-        setEnrolledProgram({ title: prog.title, weeks: prog.weeks, start_date: enrollment.start_date });
-      }
-    }
-
-    // Check for supplemental program (in-person members)
-    if (prof?.selected_plan === 'in-person') {
-      const { data: suppProg } = await supabase
-        .from('coaching_programs')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('is_active', true)
-        .eq('plan_type', 'inperson_supplemental' as any)
-        .limit(1)
-        .maybeSingle();
-      setHasSupplementalProgram(!!suppProg);
-    }
+    // Personal Daily Dose posts for this member
+    const { data: posts } = await supabase
+      .from('daily_dose_posts' as any)
+      .select('*')
+      .eq('audience_user_id', userId)
+      .order('published_date', { ascending: false });
+    setPersonalPosts((posts as unknown as DailyDosePost[]) ?? []);
 
     // Workout logs (last 10)
     const { data: logs } = await supabase
