@@ -167,7 +167,11 @@ export default function AdminLogSession() {
       });
 
       const { error: aErr } = await supabase.from('session_attendees').insert(rows);
-      if (aErr) throw aErr;
+      if (aErr) {
+        // Roll back the orphaned session
+        await supabase.from('sessions').delete().eq('id', created.id);
+        throw aErr;
+      }
 
       toast.success('Session logged.');
       // Reset form
