@@ -413,7 +413,6 @@ export default function AdminLogSession() {
           </div>
         )}
 
-        {/* Note */}
         {/* Workout blocks */}
         <div className="space-y-3">
           <Label>Workout (optional)</Label>
@@ -444,6 +443,7 @@ export default function AdminLogSession() {
           </div>
         </div>
 
+        {/* Note */}
         <div className="space-y-1.5">
           <Label>Note</Label>
           <Textarea
