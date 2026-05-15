@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { format, addDays } from 'date-fns';
-import { CalendarIcon, Plus, Trash2, Dumbbell, Bike, Heart, ChevronDown, Globe, User as UserIcon, Check } from 'lucide-react';
+import { CalendarIcon, Dumbbell, Bike, Heart, Globe, User as UserIcon, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,33 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { MovementPicker } from '@/components/movements/MovementPicker';
+import { BlockEditor, type EditableBlock, type EditableBlockType } from '@/components/workouts/WorkoutBlocksEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-// NOTE: Block types duplicated from AdminProgramBuilder. Tech debt: extract to shared module.
-type BlockType = 'strength' | 'cardio' | 'mobility';
-
-interface StrengthExercise {
-  name: string;
-  movementId?: string | null;
-  sets: string;
-  reps: string;
-  weight: string;
-  note: string;
-}
-interface StrengthBlock { type: 'strength'; exercises: StrengthExercise[]; }
-interface CardioBlock { type: 'cardio'; format: string; movements: string; scheme: string; note: string; }
-interface MobilityExercise {
-  name: string;
-  movementId?: string | null;
-  duration: string;
-  side: string;
-  note: string;
-}
-interface MobilityBlock { type: 'mobility'; exercises: MobilityExercise[]; }
-type Block = StrengthBlock | CardioBlock | MobilityBlock;
+type BlockType = EditableBlockType;
+type Block = EditableBlock;
 
 export interface DailyDosePost {
   id: string;
