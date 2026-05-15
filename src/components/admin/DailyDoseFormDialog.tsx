@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { format, addDays } from 'date-fns';
-import { CalendarIcon, Plus, Trash2, Dumbbell, Bike, Heart, ChevronDown } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Dumbbell, Bike, Heart, ChevronDown, Globe, User as UserIcon, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { MovementPicker } from '@/components/movements/MovementPicker';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,6 +50,7 @@ export interface DailyDosePost {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  audience_user_id?: string | null;
 }
 
 interface Props {
@@ -73,6 +75,10 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
   const [saving, setSaving] = useState(false);
   const [dateError, setDateError] = useState<string | null>(null);
   const [titleError, setTitleError] = useState<string | null>(null);
+  const [audienceUserId, setAudienceUserId] = useState<string | null>(null);
+  const [paidMembers, setPaidMembers] = useState<{ id: string; full_name: string | null; email: string | null }[]>([]);
+  const [audiencePopoverOpen, setAudiencePopoverOpen] = useState(false);
+  const [memberPickerOpen, setMemberPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -84,6 +90,7 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
       const b = (post.workout_data?.blocks ?? []) as Block[];
       setBlocks(Array.isArray(b) ? b : []);
       setPublish(post.is_published);
+      setAudienceUserId(post.audience_user_id ?? null);
     } else {
       setDate(addDays(new Date(), 1));
       setTitle('');
@@ -91,10 +98,35 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
       setCoverUrl('');
       setBlocks([]);
       setPublish(false);
+      setAudienceUserId(null);
     }
     setDateError(null);
     setTitleError(null);
   }, [open, post]);
+
+  // Load paid members for the audience picker
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'paid');
+      const ids = Array.from(new Set((roles ?? []).map((r: any) => r.user_id))).filter(Boolean);
+      if (ids.length === 0) {
+        setPaidMembers([]);
+        return;
+      }
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', ids);
+      const sorted = ((profs as any[]) ?? []).sort((a, b) =>
+        (a.full_name || '').localeCompare(b.full_name || '')
+      );
+      setPaidMembers(sorted);
+    })();
+  }, [open]);
 
   const addBlock = (type: BlockType) => {
     const newBlock: Block = type === 'strength'
@@ -139,16 +171,23 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
       toast.error('Coach note exceeds 2000 characters');
     }
 
-    // Date collision check
+    // Date collision check — scoped by audience (NULL == public)
     const dateStr = isoDate(date);
     let collisionQuery = supabase
       .from('daily_dose_posts' as any)
       .select('id')
       .eq('published_date', dateStr);
+    if (audienceUserId === null) {
+      collisionQuery = collisionQuery.is('audience_user_id', null);
+    } else {
+      collisionQuery = collisionQuery.eq('audience_user_id', audienceUserId);
+    }
     if (post?.id) collisionQuery = collisionQuery.neq('id', post.id);
     const { data: collision } = await collisionQuery.maybeSingle();
     if (collision) {
-      setDateError('A post already exists for this date');
+      setDateError(audienceUserId
+        ? 'A post already exists for this member on this date.'
+        : 'A post already exists for this date');
       ok = false;
     }
 
@@ -168,6 +207,7 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
         cover_image_url: coverUrl.trim() || null,
         workout_data: { blocks },
         is_published: publish,
+        audience_user_id: audienceUserId,
       };
 
       if (post?.id) {
@@ -195,11 +235,22 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
     }
   };
 
+  const selectedMember = audienceUserId
+    ? paidMembers.find(m => m.id === audienceUserId)
+    : null;
+  const selectedMemberLabel = selectedMember?.full_name
+    || selectedMember?.email
+    || (audienceUserId ? 'Selected member' : '');
+
+  const dialogTitle = audienceUserId
+    ? (isEdit ? 'Edit Personal Post' : 'New Personal Post')
+    : (isEdit ? 'Edit Daily Dose' : 'New Daily Dose');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit Daily Dose' : 'New Daily Dose'}</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -227,6 +278,104 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
               </PopoverContent>
             </Popover>
             {dateError && <p className="text-xs text-destructive">{dateError}</p>}
+          </div>
+
+          {/* Audience */}
+          <div className="space-y-1.5">
+            <Label>Audience</Label>
+            <Popover open={audiencePopoverOpen} onOpenChange={setAudiencePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn('w-full justify-start text-left font-normal')}
+                >
+                  {audienceUserId ? (
+                    <>
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      {selectedMemberLabel}
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="mr-2 h-4 w-4" />
+                      Public Daily Dose
+                    </>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-1" align="start">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAudienceUserId(null);
+                    setAudiencePopoverOpen(false);
+                  }}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-accent text-left',
+                    audienceUserId === null && 'bg-accent'
+                  )}
+                >
+                  <Globe className="h-4 w-4" />
+                  <span className="flex-1">Public Daily Dose</span>
+                  {audienceUserId === null && <Check className="h-4 w-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAudiencePopoverOpen(false);
+                    setMemberPickerOpen(true);
+                  }}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-accent text-left',
+                    audienceUserId !== null && 'bg-accent'
+                  )}
+                >
+                  <UserIcon className="h-4 w-4" />
+                  <span className="flex-1">
+                    {audienceUserId ? `Personal program for ${selectedMemberLabel}` : 'Personal program for…'}
+                  </span>
+                  {audienceUserId !== null && <Check className="h-4 w-4" />}
+                </button>
+              </PopoverContent>
+            </Popover>
+
+            {/* Member picker popover */}
+            <Popover open={memberPickerOpen} onOpenChange={setMemberPickerOpen}>
+              <PopoverTrigger asChild>
+                <span className="hidden" />
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                {paidMembers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground p-3">No paid members yet.</p>
+                ) : (
+                  <Command>
+                    <CommandInput placeholder="Search paid members..." />
+                    <CommandList>
+                      <CommandEmpty>No members found.</CommandEmpty>
+                      <CommandGroup>
+                        {paidMembers.map(m => (
+                          <CommandItem
+                            key={m.id}
+                            value={`${m.full_name || ''} ${m.email || ''} ${m.id}`}
+                            onSelect={() => {
+                              setAudienceUserId(m.id);
+                              setMemberPickerOpen(false);
+                            }}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm">{m.full_name || 'Unnamed'}</span>
+                              {m.email && (
+                                <span className="text-[11px] text-muted-foreground">{m.email}</span>
+                              )}
+                            </div>
+                            {audienceUserId === m.id && <Check className="ml-auto h-4 w-4" />}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Title */}
