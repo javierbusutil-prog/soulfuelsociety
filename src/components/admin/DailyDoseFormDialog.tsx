@@ -58,11 +58,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   post: DailyDosePost | null;
   onSaved: () => void;
+  defaultAudienceUserId?: string | null;
 }
 
 const isoDate = (d: Date) => format(d, 'yyyy-MM-dd');
 
-export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props) {
+export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved, defaultAudienceUserId }: Props) {
   const { user } = useAuth();
   const isEdit = !!post;
 
@@ -98,11 +99,11 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
       setCoverUrl('');
       setBlocks([]);
       setPublish(false);
-      setAudienceUserId(null);
+      setAudienceUserId(defaultAudienceUserId ?? null);
     }
     setDateError(null);
     setTitleError(null);
-  }, [open, post]);
+  }, [open, post, defaultAudienceUserId]);
 
   // Load paid members for the audience picker
   useEffect(() => {
