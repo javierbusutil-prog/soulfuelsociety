@@ -25,7 +25,7 @@ const navItems = [
   { path: '/admin/community', icon: MessagesSquare, label: 'Community', hasBadge: true },
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/broadcast', icon: Send, label: 'Email' },
-  { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
+  { path: '/admin/sessions/log', icon: CalendarClock, label: 'Sessions' },
   { path: '/admin/availability', icon: Clock, label: 'Hours' },
 ];
 
