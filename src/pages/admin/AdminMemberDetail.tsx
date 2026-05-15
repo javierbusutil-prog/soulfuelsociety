@@ -98,6 +98,7 @@ export default function AdminMemberDetail() {
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<DailyDosePost | null>(null);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) fetchAll(id);
@@ -121,6 +122,14 @@ export default function AdminMemberDetail() {
       .eq('user_id', userId)
       .single();
     if (mp) setMemberProfile(mp as MemberProfileData);
+
+    // User role (source of truth for paid vs free gating)
+    const { data: roleRow } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+    setUserRole(roleRow?.role ?? null);
 
     // Cash payments
     const { data: payments } = await supabase
@@ -299,7 +308,13 @@ export default function AdminMemberDetail() {
               <div className="flex-1 min-w-0">
                 <h2 className="text-xl font-bold">{profile.full_name || 'Unnamed'}</h2>
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                  <Badge variant="secondary">{profile.selected_plan || 'No plan'}</Badge>
+                  <Badge variant="secondary">
+                    {profile.selected_plan
+                      ? profile.selected_plan
+                      : userRole === 'paid'
+                      ? 'Paid (plan not set)'
+                      : 'No plan'}
+                  </Badge>
                   {profile.session_count && (
                     <Badge variant="outline">{profile.session_count} sessions/mo</Badge>
                   )}
@@ -313,7 +328,7 @@ export default function AdminMemberDetail() {
                   Member since {format(new Date(profile.created_at), 'MMMM d, yyyy')}
                   {profile.phone && ` · ${profile.phone}`}
                 </p>
-                {(!profile.selected_plan || profile.selected_plan === 'free') && (
+                {(userRole === 'free' || userRole === null) && (
                   <Button
                     size="sm"
                     className="mt-3 gap-1.5"
