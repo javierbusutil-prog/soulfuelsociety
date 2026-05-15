@@ -1972,6 +1972,45 @@ export type Database = {
           },
         ]
       }
+      session_attendees: {
+        Row: {
+          amount_charged: number | null
+          created_at: string
+          payment_received: boolean
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_charged?: number | null
+          created_at?: string
+          payment_received?: boolean
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          amount_charged?: number | null
+          created_at?: string
+          payment_received?: boolean
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_attendees_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_attendees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_bookings: {
         Row: {
           coach_id: string | null
@@ -2051,6 +2090,50 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "session_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          didnt_happen_reason: string | null
+          id: string
+          note: string | null
+          scheduled_for: string
+          status: Database["public"]["Enums"]["session_status"]
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          didnt_happen_reason?: string | null
+          id?: string
+          note?: string | null
+          scheduled_for: string
+          status?: Database["public"]["Enums"]["session_status"]
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          didnt_happen_reason?: string | null
+          id?: string
+          note?: string | null
+          scheduled_for?: string
+          status?: Database["public"]["Enums"]["session_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2640,6 +2723,7 @@ export type Database = {
         | "mobility_assessment"
         | "other"
       schedule_mode: "admin_selected" | "user_selected"
+      session_status: "scheduled" | "completed" | "didnt_happen"
       subscription_status: "inactive" | "active" | "cancelled" | "past_due"
       workout_level: "beginner" | "intermediate" | "advanced"
       workout_type: "strength" | "cardio" | "mobility" | "recovery" | "hiit"
@@ -2790,6 +2874,7 @@ export const Constants = {
         "other",
       ],
       schedule_mode: ["admin_selected", "user_selected"],
+      session_status: ["scheduled", "completed", "didnt_happen"],
       subscription_status: ["inactive", "active", "cancelled", "past_due"],
       workout_level: ["beginner", "intermediate", "advanced"],
       workout_type: ["strength", "cardio", "mobility", "recovery", "hiit"],

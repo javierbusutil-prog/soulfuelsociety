@@ -27,6 +27,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+const PLAN_LABELS: Record<string, string> = {
+  online: 'Online',
+  in_person: 'In-Person',
+  hybrid: 'Hybrid',
+};
+
+const formatPlan = (plan: string | null | undefined): string => {
+  if (!plan) return '';
+  return PLAN_LABELS[plan] ?? plan;
+};
+
 interface ProfileData {
   id: string;
   full_name: string | null;
@@ -99,6 +110,9 @@ export default function AdminMemberDetail() {
   const [editingPost, setEditingPost] = useState<DailyDosePost | null>(null);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [sessionsThisMonthCount, setSessionsThisMonthCount] = useState(0);
+  const [nextSessionAt, setNextSessionAt] = useState<string | null>(null);
+  const [paidThisMonth, setPaidThisMonth] = useState(0);
 
   useEffect(() => {
     if (id) fetchAll(id);
@@ -146,6 +160,41 @@ export default function AdminMemberDetail() {
       .eq('user_id', userId)
       .order('payment_date', { ascending: false });
     if (manualPays) setManualPayments(manualPays as unknown as ManualPaymentRecord[]);
+
+    // Sessions this month
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+    const monthStartIso = monthStart.toISOString();
+
+    const { data: sessionsThisMonth } = await supabase
+      .from('session_attendees')
+      .select('session_id, sessions!inner(status, completed_at)')
+      .eq('user_id', userId)
+      .eq('sessions.status', 'completed')
+      .gte('sessions.completed_at', monthStartIso);
+    setSessionsThisMonthCount(sessionsThisMonth?.length ?? 0);
+
+    // Next session
+    const nowIso = new Date().toISOString();
+    const { data: nextSession } = await supabase
+      .from('session_attendees')
+      .select('sessions!inner(scheduled_for, status)')
+      .eq('user_id', userId)
+      .eq('sessions.status', 'scheduled')
+      .gte('sessions.scheduled_for', nowIso)
+      .order('sessions(scheduled_for)', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    setNextSessionAt((nextSession?.sessions as any)?.scheduled_for ?? null);
+
+    // Paid this month (cash_payments)
+    const ym = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`;
+    const { data: paymentsThisMonth } = await supabase
+      .from('cash_payments')
+      .select('amount, payment_date')
+      .eq('user_id', userId)
+      .gte('payment_date', `${ym}-01`);
+    const totalThisMonth = (paymentsThisMonth ?? []).reduce((acc: number, p: any) => acc + Number(p.amount), 0);
+    setPaidThisMonth(totalThisMonth);
 
     // Personal Daily Dose posts for this member
     const { data: posts } = await supabase
@@ -310,7 +359,7 @@ export default function AdminMemberDetail() {
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
                   <Badge variant="secondary">
                     {profile.selected_plan
-                      ? profile.selected_plan
+                      ? formatPlan(profile.selected_plan)
                       : userRole === 'paid'
                       ? 'Paid (plan not set)'
                       : 'No plan'}
@@ -368,6 +417,26 @@ export default function AdminMemberDetail() {
                 )}
               </div>
             )}
+
+            {/* Quick stats */}
+            <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-border">
+              <div className="bg-muted/40 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold">{sessionsThisMonthCount}</p>
+                <p className="text-[11px] text-muted-foreground">Sessions this month</p>
+              </div>
+              <div className="bg-muted/40 rounded-lg p-3 text-center">
+                <p className="text-sm font-medium">
+                  {nextSessionAt
+                    ? format(new Date(nextSessionAt), 'EEE, MMM d, h:mm a')
+                    : '—'}
+                </p>
+                <p className="text-[11px] text-muted-foreground">Next session</p>
+              </div>
+              <div className="bg-muted/40 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold">${paidThisMonth.toFixed(2)}</p>
+                <p className="text-[11px] text-muted-foreground">Paid this month</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
