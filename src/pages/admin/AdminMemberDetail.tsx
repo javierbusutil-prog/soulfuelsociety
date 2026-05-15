@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, DollarSign, Pencil, Trash2, Plus, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
@@ -647,6 +648,49 @@ export default function AdminMemberDetail() {
           onSuccess={() => id && fetchAll(id)}
         />
       )}
+
+      {profile && (
+        <DailyDoseFormDialog
+          open={postDialogOpen}
+          onOpenChange={(open) => {
+            setPostDialogOpen(open);
+            if (!open) setEditingPost(null);
+          }}
+          post={editingPost}
+          defaultAudienceUserId={profile.id}
+          onSaved={() => id && fetchAll(id)}
+        />
+      )}
+
+      <AlertDialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+            <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!deletePostId) return;
+                const { error } = await supabase
+                  .from('daily_dose_posts' as any)
+                  .delete()
+                  .eq('id', deletePostId);
+                if (error) {
+                  toast.error('Failed to delete post');
+                } else {
+                  toast.success('Post deleted.');
+                  if (id) fetchAll(id);
+                }
+                setDeletePostId(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
