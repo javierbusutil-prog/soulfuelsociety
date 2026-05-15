@@ -426,16 +426,89 @@ export default function AdminMemberDetail() {
           </Card>
         )}
 
-        {/* SECTION 2 — Current Program / Sessions */}
+        {/* SECTION — Programming (personal Daily Dose posts) */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Dumbbell className="w-4 h-4 text-muted-foreground" />
-              {profile.selected_plan === 'in-person' ? 'Session bookings' : 'Current program'}
-            </CardTitle>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-muted-foreground" /> Programming
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Personal posts for this member</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => { setEditingPost(null); setPostDialogOpen(true); }}
+                className="gap-1.5 shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" /> New post
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            {profile.selected_plan === 'in-person' ? (
+            {personalPosts.length === 0 ? (
+              <div className="text-center py-6 space-y-3">
+                <p className="text-sm text-muted-foreground">No programming yet</p>
+                <Button
+                  size="sm"
+                  onClick={() => { setEditingPost(null); setPostDialogOpen(true); }}
+                  className="gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> New post
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {personalPosts.map(p => {
+                  const todayStr = format(new Date(), 'yyyy-MM-dd');
+                  let badgeLabel = 'Draft';
+                  let badgeClass = 'bg-muted text-muted-foreground';
+                  if (p.is_published) {
+                    if (p.published_date > todayStr) {
+                      badgeLabel = 'Scheduled';
+                      badgeClass = 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+                    } else if (p.published_date === todayStr) {
+                      badgeLabel = 'Today';
+                      badgeClass = 'bg-accent/15 text-accent-foreground border-accent/30';
+                    } else {
+                      badgeLabel = 'Published';
+                      badgeClass = 'bg-muted text-muted-foreground';
+                    }
+                  }
+                  return (
+                    <div key={p.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-muted-foreground">
+                          {format(new Date(p.published_date + 'T00:00:00'), 'EEE, MMM d')}
+                        </p>
+                        <p className="text-sm font-semibold truncate">{p.title}</p>
+                      </div>
+                      <Badge variant="outline" className={cn('text-[10px]', badgeClass)}>{badgeLabel}</Badge>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingPost(p); setPostDialogOpen(true); }}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeletePostId(p.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* In-person session bookings (kept) */}
+        {profile.selected_plan === 'in-person' && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Dumbbell className="w-4 h-4 text-muted-foreground" /> Session bookings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="text-center py-6 space-y-3">
                 <Calendar className="w-8 h-8 text-muted-foreground mx-auto" />
                 <p className="text-sm text-muted-foreground">Manage in-person sessions from the Sessions tab.</p>
@@ -443,55 +516,6 @@ export default function AdminMemberDetail() {
                   Go to sessions
                 </Button>
               </div>
-            ) : enrolledProgram && memberProfile?.program_delivered ? (
-              <div className="space-y-2">
-                <p className="font-medium">{enrolledProgram.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  {enrolledProgram.weeks} weeks · Started {format(new Date(enrolledProgram.start_date), 'MMM d, yyyy')}
-                </p>
-                <Button size="sm" variant="outline" onClick={() => navigate(`/admin/members/${id}/program`)} className="gap-1.5 mt-2">
-                  Update program
-                </Button>
-              </div>
-            ) : (
-              <div className="text-center py-6 space-y-3">
-                <ClipboardList className="w-8 h-8 text-muted-foreground mx-auto" />
-                <p className="text-sm text-muted-foreground">No program delivered yet</p>
-                <Button onClick={() => navigate(`/admin/members/${id}/program`)} className="gap-1.5">
-                  Build & deliver program
-                  <Dumbbell className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Supplemental program section — in-person members only */}
-        {profile.selected_plan === 'in-person' && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-muted-foreground" /> Supplemental program
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {hasSupplementalProgram ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">A supplemental between-session program has been delivered.</p>
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/admin/members/${id}/program`)} className="gap-1.5 mt-1">
-                    Update supplemental program
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center py-6 space-y-3">
-                  <BookOpen className="w-8 h-8 text-muted-foreground mx-auto" />
-                  <p className="text-sm text-muted-foreground">No supplemental program delivered. Add one if this member would benefit from structured between-session work.</p>
-                  <Button onClick={() => navigate(`/admin/members/${id}/program`)} className="gap-1.5">
-                    Build supplemental program
-                    <BookOpen className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
