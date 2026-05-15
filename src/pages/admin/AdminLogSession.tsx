@@ -260,6 +260,17 @@ export default function AdminLogSession() {
           </TabsList>
         </Tabs>
 
+        {/* Title */}
+        <div className="space-y-1.5">
+          <Label>Title (optional)</Label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={100}
+            placeholder="e.g. Lower body strength"
+          />
+        </div>
+
         {/* Date & time */}
         <div className="space-y-1.5">
           <Label>Date & time *</Label>
@@ -403,6 +414,36 @@ export default function AdminLogSession() {
         )}
 
         {/* Note */}
+        {/* Workout blocks */}
+        <div className="space-y-3">
+          <Label>Workout (optional)</Label>
+          {blocks.length === 0 && (
+            <p className="text-sm text-muted-foreground">No blocks yet. Add one below.</p>
+          )}
+          {blocks.map((block, bi) => (
+            <BlockEditor
+              key={bi}
+              block={block}
+              blockIdx={bi}
+              totalBlocks={blocks.length}
+              onUpdate={(updater) => updateBlock(bi, updater)}
+              onRemove={() => removeBlock(bi)}
+              onMove={(dir) => moveBlock(bi, dir)}
+            />
+          ))}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => addBlock('strength')}>
+              <Dumbbell className="h-4 w-4 mr-1.5" /> + Strength
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => addBlock('cardio')}>
+              <Bike className="h-4 w-4 mr-1.5" /> + Cardio
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => addBlock('mobility')}>
+              <Heart className="h-4 w-4 mr-1.5" /> + Mobility
+            </Button>
+          </div>
+        </div>
+
         <div className="space-y-1.5">
           <Label>Note</Label>
           <Textarea
