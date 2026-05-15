@@ -2104,7 +2104,9 @@ export type Database = {
           note: string | null
           scheduled_for: string
           status: Database["public"]["Enums"]["session_status"]
+          title: string | null
           updated_at: string
+          workout_data: Json | null
         }
         Insert: {
           completed_at?: string | null
@@ -2115,7 +2117,9 @@ export type Database = {
           note?: string | null
           scheduled_for: string
           status?: Database["public"]["Enums"]["session_status"]
+          title?: string | null
           updated_at?: string
+          workout_data?: Json | null
         }
         Update: {
           completed_at?: string | null
@@ -2126,7 +2130,9 @@ export type Database = {
           note?: string | null
           scheduled_for?: string
           status?: Database["public"]["Enums"]["session_status"]
+          title?: string | null
           updated_at?: string
+          workout_data?: Json | null
         }
         Relationships: [
           {
