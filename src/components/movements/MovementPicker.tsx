@@ -185,23 +185,45 @@ export function MovementPicker({
             })}
 
             {query && !exactMatch && (
-              <button
-                type="button"
-                onClick={() => openCreateDialog(query.trim())}
-                className="w-full flex items-center gap-2 px-2 py-2 mt-1 border-t border-border text-left hover:bg-primary/5 transition-colors"
-              >
-                <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                  <Plus className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-primary truncate">
-                    Create "{query.trim()}"
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    Add as new movement to library
-                  </p>
-                </div>
-              </button>
+              <div className="mt-1 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ name: query.trim(), movementId: null });
+                    setOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-2 py-2 text-left hover:bg-muted/60 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded bg-muted flex items-center justify-center shrink-0">
+                    <Check className="w-4 h-4 text-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      Use "{query.trim()}" as-is
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Don't add to library
+                    </p>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openCreateDialog(query.trim())}
+                  className="w-full flex items-center gap-2 px-2 py-2 text-left hover:bg-primary/5 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                    <Plus className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-primary truncate">
+                      Add "{query.trim()}" to library
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Save for reuse later
+                    </p>
+                  </div>
+                </button>
+              </div>
             )}
           </div>
         </PopoverContent>
