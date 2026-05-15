@@ -193,8 +193,22 @@ export default function AdminMemberDetail() {
       .select('amount, payment_date')
       .eq('user_id', userId)
       .gte('payment_date', `${ym}-01`);
-    const totalThisMonth = (paymentsThisMonth ?? []).reduce((acc: number, p: any) => acc + Number(p.amount), 0);
-    setPaidThisMonth(totalThisMonth);
+    const cashTotal = (paymentsThisMonth ?? []).reduce((acc: number, p: any) => acc + Number(p.amount), 0);
+
+    // Session payments this month
+    const { data: sessionPaymentsThisMonth } = await supabase
+      .from('session_attendees')
+      .select('amount_charged, sessions!inner(status, completed_at)')
+      .eq('user_id', userId)
+      .eq('payment_received', true)
+      .eq('sessions.status', 'completed')
+      .gte('sessions.completed_at', monthStartIso);
+    const sessionTotal = (sessionPaymentsThisMonth ?? []).reduce(
+      (acc: number, sa: any) => acc + Number(sa.amount_charged ?? 0),
+      0
+    );
+
+    setPaidThisMonth(cashTotal + sessionTotal);
 
     // Personal Daily Dose posts for this member
     const { data: posts } = await supabase
