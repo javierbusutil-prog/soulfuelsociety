@@ -19,6 +19,7 @@ import Coach from "./pages/Coach";
 import Store from "./pages/Store";
 import Upgrade from "./pages/Upgrade";
 import Profile from "./pages/Profile";
+import Sessions from "./pages/Sessions";
 
 import Nutrition from "./pages/Nutrition";
 import TrainWithUs from "./pages/TrainWithUs";
@@ -181,6 +182,7 @@ function AppRoutes() {
       <Route path="/join/:token" element={<JoinGroup />} />
       <Route path="/waiver" element={<WaiverRoute />} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
       <Route path="/intake" element={<Intake />} />
       <Route path="/book" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
       <Route path="/book/confirm/:bookingId" element={<ProtectedRoute><BookConfirm /></ProtectedRoute>} />

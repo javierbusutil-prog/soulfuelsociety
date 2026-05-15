@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet, CreditCard } from 'lucide-react';
+import { Crown, Settings, HelpCircle, LogOut, ChevronRight, Droplet, CreditCard, Dumbbell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCycleTracker } from '@/hooks/useCycleTracker';
@@ -118,6 +118,21 @@ export default function Profile() {
                 {portalLoading ? '…' : 'Manage'}
               </Button>
             </div>
+          </Card>
+        )}
+
+        {isPaidMember && (
+          <Card className="p-4 mb-6">
+            <Link to="/sessions" className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
+                <Dumbbell className="w-6 h-6 text-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold">My Sessions</p>
+                <p className="text-sm text-muted-foreground">View your in-person sessions</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </Link>
           </Card>
         )}
 
