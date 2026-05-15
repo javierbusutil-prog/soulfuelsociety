@@ -337,12 +337,9 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
               </PopoverContent>
             </Popover>
 
-            {/* Member picker popover */}
-            <Popover open={memberPickerOpen} onOpenChange={setMemberPickerOpen}>
-              <PopoverTrigger asChild>
-                <span className="hidden" />
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+            {/* Inline member picker — shown after choosing "Personal program for…" */}
+            {memberPickerOpen && (
+              <div className="border border-border rounded-md mt-2 overflow-hidden">
                 {paidMembers.length === 0 ? (
                   <p className="text-xs text-muted-foreground p-3">No paid members yet.</p>
                 ) : (
@@ -368,8 +365,8 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved }: Props
                     </CommandList>
                   </Command>
                 )}
-              </PopoverContent>
-            </Popover>
+              </div>
+            )}
           </div>
 
           {/* Title */}
