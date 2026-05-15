@@ -448,16 +448,7 @@ export default function AdminMemberDetail() {
           </CardHeader>
           <CardContent>
             {personalPosts.length === 0 ? (
-              <div className="text-center py-6 space-y-3">
-                <p className="text-sm text-muted-foreground">No programming yet</p>
-                <Button
-                  size="sm"
-                  onClick={() => { setEditingPost(null); setPostDialogOpen(true); }}
-                  className="gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" /> New post
-                </Button>
-              </div>
+              <p className="text-sm text-muted-foreground text-center py-6">No programming yet</p>
             ) : (
               <div className="space-y-2">
                 {personalPosts.map(p => {
