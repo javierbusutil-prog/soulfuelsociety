@@ -613,6 +613,7 @@ export type Database = {
       }
       daily_dose_posts: {
         Row: {
+          audience_user_id: string | null
           coach_note: string | null
           cover_image_url: string | null
           created_at: string
@@ -625,6 +626,7 @@ export type Database = {
           workout_data: Json
         }
         Insert: {
+          audience_user_id?: string | null
           coach_note?: string | null
           cover_image_url?: string | null
           created_at?: string
@@ -637,6 +639,7 @@ export type Database = {
           workout_data: Json
         }
         Update: {
+          audience_user_id?: string | null
           coach_note?: string | null
           cover_image_url?: string | null
           created_at?: string
@@ -648,7 +651,15 @@ export type Database = {
           updated_at?: string
           workout_data?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "daily_dose_posts_audience_user_id_fkey"
+            columns: ["audience_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_nutrition: {
         Row: {
