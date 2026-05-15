@@ -12,7 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarIcon, X, Check, Dumbbell, CalendarPlus } from 'lucide-react';
+import { CalendarIcon, X, Check, Dumbbell, CalendarPlus, Bike, Heart } from 'lucide-react';
+import { BlockEditor, type EditableBlock, type EditableBlockType } from '@/components/workouts/WorkoutBlocksEditor';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +30,9 @@ interface AttendeeDetails {
   amount: string;
   paid: boolean;
 }
+
+type Block = EditableBlock;
+type BlockType = EditableBlockType;
 
 function roundTo15(d: Date) {
   const r = new Date(d);
@@ -62,6 +66,8 @@ export default function AdminLogSession() {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const [note, setNote] = useState('');
+  const [title, setTitle] = useState('');
+  const [blocks, setBlocks] = useState<Block[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -125,6 +131,29 @@ export default function AdminLogSession() {
     setDetails((prev) => ({ ...prev, [id]: { ...(prev[id] || { amount: '', paid: false }), ...patch } }));
   };
 
+  const addBlock = (type: BlockType) => {
+    const newBlock: Block =
+      type === 'strength'
+        ? { type: 'strength', exercises: [{ name: '', movementId: null, sets: '3', reps: '10', weight: '', note: '' }] }
+        : type === 'cardio'
+        ? { type: 'cardio', format: 'For Time', movements: '', scheme: '', note: '' }
+        : { type: 'mobility', exercises: [{ name: '', movementId: null, duration: '', side: 'both', note: '' }] };
+    setBlocks((prev) => [...prev, newBlock]);
+  };
+  const removeBlock = (idx: number) => setBlocks((prev) => prev.filter((_, i) => i !== idx));
+  const moveBlock = (idx: number, dir: -1 | 1) => {
+    setBlocks((prev) => {
+      const out = [...prev];
+      const t = idx + dir;
+      if (t < 0 || t >= out.length) return prev;
+      [out[idx], out[t]] = [out[t], out[idx]];
+      return out;
+    });
+  };
+  const updateBlock = (idx: number, updater: (b: Block) => Block) => {
+    setBlocks((prev) => prev.map((b, i) => (i === idx ? updater(b) : b)));
+  };
+
   const handleModeChange = (next: 'log_past' | 'schedule_future') => {
     setMode(next);
     if (next === 'schedule_future') {
@@ -176,6 +205,8 @@ export default function AdminLogSession() {
           scheduled_for: combined.toISOString(),
           status: sessionStatus,
           note: note.trim() || null,
+          title: title.trim() || null,
+          workout_data: blocks.length > 0 ? ({ blocks } as any) : null,
           created_by: user.id,
         })
         .select('id')
@@ -209,6 +240,8 @@ export default function AdminLogSession() {
       setSelectedIds([]);
       setDetails({});
       setNote('');
+      setTitle('');
+      setBlocks([]);
     } catch (err: any) {
       toast.error(err?.message || (mode === 'log_past' ? 'Failed to log session.' : 'Failed to schedule session.'));
     } finally {
@@ -226,6 +259,17 @@ export default function AdminLogSession() {
             <TabsTrigger value="schedule_future">Schedule future session</TabsTrigger>
           </TabsList>
         </Tabs>
+
+        {/* Title */}
+        <div className="space-y-1.5">
+          <Label>Title (optional)</Label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={100}
+            placeholder="e.g. Lower body strength"
+          />
+        </div>
 
         {/* Date & time */}
         <div className="space-y-1.5">
@@ -368,6 +412,36 @@ export default function AdminLogSession() {
             })}
           </div>
         )}
+
+        {/* Workout blocks */}
+        <div className="space-y-3">
+          <Label>Workout (optional)</Label>
+          {blocks.length === 0 && (
+            <p className="text-sm text-muted-foreground">No blocks yet. Add one below.</p>
+          )}
+          {blocks.map((block, bi) => (
+            <BlockEditor
+              key={bi}
+              block={block}
+              blockIdx={bi}
+              totalBlocks={blocks.length}
+              onUpdate={(updater) => updateBlock(bi, updater)}
+              onRemove={() => removeBlock(bi)}
+              onMove={(dir) => moveBlock(bi, dir)}
+            />
+          ))}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => addBlock('strength')}>
+              <Dumbbell className="h-4 w-4 mr-1.5" /> + Strength
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => addBlock('cardio')}>
+              <Bike className="h-4 w-4 mr-1.5" /> + Cardio
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => addBlock('mobility')}>
+              <Heart className="h-4 w-4 mr-1.5" /> + Mobility
+            </Button>
+          </div>
+        </div>
 
         {/* Note */}
         <div className="space-y-1.5">
