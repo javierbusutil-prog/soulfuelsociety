@@ -98,6 +98,7 @@ export default function AdminMemberDetail() {
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<DailyDosePost | null>(null);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) fetchAll(id);
@@ -121,6 +122,14 @@ export default function AdminMemberDetail() {
       .eq('user_id', userId)
       .single();
     if (mp) setMemberProfile(mp as MemberProfileData);
+
+    // User role (source of truth for paid vs free gating)
+    const { data: roleRow } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+    setUserRole(roleRow?.role ?? null);
 
     // Cash payments
     const { data: payments } = await supabase
