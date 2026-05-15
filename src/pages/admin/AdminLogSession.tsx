@@ -11,7 +11,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { CalendarIcon, X, Check, Dumbbell } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CalendarIcon, X, Check, Dumbbell, CalendarPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +48,8 @@ export default function AdminLogSession() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+
+  const [mode, setMode] = useState<'log_past' | 'schedule_future'>('log_past');
 
   const initial = roundTo15(new Date());
   const [date, setDate] = useState<Date>(initial);
@@ -122,6 +125,19 @@ export default function AdminLogSession() {
     setDetails((prev) => ({ ...prev, [id]: { ...(prev[id] || { amount: '', paid: false }), ...patch } }));
   };
 
+  const handleModeChange = (next: 'log_past' | 'schedule_future') => {
+    setMode(next);
+    if (next === 'schedule_future') {
+      setDetails((prev) => {
+        const cleared: Record<string, AttendeeDetails> = {};
+        Object.keys(prev).forEach((k) => {
+          cleared[k] = { amount: '', paid: false };
+        });
+        return cleared;
+      });
+    }
+  };
+
   const handleSubmit = async () => {
     if (selectedIds.length === 0) {
       toast.error('Add at least one attendee.');
@@ -140,13 +156,25 @@ export default function AdminLogSession() {
     const combined = new Date(date);
     combined.setHours(hh || 0, mm || 0, 0, 0);
 
+    const now = new Date();
+    if (mode === 'log_past' && combined.getTime() > now.getTime()) {
+      toast.error('Past session date must be in the past or now.');
+      return;
+    }
+    if (mode === 'schedule_future' && combined.getTime() <= now.getTime()) {
+      toast.error('Scheduled session must be in the future.');
+      return;
+    }
+
+    const sessionStatus = mode === 'log_past' ? 'completed' : 'scheduled';
+
     setSaving(true);
     try {
       const { data: created, error } = await supabase
         .from('sessions')
         .insert({
           scheduled_for: combined.toISOString(),
-          status: 'completed',
+          status: sessionStatus,
           note: note.trim() || null,
           created_by: user.id,
         })
@@ -157,12 +185,12 @@ export default function AdminLogSession() {
 
       const rows = selectedIds.map((uid) => {
         const d = details[uid] || { amount: '', paid: false };
-        const amt = d.amount.trim();
+        const isSchedule = mode === 'schedule_future';
         return {
           session_id: created.id,
           user_id: uid,
-          amount_charged: amt === '' ? null : Number(amt),
-          payment_received: d.paid,
+          amount_charged: isSchedule ? null : (d.amount.trim() === '' ? null : Number(d.amount)),
+          payment_received: isSchedule ? false : d.paid,
         };
       });
 
@@ -173,7 +201,7 @@ export default function AdminLogSession() {
         throw aErr;
       }
 
-      toast.success('Session logged.');
+      toast.success(mode === 'log_past' ? 'Session logged.' : 'Session scheduled.');
       // Reset form
       const fresh = roundTo15(new Date());
       setDate(fresh);
@@ -182,15 +210,23 @@ export default function AdminLogSession() {
       setDetails({});
       setNote('');
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to log session.');
+      toast.error(err?.message || (mode === 'log_past' ? 'Failed to log session.' : 'Failed to schedule session.'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <AdminLayout title="Log session">
+    <AdminLayout title={mode === 'log_past' ? 'Log past session' : 'Schedule session'}>
       <div className="max-w-2xl mx-auto space-y-6">
+        {/* Mode toggle */}
+        <Tabs value={mode} onValueChange={(v) => handleModeChange(v as 'log_past' | 'schedule_future')}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="log_past">Log past session</TabsTrigger>
+            <TabsTrigger value="schedule_future">Schedule future session</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {/* Date & time */}
         <div className="space-y-1.5">
           <Label>Date & time *</Label>
@@ -292,7 +328,7 @@ export default function AdminLogSession() {
         </div>
 
         {/* Per-attendee details */}
-        {selectedClients.length > 0 && (
+        {mode === 'log_past' && selectedClients.length > 0 && (
           <div className="space-y-3">
             {selectedClients.map((c) => {
               const d = details[c.id] || { amount: '', paid: false };
@@ -349,8 +385,10 @@ export default function AdminLogSession() {
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={saving} className="gap-1.5">
-            <Dumbbell className="h-4 w-4" />
-            {saving ? 'Logging…' : 'Log session'}
+            {mode === 'log_past' ? <Dumbbell className="h-4 w-4" /> : <CalendarPlus className="h-4 w-4" />}
+            {saving
+              ? (mode === 'log_past' ? 'Logging…' : 'Scheduling…')
+              : (mode === 'log_past' ? 'Log session' : 'Schedule session')}
           </Button>
         </div>
       </div>
