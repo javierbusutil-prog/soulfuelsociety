@@ -308,7 +308,13 @@ export default function AdminMemberDetail() {
               <div className="flex-1 min-w-0">
                 <h2 className="text-xl font-bold">{profile.full_name || 'Unnamed'}</h2>
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                  <Badge variant="secondary">{profile.selected_plan || 'No plan'}</Badge>
+                  <Badge variant="secondary">
+                    {profile.selected_plan
+                      ? profile.selected_plan
+                      : userRole === 'paid'
+                      ? 'Paid (plan not set)'
+                      : 'No plan'}
+                  </Badge>
                   {profile.session_count && (
                     <Badge variant="outline">{profile.session_count} sessions/mo</Badge>
                   )}
@@ -322,7 +328,7 @@ export default function AdminMemberDetail() {
                   Member since {format(new Date(profile.created_at), 'MMMM d, yyyy')}
                   {profile.phone && ` · ${profile.phone}`}
                 </p>
-                {(!profile.selected_plan || profile.selected_plan === 'free') && (
+                {(userRole === 'free' || userRole === null) && (
                   <Button
                     size="sm"
                     className="mt-3 gap-1.5"
