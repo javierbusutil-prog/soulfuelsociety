@@ -685,7 +685,13 @@ export default function Calendar() {
                           isTodayEvent ? 'bg-primary/10 border-primary/30' : 
                           'bg-card/50 border-border/50'
                         }`}
-                        onClick={() => setSelectedCalendarEvent(event)}
+                        onClick={() => {
+                          if (event.event_type === 'session') {
+                            navigate('/sessions');
+                          } else {
+                            setSelectedCalendarEvent(event);
+                          }
+                        }}
                       >
                         <div className="flex items-center gap-3">
                           <div className="text-center min-w-[50px]">
@@ -716,17 +722,19 @@ export default function Calendar() {
                               <p className="text-xs text-muted-foreground truncate">{event.description}</p>
                             )}
                           </div>
-                          <Button
-                            variant={event.completed ? 'success' : 'outline'}
-                            size="icon"
-                            className="shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCalendarEventComplete(event.id);
-                            }}
-                          >
-                            <Check className="w-4 h-4" />
-                          </Button>
+                          {event.event_type !== 'session' && (
+                            <Button
+                              variant={event.completed ? 'success' : 'outline'}
+                              size="icon"
+                              className="shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCalendarEventComplete(event.id);
+                              }}
+                            >
+                              <Check className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </Card>
                     </motion.div>
