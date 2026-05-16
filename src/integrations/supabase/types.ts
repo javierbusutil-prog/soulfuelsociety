@@ -60,6 +60,7 @@ export type Database = {
           id: string
           linked_program_id: string | null
           linked_session_id: string | null
+          linked_session_log_id: string | null
           reminder_enabled: boolean
           title: string
           user_id: string
@@ -77,6 +78,7 @@ export type Database = {
           id?: string
           linked_program_id?: string | null
           linked_session_id?: string | null
+          linked_session_log_id?: string | null
           reminder_enabled?: boolean
           title: string
           user_id: string
@@ -94,6 +96,7 @@ export type Database = {
           id?: string
           linked_program_id?: string | null
           linked_session_id?: string | null
+          linked_session_log_id?: string | null
           reminder_enabled?: boolean
           title?: string
           user_id?: string
@@ -126,6 +129,13 @@ export type Database = {
             columns: ["linked_session_id"]
             isOneToOne: false
             referencedRelation: "workout_session_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_linked_session_log_id_fkey"
+            columns: ["linked_session_log_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
             referencedColumns: ["id"]
           },
         ]
