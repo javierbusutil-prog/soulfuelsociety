@@ -1,80 +1,111 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Calendar, Clock, User } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format } from 'date-fns';
+
+interface AttendeeSessionRow {
+  session_id: string;
+  sessions: {
+    scheduled_for: string | null;
+    completed_at: string | null;
+    status: string;
+    title: string | null;
+  } | null;
+}
+
+/**
+ * Returns the year+month of a UTC timestamp as seen in Miami (America/New_York).
+ */
+function miamiYearMonth(iso: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(new Date(iso));
+  const year = parts.find((p) => p.type === 'year')?.value ?? '';
+  const month = parts.find((p) => p.type === 'month')?.value ?? '';
+  return `${year}-${month}`;
+}
 
 export function InPersonSessionsCard() {
   const { user } = useAuth();
-  const [sessionCount, setSessionCount] = useState<number | null>(null);
-  const [remaining, setRemaining] = useState<number>(0);
+  const [completedThisMonth, setCompletedThisMonth] = useState(0);
   const [nextSession, setNextSession] = useState<{
-    scheduled_at: string;
-    coach_name: string | null;
+    scheduled_for: string;
+    title: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    const fetch = async () => {
-      // Get member's plan info
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('session_count')
-        .eq('id', user.id)
-        .single();
+    let cancelled = false;
 
-      const totalSessions = prof?.session_count || 0;
-      setSessionCount(totalSessions);
+    const load = async () => {
+      setLoading(true);
 
-      const now = new Date();
-      const monthStart = startOfMonth(now).toISOString();
-      const monthEnd = endOfMonth(now).toISOString();
+      const { data, error } = await supabase
+        .from('session_attendees')
+        .select('session_id, sessions!inner(scheduled_for, completed_at, status, title)')
+        .eq('user_id', user.id);
 
-      // Count completed/scheduled sessions this month
-      const { count } = await supabase
-        .from('session_bookings')
-        .select('id', { count: 'exact', head: true })
-        .eq('member_id', user.id)
-        .in('status', ['scheduled', 'completed'])
-        .gte('scheduled_at', monthStart)
-        .lte('scheduled_at', monthEnd);
+      if (cancelled) return;
 
-      setRemaining(Math.max(0, totalSessions - (count || 0)));
-
-      // Get next upcoming session
-      const { data: next } = await supabase
-        .from('session_bookings')
-        .select('scheduled_at, coach_id')
-        .eq('member_id', user.id)
-        .eq('status', 'scheduled')
-        .gte('scheduled_at', now.toISOString())
-        .order('scheduled_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      if (next) {
-        let coachName: string | null = null;
-        if (next.coach_id) {
-          const { data: coach } = await supabase
-            .from('profiles')
-            .select('full_name')
-            .eq('id', next.coach_id)
-            .single();
-          coachName = coach?.full_name || null;
-        }
-        setNextSession({ scheduled_at: next.scheduled_at, coach_name: coachName });
+      if (error) {
+        console.error('InPersonSessionsCard: failed to load sessions', error);
+        setCompletedThisMonth(0);
+        setNextSession(null);
+        setLoading(false);
+        return;
       }
 
+      const rows = (data ?? []) as unknown as AttendeeSessionRow[];
+      const thisMiamiMonth = miamiYearMonth(new Date().toISOString());
+      const now = Date.now();
+
+      const completed = rows.filter((r) => {
+        const s = r.sessions;
+        return (
+          s?.status === 'completed' &&
+          s.completed_at != null &&
+          miamiYearMonth(s.completed_at) === thisMiamiMonth
+        );
+      }).length;
+
+      const upcoming = rows
+        .map((r) => r.sessions)
+        .filter(
+          (s): s is NonNullable<AttendeeSessionRow['sessions']> =>
+            s != null &&
+            s.status === 'scheduled' &&
+            s.scheduled_for != null &&
+            new Date(s.scheduled_for).getTime() > now,
+        )
+        .sort(
+          (a, b) =>
+            new Date(a.scheduled_for!).getTime() -
+            new Date(b.scheduled_for!).getTime(),
+        );
+
+      setCompletedThisMonth(completed);
+      setNextSession(
+        upcoming[0]
+          ? { scheduled_for: upcoming[0].scheduled_for!, title: upcoming[0].title }
+          : null,
+      );
       setLoading(false);
     };
-    fetch();
+
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   if (loading) return null;
+
+  const hasActivity = completedThisMonth > 0 || nextSession !== null;
 
   return (
     <Card className="p-4 space-y-4">
@@ -83,34 +114,41 @@ export function InPersonSessionsCard() {
         <h3 className="text-sm font-semibold">Your sessions</h3>
       </div>
 
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold text-primary">{remaining}</span>
-        <span className="text-sm text-muted-foreground">sessions remaining this month</span>
-      </div>
-
-      {nextSession ? (
-        <div className="bg-muted/40 rounded-lg p-3 space-y-1">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Next session</p>
-          <div className="flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-sm font-medium">
-              {format(new Date(nextSession.scheduled_at), 'EEEE, MMM d · h:mm a')}
+      {hasActivity ? (
+        <>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-primary">{completedThisMonth}</span>
+            <span className="text-sm text-muted-foreground">
+              {completedThisMonth === 1
+                ? 'session completed this month'
+                : 'sessions completed this month'}
             </span>
           </div>
-          {nextSession.coach_name && (
-            <div className="flex items-center gap-2">
-              <User className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">with {nextSession.coach_name}</span>
-            </div>
-          )}
-        </div>
-      ) : (
-        <p className="text-xs text-muted-foreground">No sessions booked yet</p>
-      )}
 
-      <Button asChild size="sm" variant="outline" className="w-full text-xs">
-        <Link to="/book">Book a session</Link>
-      </Button>
+          {nextSession ? (
+            <div className="bg-muted/40 rounded-lg p-3 space-y-1">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                Next session
+              </p>
+              <div className="flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  {format(new Date(nextSession.scheduled_for), 'EEEE, MMM d · h:mm a')}
+                </span>
+              </div>
+              {nextSession.title && (
+                <p className="text-xs text-muted-foreground">{nextSession.title}</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">No upcoming sessions scheduled.</p>
+          )}
+        </>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          No sessions yet — your coach will schedule these for you.
+        </p>
+      )}
     </Card>
   );
 }
