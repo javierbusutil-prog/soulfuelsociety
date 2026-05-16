@@ -238,7 +238,6 @@ export function CalendarEventDetailDialog({
             </p>
           )}
 
-          {/* Cancel session button — only for session events */}
           {/* Complete Button */}
           <Button
             className="w-full"
