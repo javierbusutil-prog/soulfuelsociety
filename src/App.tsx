@@ -49,10 +49,6 @@ import AdminPTRequests from "./pages/admin/AdminPTRequests";
 import PTRequest from "./pages/PTRequest";
 import AdminBroadcast from "./pages/admin/AdminBroadcast";
 
-// Booking pages
-import BookSession from "./pages/BookSession";
-import BookConfirm from "./pages/BookConfirm";
-
 const queryClient = new QueryClient();
 
 const CURRENT_WAIVER_VERSION = 'March 2026 v2';
@@ -184,8 +180,6 @@ function AppRoutes() {
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
       <Route path="/intake" element={<Intake />} />
-      <Route path="/book" element={<ProtectedRoute><BookSession /></ProtectedRoute>} />
-      <Route path="/book/confirm/:bookingId" element={<ProtectedRoute><BookConfirm /></ProtectedRoute>} />
       <Route path="/pt-request" element={<ProtectedRoute><PTRequest /></ProtectedRoute>} />
       
       {/* Coach admin routes */}
