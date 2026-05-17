@@ -8,173 +8,150 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface Booking {
+interface SessionRow {
   id: string;
-  member_id: string;
-  member_name: string;
-  scheduled_at: string;
-  duration_minutes: number;
-  session_type: string;
+  scheduled_for: string;
   status: string;
-  coach_note: string | null;
-  session_count: number | null;
+  note: string | null;
+  title: string | null;
+  attendee_names: string[];
 }
 
 export default function AdminSessions() {
-  const { user } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [selected, setSelected] = useState<SessionRow | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [coachNote, setCoachNote] = useState('');
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchBookings();
+    fetchSessions();
   }, [weekStart]);
 
-  const fetchBookings = async () => {
+  const fetchSessions = async () => {
     setLoading(true);
     const wEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
 
-    const { data } = await supabase
-      .from('session_bookings')
-      .select('id, member_id, scheduled_at, duration_minutes, session_type, status, coach_note')
-      .gte('scheduled_at', weekStart.toISOString())
-      .lte('scheduled_at', wEnd.toISOString())
-      .order('scheduled_at', { ascending: true });
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('id, scheduled_for, status, note, title, session_attendees(user_id, profiles(full_name))')
+      .gte('scheduled_for', weekStart.toISOString())
+      .lte('scheduled_for', wEnd.toISOString())
+      .order('scheduled_for', { ascending: true });
 
-    if (data && data.length > 0) {
-      const memberIds = [...new Set(data.map(d => d.member_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, session_count')
-        .in('id', memberIds);
-      const profMap = new Map(profiles?.map(p => [p.id, p]) || []);
-
-      setBookings(data.map(d => ({
-        ...d,
-        member_name: profMap.get(d.member_id)?.full_name || 'Unknown',
-        session_count: profMap.get(d.member_id)?.session_count || null,
-      })));
-    } else {
-      setBookings([]);
+    if (error) {
+      console.error('AdminSessions: failed to load sessions', error);
+      setSessions([]);
+      setLoading(false);
+      return;
     }
+
+    const rows: SessionRow[] = (data ?? []).map((s: any) => ({
+      id: s.id,
+      scheduled_for: s.scheduled_for,
+      status: s.status,
+      note: s.note,
+      title: s.title,
+      attendee_names: (s.session_attendees ?? [])
+        .map((a: any) => a.profiles?.full_name)
+        .filter(Boolean),
+    }));
+
+    setSessions(rows);
     setLoading(false);
   };
 
-  const openDetail = (b: Booking) => {
-    setSelectedBooking(b);
-    setCoachNote(b.coach_note || '');
+  const openDetail = (s: SessionRow) => {
+    setSelected(s);
+    setCoachNote(s.note || '');
     setRescheduleDate('');
     setDetailOpen(true);
   };
 
   const handleComplete = async () => {
-    if (!selectedBooking || !user) return;
+    if (!selected) return;
     setSaving(true);
-
-    await supabase
-      .from('session_bookings')
-      .update({ status: 'completed', coach_note: coachNote || null, updated_at: new Date().toISOString() } as any)
-      .eq('id', selectedBooking.id);
-
-    await supabase.from('session_logs').insert({
-      booking_id: selectedBooking.id,
-      member_ids: [selectedBooking.member_id],
-      coach_id: user.id,
-      scheduled_at: selectedBooking.scheduled_at,
-      status: 'completed',
-      coach_note: coachNote || null,
-    } as any);
-
-    if (selectedBooking.session_count && selectedBooking.session_count > 0) {
-      await supabase
-        .from('profiles')
-        .update({ session_count: selectedBooking.session_count - 1 } as any)
-        .eq('id', selectedBooking.member_id);
+    const { error } = await supabase
+      .from('sessions')
+      .update({ status: 'completed', note: coachNote || null })
+      .eq('id', selected.id);
+    if (error) {
+      toast.error('Failed to complete session');
+    } else {
+      toast.success('Session marked as completed');
+      setDetailOpen(false);
+      fetchSessions();
     }
-
-    // Mark calendar events as completed
-    await supabase
-      .from('calendar_events')
-      .update({ completed: true, completed_at: new Date().toISOString() } as any)
-      .eq('booking_id', selectedBooking.id);
-
-    toast.success('Session marked as completed');
-    setDetailOpen(false);
-    fetchBookings();
     setSaving(false);
   };
 
   const handleReschedule = async () => {
-    if (!selectedBooking || !rescheduleDate) return;
+    if (!selected || !rescheduleDate) return;
     setSaving(true);
-
-    const newDate = new Date(rescheduleDate);
-    await supabase
-      .from('session_bookings')
-      .update({ scheduled_at: newDate.toISOString(), coach_note: coachNote || null, updated_at: new Date().toISOString() } as any)
-      .eq('id', selectedBooking.id);
-
-    // Update calendar events to new date
-    await supabase
-      .from('calendar_events')
-      .update({ event_date: format(newDate, 'yyyy-MM-dd') } as any)
-      .eq('booking_id', selectedBooking.id);
-
-    toast.success('Session rescheduled');
-    setDetailOpen(false);
-    fetchBookings();
+    const { error } = await supabase
+      .from('sessions')
+      .update({ scheduled_for: new Date(rescheduleDate).toISOString(), note: coachNote || null })
+      .eq('id', selected.id);
+    if (error) {
+      toast.error('Failed to reschedule');
+    } else {
+      toast.success('Session rescheduled');
+      setDetailOpen(false);
+      fetchSessions();
+    }
     setSaving(false);
   };
 
   const handleCancel = async () => {
-    if (!selectedBooking) return;
+    if (!selected) return;
     setSaving(true);
-
-    await supabase
-      .from('session_bookings')
-      .update({ status: 'cancelled', updated_at: new Date().toISOString() } as any)
-      .eq('id', selectedBooking.id);
-
-    // Remove calendar events for this booking
-    await supabase
-      .from('calendar_events')
-      .delete()
-      .eq('booking_id', selectedBooking.id);
-
-    toast.success('Session cancelled');
-    setDetailOpen(false);
-    fetchBookings();
+    const { error } = await supabase
+      .from('sessions')
+      .update({ status: 'didnt_happen' })
+      .eq('id', selected.id);
+    if (error) {
+      toast.error('Failed to cancel session');
+    } else {
+      toast.success('Session cancelled');
+      setDetailOpen(false);
+      fetchSessions();
+    }
     setSaving(false);
   };
 
   const saveNote = async () => {
-    if (!selectedBooking) return;
-    await supabase
-      .from('session_bookings')
-      .update({ coach_note: coachNote, updated_at: new Date().toISOString() } as any)
-      .eq('id', selectedBooking.id);
-    toast.success('Note saved');
+    if (!selected) return;
+    const { error } = await supabase
+      .from('sessions')
+      .update({ note: coachNote })
+      .eq('id', selected.id);
+    if (error) toast.error('Failed to save note');
+    else toast.success('Note saved');
   };
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const getStatusColor = (status: string) => {
     if (status === 'completed') return 'bg-chart-2/15 text-chart-2 border-chart-2/30';
-    if (status === 'cancelled') return 'bg-destructive/15 text-destructive border-destructive/30';
+    if (status === 'didnt_happen') return 'bg-destructive/15 text-destructive border-destructive/30';
     return 'bg-primary/15 text-primary border-primary/30';
   };
 
-  const getTypeLabel = (t: string) => t === 'partner' ? 'Partner' : t === 'trio' ? 'Trio' : 'Solo';
+  const getStatusLabel = (status: string) =>
+    status === 'didnt_happen' ? "didn't happen" : status;
+
+  const getTypeLabel = (count: number) =>
+    count >= 3 ? 'Trio' : count === 2 ? 'Partner' : 'Solo';
+
+  const namesLabel = (names: string[]) =>
+    names.length === 0 ? 'No attendees' : names.join(', ');
 
   return (
     <AdminLayout title="Sessions">
@@ -207,8 +184,8 @@ export default function AdminSessions() {
                 <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              weekDays.map(day => {
-                const dayBookings = bookings.filter(b => isSameDay(new Date(b.scheduled_at), day));
+              weekDays.map((day) => {
+                const daySessions = sessions.filter((s) => isSameDay(new Date(s.scheduled_for), day));
                 const isToday = isSameDay(day, new Date());
                 return (
                   <Card key={day.toISOString()} className={isToday ? 'border-primary/40' : ''}>
@@ -218,32 +195,37 @@ export default function AdminSessions() {
                           {format(day, 'EEEE, MMM d')}
                         </span>
                         {isToday && <Badge variant="default" className="text-[9px] px-1.5 py-0">Today</Badge>}
-                        {dayBookings.length > 0 && (
-                          <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{dayBookings.length}</Badge>
+                        {daySessions.length > 0 && (
+                          <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{daySessions.length}</Badge>
                         )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-3 pt-1">
-                      {dayBookings.length === 0 ? (
+                      {daySessions.length === 0 ? (
                         <p className="text-xs text-muted-foreground py-1">No sessions</p>
                       ) : (
                         <div className="space-y-2">
-                          {dayBookings.map(b => (
+                          {daySessions.map((s) => (
                             <button
-                              key={b.id}
-                              onClick={() => openDetail(b)}
+                              key={s.id}
+                              onClick={() => openDetail(s)}
                               className="w-full text-left flex items-center gap-3 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                             >
                               <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{b.member_name}</p>
+                                <p className="text-sm font-medium truncate">{namesLabel(s.attendee_names)}</p>
                                 <p className="text-[11px] text-muted-foreground">
-                                  {format(new Date(b.scheduled_at), 'h:mm a')} · {b.duration_minutes}min
+                                  {format(new Date(s.scheduled_for), 'h:mm a')}
+                                  {s.title ? ` · ${s.title}` : ''}
                                 </p>
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">{getTypeLabel(b.session_type)}</Badge>
-                                <Badge className={`text-[10px] px-1.5 py-0 ${getStatusColor(b.status)}`}>{b.status}</Badge>
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                  {getTypeLabel(s.attendee_names.length)}
+                                </Badge>
+                                <Badge className={`text-[10px] px-1.5 py-0 ${getStatusColor(s.status)}`}>
+                                  {getStatusLabel(s.status)}
+                                </Badge>
                               </div>
                             </button>
                           ))}
@@ -261,21 +243,22 @@ export default function AdminSessions() {
               <div className="flex justify-center py-12">
                 <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
-            ) : bookings.length === 0 ? (
+            ) : sessions.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-12">No sessions this week.</p>
             ) : (
               <div className="space-y-2">
-                {bookings.map(b => (
-                  <Card key={b.id} className="p-3 cursor-pointer hover:bg-muted/40 transition-colors" onClick={() => openDetail(b)}>
+                {sessions.map((s) => (
+                  <Card key={s.id} className="p-3 cursor-pointer hover:bg-muted/40 transition-colors" onClick={() => openDetail(s)}>
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{b.member_name}</p>
+                        <p className="text-sm font-medium">{namesLabel(s.attendee_names)}</p>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(b.scheduled_at), 'EEE, MMM d · h:mm a')} · {b.duration_minutes}min
+                          {format(new Date(s.scheduled_for), 'EEE, MMM d · h:mm a')}
+                          {s.title ? ` · ${s.title}` : ''}
                         </p>
                       </div>
-                      <Badge variant="outline" className="text-[10px]">{getTypeLabel(b.session_type)}</Badge>
-                      <Badge className={`text-[10px] ${getStatusColor(b.status)}`}>{b.status}</Badge>
+                      <Badge variant="outline" className="text-[10px]">{getTypeLabel(s.attendee_names.length)}</Badge>
+                      <Badge className={`text-[10px] ${getStatusColor(s.status)}`}>{getStatusLabel(s.status)}</Badge>
                     </div>
                   </Card>
                 ))}
@@ -289,36 +272,32 @@ export default function AdminSessions() {
             <DialogHeader>
               <DialogTitle>Session Details</DialogTitle>
             </DialogHeader>
-            {selectedBooking && (
+            {selected && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Member</span>
-                    <span className="text-sm font-medium">{selectedBooking.member_name}</span>
+                    <span className="text-sm text-muted-foreground">Attendees</span>
+                    <span className="text-sm font-medium text-right">{namesLabel(selected.attendee_names)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Date & time</span>
-                    <span className="text-sm">{format(new Date(selectedBooking.scheduled_at), 'MMM d, yyyy · h:mm a')}</span>
+                    <span className="text-sm">{format(new Date(selected.scheduled_for), 'MMM d, yyyy · h:mm a')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Type</span>
-                    <Badge variant="outline">{getTypeLabel(selectedBooking.session_type)}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Remaining sessions</span>
-                    <span className="text-sm font-medium">{selectedBooking.session_count ?? '—'}</span>
+                    <Badge variant="outline">{getTypeLabel(selected.attendee_names.length)}</Badge>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge className={getStatusColor(selectedBooking.status)}>{selectedBooking.status}</Badge>
+                    <Badge className={getStatusColor(selected.status)}>{getStatusLabel(selected.status)}</Badge>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Coach note (private)</p>
+                  <p className="text-xs text-muted-foreground mb-1">Note</p>
                   <Textarea
                     value={coachNote}
-                    onChange={e => setCoachNote(e.target.value)}
+                    onChange={(e) => setCoachNote(e.target.value)}
                     placeholder="Add a note..."
                     className="min-h-[60px] text-sm"
                   />
@@ -327,14 +306,14 @@ export default function AdminSessions() {
                   </Button>
                 </div>
 
-                {selectedBooking.status === 'scheduled' && (
+                {selected.status === 'scheduled' && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Reschedule</p>
                     <div className="flex gap-2">
                       <Input
                         type="datetime-local"
                         value={rescheduleDate}
-                        onChange={e => setRescheduleDate(e.target.value)}
+                        onChange={(e) => setRescheduleDate(e.target.value)}
                         className="text-sm"
                       />
                       <Button size="sm" onClick={handleReschedule} disabled={!rescheduleDate || saving}>
@@ -346,7 +325,7 @@ export default function AdminSessions() {
               </div>
             )}
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              {selectedBooking?.status === 'scheduled' && (
+              {selected?.status === 'scheduled' && (
                 <>
                   <Button variant="destructive" size="sm" onClick={handleCancel} disabled={saving} className="gap-1">
                     <X className="w-3 h-3" /> Cancel session
