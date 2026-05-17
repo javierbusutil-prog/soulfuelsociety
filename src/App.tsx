@@ -24,8 +24,6 @@ import Sessions from "./pages/Sessions";
 import Nutrition from "./pages/Nutrition";
 import TrainWithUs from "./pages/TrainWithUs";
 import Onboarding from "./pages/Onboarding";
-import Invite from "./pages/Invite";
-import JoinGroup from "./pages/JoinGroup";
 import Waiver from "./pages/Waiver";
 import Intake from "./pages/Intake";
 import DailyDose from "./pages/DailyDose";
@@ -174,8 +172,6 @@ function AppRoutes() {
       <Route path="/store" element={<ProtectedRoute><Store /></ProtectedRoute>} />
       <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-      <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
-      <Route path="/join/:token" element={<JoinGroup />} />
       <Route path="/waiver" element={<WaiverRoute />} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
