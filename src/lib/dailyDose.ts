@@ -6,3 +6,5 @@ export function getDateLabel(dateStr: string): string {
   if (diff === 1) return 'Yesterday';
   return format(d, 'EEE, MMM d');
 }
+
+export { getBlocksFromSource, summarizeBlocks } from '@/lib/workoutBlocks';
