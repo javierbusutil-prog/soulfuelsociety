@@ -6,6 +6,23 @@ import { Heart, ArrowLeft, AlertTriangle, ChevronRight, PlayCircle } from 'lucid
 import { cn } from '@/lib/utils';
 import type { Movement } from '@/types/movements';
 
+function toEmbedUrl(url: string): string {
+  // YouTube: handle youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID
+  const ytMatch = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+  );
+  if (ytMatch) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  }
+  // Vimeo: handle vimeo.com/ID
+  const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vimeoMatch) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  }
+  // Not a recognized embed URL — return as-is
+  return url;
+}
+
 interface Props {
   movement: Movement;
   isFavorite: boolean;
@@ -63,7 +80,7 @@ export function MovementDetailView({ movement, isFavorite, onToggleFavorite, onC
         <div className="rounded-xl overflow-hidden bg-secondary aspect-video">
           {isEmbedUrl ? (
             <iframe
-              src={movement.video_url.replace('watch?v=', 'embed/')}
+              src={toEmbedUrl(movement.video_url)}
               className="w-full h-full"
               allowFullScreen
               title={movement.name}
