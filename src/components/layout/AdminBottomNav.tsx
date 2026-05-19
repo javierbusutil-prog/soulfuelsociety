@@ -6,7 +6,6 @@ import {
   MessageCircle,
   CalendarClock,
   DollarSign,
-  Clock,
   ArrowLeftRight,
   MessagesSquare,
   Activity,
@@ -26,7 +25,6 @@ const navItems = [
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/broadcast', icon: Send, label: 'Email' },
   { path: '/admin/sessions/log', icon: CalendarClock, label: 'Sessions' },
-  { path: '/admin/availability', icon: Clock, label: 'Hours' },
 ];
 
 export function AdminBottomNav() {

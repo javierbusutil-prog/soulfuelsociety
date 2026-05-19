@@ -37,7 +37,6 @@ import AdminPrograms from "./pages/admin/AdminPrograms";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminSessions from "./pages/admin/AdminSessions";
 import AdminLogSession from "./pages/admin/AdminLogSession";
-import AdminAvailability from "./pages/admin/AdminAvailability";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminCommunity from "./pages/admin/AdminCommunity";
@@ -187,7 +186,6 @@ function AppRoutes() {
       <Route path="/admin/messages" element={<CoachRoute><AdminMessages /></CoachRoute>} />
       <Route path="/admin/sessions" element={<CoachRoute><AdminSessions /></CoachRoute>} />
       <Route path="/admin/sessions/log" element={<CoachRoute><AdminLogSession /></CoachRoute>} />
-      <Route path="/admin/availability" element={<CoachRoute><AdminAvailability /></CoachRoute>} />
       <Route path="/admin/revenue" element={<CoachRoute><AdminRevenue /></CoachRoute>} />
       <Route path="/admin/settings" element={<CoachRoute><AdminSettings /></CoachRoute>} />
       <Route path="/admin/community" element={<CoachRoute><AdminCommunity /></CoachRoute>} />
