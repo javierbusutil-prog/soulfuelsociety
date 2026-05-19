@@ -282,7 +282,7 @@ function UpcomingSessions() {
           const userIds = data.map(s => s.user_id);
           const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, full_name, selected_plan, group_size')
+            .select('id, full_name, selected_plan')
             .in('id', userIds);
 
           const merged = data.map(s => {
@@ -291,7 +291,6 @@ function UpcomingSessions() {
               ...s,
               full_name: prof?.full_name || 'Unknown',
               plan_type: prof?.selected_plan || null,
-              group_size: prof?.group_size || null,
             };
           });
           setSessions(merged);
@@ -304,12 +303,6 @@ function UpcomingSessions() {
     };
     fetchSessions();
   }, []);
-
-  const getSessionLabel = (groupSize: string | null) => {
-    if (groupSize === '2') return 'Partner';
-    if (groupSize === '3') return 'Trio';
-    return 'Solo';
-  };
 
   return (
     <Card>
@@ -335,9 +328,6 @@ function UpcomingSessions() {
                   <span className="text-[11px] text-muted-foreground">
                     {format(new Date(session.scheduled_at), 'MMM d, h:mm a')}
                   </span>
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                    {getSessionLabel(session.group_size)}
-                  </Badge>
                 </div>
               </div>
               <Button
