@@ -54,7 +54,7 @@ function BulletList({ items, title, icon }: { items: string[]; title: string; ic
 }
 
 export function MovementDetailView({ movement, isFavorite, onToggleFavorite, onClose }: Props) {
-  const isEmbedUrl = movement.video_url?.includes('youtube') || movement.video_url?.includes('vimeo');
+  const isEmbedUrl = movement.video_url?.includes('youtube') || movement.video_url?.includes('youtu.be') || movement.video_url?.includes('vimeo');
   const isDirectVideo = movement.video_url && !isEmbedUrl;
 
   return (
