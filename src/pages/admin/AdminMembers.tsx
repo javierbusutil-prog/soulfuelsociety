@@ -20,8 +20,6 @@ interface MemberRow {
   full_name: string | null;
   avatar_url: string | null;
   selected_plan: string | null;
-  session_count: number | null;
-  group_size: string | null;
   created_at: string;
   program_delivered: boolean;
   isPaid: boolean;
@@ -97,7 +95,7 @@ export default function AdminMembers() {
 
     // Fetch all profiles and paid roles in parallel
     const [profilesRes, rolesRes, memberProfilesRes] = await Promise.all([
-      supabase.from('profiles').select('id, full_name, avatar_url, selected_plan, session_count, group_size, created_at, sessions_remaining, membership_expires_at'),
+      supabase.from('profiles').select('id, full_name, avatar_url, selected_plan, created_at, sessions_remaining, membership_expires_at'),
       supabase.from('user_roles').select('user_id, role'),
       supabase.from('member_profiles').select('user_id, program_delivered'),
     ]);
@@ -120,8 +118,6 @@ export default function AdminMembers() {
         full_name: p.full_name,
         avatar_url: p.avatar_url,
         selected_plan: p.selected_plan,
-        session_count: p.session_count,
-        group_size: p.group_size,
         created_at: p.created_at,
         program_delivered: deliveredMap.get(p.id) ?? false,
         isPaid: paidSet.has(p.id),
@@ -150,16 +146,6 @@ export default function AdminMembers() {
     if (plan.toLowerCase().includes('online')) return 'Online';
     if (plan.toLowerCase().includes('person')) return 'In-person';
     return plan;
-  };
-
-  const isInPerson = (plan: string | null) => {
-    return plan?.toLowerCase().includes('person') ?? false;
-  };
-
-  const getGroupLabel = (size: string | null) => {
-    if (size === '2') return 'Partner';
-    if (size === '3') return 'Trio';
-    return 'Solo';
   };
 
   const renderManualStatusBadge = (m: MemberRow) => {
@@ -305,16 +291,6 @@ export default function AdminMembers() {
                       ) : (
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-muted-foreground/30 text-muted-foreground">
                           Free
-                        </Badge>
-                      )}
-                      {member.isPaid && isInPerson(member.selected_plan) && member.session_count && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          {member.session_count} sessions
-                        </Badge>
-                      )}
-                      {member.isPaid && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          {getGroupLabel(member.group_size)}
                         </Badge>
                       )}
                       {renderManualStatusBadge(member)}
