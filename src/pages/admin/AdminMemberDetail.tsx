@@ -44,8 +44,6 @@ interface ProfileData {
   full_name: string | null;
   avatar_url: string | null;
   selected_plan: string | null;
-  session_count: number | null;
-  group_size: string | null;
   created_at: string;
   subscription_status: string | null;
   phone: string | null;
@@ -125,7 +123,7 @@ export default function AdminMemberDetail() {
     // Profile
     const { data: prof } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, selected_plan, session_count, group_size, created_at, subscription_status, phone')
+      .select('id, full_name, avatar_url, selected_plan, created_at, subscription_status, phone')
       .eq('id', userId)
       .single();
     if (prof) setProfile(prof as ProfileData);
@@ -379,14 +377,6 @@ export default function AdminMemberDetail() {
                       ? 'Paid (plan not set)'
                       : 'No plan'}
                   </Badge>
-                  {profile.session_count && (
-                    <Badge variant="outline">{profile.session_count} sessions/mo</Badge>
-                  )}
-                  {profile.group_size && (
-                    <Badge variant="outline">
-                      {profile.group_size === '2' ? 'Partner' : profile.group_size === '3' ? 'Trio' : 'Solo'}
-                    </Badge>
-                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   Member since {format(new Date(profile.created_at), 'MMMM d, yyyy')}
