@@ -22,7 +22,6 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
 
-  // Service-role client for writing stripe_customer_id back to profiles (bypasses RLS)
   const supabaseAdmin = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -39,6 +38,10 @@ serve(async (req) => {
     const { plan } = await req.json();
     logStep("Checkout request", { plan, email: user.email });
 
+    if (plan !== "online") {
+      throw new Error("Only online plan checkout is supported");
+    }
+
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
     const isSandbox = stripeKey.startsWith("sk_test_");
     console.log("[create-checkout] mode:", isSandbox ? "sandbox" : "live");
@@ -47,12 +50,14 @@ serve(async (req) => {
       ? Deno.env.get("STRIPE_ONLINE_PRICE_ID_TEST")
       : Deno.env.get("STRIPE_ONLINE_PRICE_ID_LIVE");
 
+    if (!onlinePriceId) {
+      throw new Error("Online price ID not configured for this environment");
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Find or create Stripe customer, persisting the ID to profiles to avoid duplicates
     let customerId: string | undefined;
 
-    // 1. Check profiles for an existing stripe_customer_id
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("stripe_customer_id")
@@ -63,13 +68,11 @@ serve(async (req) => {
       customerId = profile.stripe_customer_id;
       logStep("Using stripe_customer_id from profiles", { customerId });
     } else {
-      // 2. Look up an existing Stripe customer by email
       const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       if (customers.data.length > 0) {
         customerId = customers.data[0].id;
         logStep("Found existing Stripe customer by email", { customerId });
       } else {
-        // 3. Create a new Stripe customer
         const newCustomer = await stripe.customers.create({
           email: user.email,
           metadata: { user_id: user.id },
@@ -78,7 +81,6 @@ serve(async (req) => {
         logStep("Created new Stripe customer", { customerId });
       }
 
-      // Persist the customer ID back to profiles
       const { error: updateError } = await supabaseAdmin
         .from("profiles")
         .update({ stripe_customer_id: customerId })
@@ -89,10 +91,7 @@ serve(async (req) => {
     }
 
     const origin = req.headers.get("origin") || "https://soulfuelsociety.lovable.app";
-    if (plan !== "online") throw new Error("Only online plan checkout is supported");
-    if (!onlinePriceId) {
-      throw new Error("Online price ID not configured for this environment");
-    }
+
     const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
