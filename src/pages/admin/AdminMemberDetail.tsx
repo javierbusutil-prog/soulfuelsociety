@@ -16,6 +16,7 @@ import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/Upgra
 import { DeletePaymentDialog } from '@/components/admin/DeletePaymentDialog';
 import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
 import { DailyDoseFormDialog, DailyDosePost } from '@/components/admin/DailyDoseFormDialog';
+import { isIntakeFormMessage, IntakeFormMessage } from '@/components/chat/IntakeFormMessage';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -675,6 +676,19 @@ export default function AdminMemberDetail() {
                 <p className="text-sm text-muted-foreground text-center py-4">No messages yet. Start the conversation below.</p>
               ) : (
                 messages.map(msg => {
+                  const intakeData = isIntakeFormMessage(msg.content);
+                  if (intakeData) {
+                    return (
+                      <div key={msg.id} className="flex justify-start">
+                        <div className="w-full">
+                          <IntakeFormMessage data={intakeData} />
+                          <p className="text-[10px] mt-1 text-muted-foreground">
+                            {format(new Date(msg.created_at), 'MMM d, h:mm a')}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
                   const isCoach = msg.sender_id === user?.id;
                   return (
                     <div key={msg.id} className={`flex ${isCoach ? 'justify-end' : 'justify-start'}`}>
