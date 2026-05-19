@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock } from 'lucide-react';
-import { Search, Filter, Heart, Clock, Dumbbell, Check, Calendar, BookOpen, Pencil, Trash2, Play, History, ListChecks, CalendarDays } from 'lucide-react';
+import { Search, Filter, Heart, Clock, Dumbbell, Check, BookOpen, Pencil, Trash2, Play, History, ListChecks, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,19 +12,12 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Workout, WorkoutLevel, WorkoutType } from '@/types/database';
-import { WorkoutProgram } from '@/types/workoutPrograms';
-import { useWorkoutPrograms } from '@/hooks/useWorkoutPrograms';
-import { ProgramCard } from '@/components/workouts/ProgramCard';
-import { CreateProgramDialog } from '@/components/workouts/CreateProgramDialog';
-import { UploadEbookDialog } from '@/components/workouts/UploadEbookDialog';
 import { CreateWorkoutDialog } from '@/components/workouts/CreateWorkoutDialog';
 import { EditWorkoutDialog } from '@/components/workouts/EditWorkoutDialog';
-import { ProgramDetailView } from '@/components/workouts/ProgramDetailView';
 import { WorkoutSessionView } from '@/components/workouts/WorkoutSessionView';
 import { WorkoutHistory } from '@/components/workouts/WorkoutHistory';
 import { WorkoutStructureEditor } from '@/components/workouts/WorkoutStructureEditor';
-import { WeeklyPlanView } from '@/components/workouts/WeeklyPlanView';
-import { EnrollProgramDialog } from '@/components/workouts/EnrollProgramDialog';
+import { MyWorkoutsTab } from '@/components/workouts/MyWorkoutsTab';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +29,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MovementLibrary } from '@/components/movements/MovementLibrary';
-import { CoachingDashboard } from '@/components/dashboard/CoachingDashboard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,23 +66,12 @@ export default function Workouts() {
   const [levelFilter, setLevelFilter] = useState<WorkoutLevel[]>([]);
   const [typeFilter, setTypeFilter] = useState<WorkoutType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState((isPaidMember || isAdmin) ? 'weekly' : 'programs');
-  const [selectedProgram, setSelectedProgram] = useState<WorkoutProgram | null>(null);
+  const [activeTab, setActiveTab] = useState('my_workouts');
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [deletingWorkout, setDeletingWorkout] = useState<Workout | null>(null);
   const [activeSession, setActiveSession] = useState<Workout | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [structureWorkout, setStructureWorkout] = useState<Workout | null>(null);
-  const [enrollingProgram, setEnrollingProgram] = useState<WorkoutProgram | null>(null);
-  const { 
-    programs, 
-    loading: programsLoading, 
-    createProgram,
-    updateProgram,
-    isEnrolled,
-    refetchPrograms,
-    refetchEnrollments,
-  } = useWorkoutPrograms();
 
   useEffect(() => {
     fetchWorkouts();
@@ -172,8 +153,6 @@ export default function Workouts() {
     return matchesSearch && matchesLevel && matchesType;
   });
 
-  const visiblePrograms = programs.filter(p => isAdmin || p.published);
-
   // Active workout session view
   if (activeSession) {
     return (
@@ -195,28 +174,6 @@ export default function Workouts() {
     return (
       <AppLayout title="Training History">
         <WorkoutHistory onBack={() => setShowHistory(false)} />
-      </AppLayout>
-    );
-  }
-
-  // Program detail view
-  if (selectedProgram) {
-    return (
-      <AppLayout title="Program Details">
-        <ProgramDetailView
-          program={selectedProgram}
-          isAdmin={isAdmin}
-          isEnrolled={isEnrolled(selectedProgram.id)}
-          onBack={() => setSelectedProgram(null)}
-          onUpdate={async (id, updates) => {
-            const updated = await updateProgram(id, updates);
-            setSelectedProgram(updated);
-            return updated;
-          }}
-          onEnrollmentChange={() => {
-            refetchEnrollments();
-          }}
-        />
       </AppLayout>
     );
   }
@@ -246,28 +203,11 @@ export default function Workouts() {
   return (
     <AppLayout title="My Training">
       <div className="max-w-lg mx-auto p-4">
-        <div className="mb-4">
-          <CoachingDashboard />
-        </div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger 
-              value="weekly" 
-              className="flex items-center gap-1.5 text-xs"
-              disabled={!isPaidMember && !isAdmin}
-              onClick={(e) => {
-                if (!isPaidMember && !isAdmin) {
-                  e.preventDefault();
-                }
-              }}
-            >
-              {!isPaidMember && !isAdmin && <Lock className="w-3 h-3" />}
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="my_workouts" className="flex items-center gap-1.5 text-xs">
               <Dumbbell className="w-3.5 h-3.5" />
-              Training
-            </TabsTrigger>
-            <TabsTrigger value="programs" className="flex items-center gap-1.5 text-xs">
-              <Calendar className="w-3.5 h-3.5" />
-              Programs
+              My Workouts
             </TabsTrigger>
             <TabsTrigger value="movements" className="flex items-center gap-1.5 text-xs">
               <BookOpen className="w-3.5 h-3.5" />
@@ -275,51 +215,9 @@ export default function Workouts() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Weekly Plan Tab */}
-          <TabsContent value="weekly" className="mt-4">
-            <WeeklyPlanView />
-          </TabsContent>
-
-          {/* Programs Tab */}
-          <TabsContent value="programs" className="mt-4">
-            {isAdmin && (
-              <div className="flex gap-2 mb-4">
-                <CreateProgramDialog onProgramCreated={createProgram} />
-                <UploadEbookDialog onProgramCreated={createProgram} />
-              </div>
-            )}
-            <div className="space-y-3">
-              {programsLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <div className="h-32 bg-muted" />
-                    <div className="p-4 space-y-2">
-                      <div className="h-4 bg-muted rounded w-3/4" />
-                      <div className="h-3 bg-muted rounded w-1/2" />
-                    </div>
-                  </Card>
-                ))
-              ) : visiblePrograms.length === 0 ? (
-                <Card className="p-8 text-center text-muted-foreground">
-                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No programs available</p>
-                  {isAdmin && <p className="text-sm mt-2">Create your first program above!</p>}
-                </Card>
-              ) : (
-                visiblePrograms.map((program, index) => (
-                  <ProgramCard
-                    key={program.id}
-                    program={program}
-                    isEnrolled={isEnrolled(program.id)}
-                    isAdmin={isAdmin}
-                    onView={() => setSelectedProgram(program)}
-                    onEdit={() => setSelectedProgram(program)}
-                    onAddToCalendar={() => setEnrollingProgram(program)}
-                    index={index}
-                  />
-                ))
-              )}
-            </div>
+          {/* My Workouts Tab */}
+          <TabsContent value="my_workouts" className="mt-4">
+            <MyWorkoutsTab />
           </TabsContent>
 
           {/* Movement Library Tab */}
@@ -327,19 +225,6 @@ export default function Workouts() {
             <MovementLibrary />
           </TabsContent>
         </Tabs>
-
-        {/* Enroll Program Dialog (triggered from card's Add Program button) */}
-        {enrollingProgram && (
-          <EnrollProgramDialog
-            program={enrollingProgram}
-            open={!!enrollingProgram}
-            onOpenChange={(open) => !open && setEnrollingProgram(null)}
-            onEnrolled={() => {
-              refetchEnrollments();
-              setEnrollingProgram(null);
-            }}
-          />
-        )}
 
         {/* Edit Workout Dialog */}
         {editingWorkout && (
