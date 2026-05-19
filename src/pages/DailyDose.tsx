@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { format, parseISO, differenceInCalendarDays, subDays } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { Sunrise, ChevronRight, CheckCircle2, Play } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { getBlocksFromSource, summarizeBlocks } from '@/lib/workoutBlocks';
+import { getDateLabel } from '@/lib/dailyDose';
 import { WorkoutBlocksDisplay } from '@/components/workouts/WorkoutBlocksDisplay';
 
 interface DailyDosePost {
@@ -25,13 +26,6 @@ interface DailyDosePost {
 }
 
 const todayIso = () => format(new Date(), 'yyyy-MM-dd');
-
-function getDateLabel(dateStr: string): string {
-  const d = parseISO(dateStr);
-  const diff = differenceInCalendarDays(new Date(), d);
-  if (diff === 1) return 'Yesterday';
-  return format(d, 'EEE, MMM d');
-}
 
 function PostBlocks({ post }: { post: DailyDosePost }) {
   return (
@@ -159,17 +153,19 @@ export default function DailyDose() {
         .select('*')
         .eq('is_published', true)
         .eq('published_date', todayStr)
-        .maybeSingle(),
+        .is('audience_user_id', null)
+        .limit(1),
       (supabase as any)
         .from('daily_dose_posts')
         .select('*')
         .eq('is_published', true)
         .lt('published_date', todayStr)
         .gte('published_date', fourteenAgo)
+        .is('audience_user_id', null)
         .order('published_date', { ascending: false }),
     ]);
 
-    const todayPost = (todayRes?.data as DailyDosePost | null) ?? null;
+    const todayPost = ((todayRes?.data as DailyDosePost[] | null) ?? [])[0] ?? null;
     const recentPosts = ((recentRes?.data as DailyDosePost[]) ?? []);
     setToday(todayPost);
     setRecent(recentPosts);
