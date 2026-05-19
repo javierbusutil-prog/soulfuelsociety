@@ -12,13 +12,6 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
-// In-person per-session rates
-const SESSION_RATES: Record<string, number> = {
-  solo: 5000,    // $50/session in cents
-  partner: 4000, // $40/session
-  trio: 3500,    // $35/session
-};
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -43,8 +36,8 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { plan, sessionCount, groupSize, inviteToken, groupId } = await req.json();
-    logStep("Checkout request", { plan, sessionCount, groupSize, email: user.email, inviteToken });
+    const { plan } = await req.json();
+    logStep("Checkout request", { plan, email: user.email });
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
     const isSandbox = stripeKey.startsWith("sk_test_");
@@ -96,65 +89,19 @@ serve(async (req) => {
     }
 
     const origin = req.headers.get("origin") || "https://soulfuelsociety.lovable.app";
-    let sessionConfig: Stripe.Checkout.SessionCreateParams;
-
-    if (plan === "online") {
-      if (!onlinePriceId) {
-        throw new Error("Online price ID not configured for this environment");
-      }
-      sessionConfig = {
-        customer: customerId,
-        customer_email: customerId ? undefined : user.email,
-        line_items: [{ price: onlinePriceId, quantity: 1 }],
-        mode: "subscription",
-        success_url: `${origin}/onboarding?checkout=success`,
-        cancel_url: `${origin}/upgrade?checkout=cancelled`,
-        metadata: { user_id: user.id, plan: "online" },
-      };
-    } else {
-      // In-person training
-      const rate = SESSION_RATES[groupSize] || SESSION_RATES.solo;
-      const totalCents = rate * (sessionCount || 4);
-      const groupLabel = groupSize === "solo" ? "Solo" : groupSize === "partner" ? "Partner" : "Trio";
-
-      // Determine success URL based on context
-      let successUrl: string;
-      if (inviteToken) {
-        // Invited member paying — go to onboarding
-        successUrl = `${origin}/onboarding?checkout=success&invite_token=${inviteToken}`;
-      } else if (groupSize === "solo") {
-        successUrl = `${origin}/onboarding?checkout=success`;
-      } else {
-        // Group organizer — redirect to invite page
-        successUrl = `${origin}/invite?checkout=success`;
-      }
-
-      sessionConfig = {
-        customer: customerId,
-        customer_email: customerId ? undefined : user.email,
-        line_items: [{
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `In-Person Training — ${groupLabel}, ${sessionCount} sessions/mo`,
-            },
-            unit_amount: totalCents,
-            recurring: { interval: "month" },
-          },
-          quantity: 1,
-        }],
-        mode: "subscription",
-        success_url: successUrl,
-        cancel_url: `${origin}/upgrade?checkout=cancelled`,
-        metadata: {
-          user_id: user.id,
-          plan: "in_person",
-          session_count: String(sessionCount),
-          group_size: groupSize,
-          ...(inviteToken ? { invite_token: inviteToken, group_id: groupId } : {}),
-        },
-      };
+    if (plan !== "online") throw new Error("Only online plan checkout is supported");
+    if (!onlinePriceId) {
+      throw new Error("Online price ID not configured for this environment");
     }
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
+      customer: customerId,
+      customer_email: customerId ? undefined : user.email,
+      line_items: [{ price: onlinePriceId, quantity: 1 }],
+      mode: "subscription",
+      success_url: `${origin}/onboarding?checkout=success`,
+      cancel_url: `${origin}/upgrade?checkout=cancelled`,
+      metadata: { user_id: user.id, plan: "online" },
+    };
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
     logStep("Checkout session created", { sessionId: session.id });
