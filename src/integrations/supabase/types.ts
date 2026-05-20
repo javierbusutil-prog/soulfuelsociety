@@ -144,34 +144,46 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          description: string | null
           expires_at: string | null
           id: string
           note: string | null
+          notes: string | null
           payment_date: string
           payment_method: string
-          upgraded_by: string
+          payment_type: string
+          recorded_by: string
+          sessions_purchased: number | null
           user_id: string
         }
         Insert: {
           amount: number
           created_at?: string
+          description?: string | null
           expires_at?: string | null
           id?: string
           note?: string | null
+          notes?: string | null
           payment_date?: string
           payment_method?: string
-          upgraded_by: string
+          payment_type: string
+          recorded_by: string
+          sessions_purchased?: number | null
           user_id: string
         }
         Update: {
           amount?: number
           created_at?: string
+          description?: string | null
           expires_at?: string | null
           id?: string
           note?: string | null
+          notes?: string | null
           payment_date?: string
           payment_method?: string
-          upgraded_by?: string
+          payment_type?: string
+          recorded_by?: string
+          sessions_purchased?: number | null
           user_id?: string
         }
         Relationships: []
