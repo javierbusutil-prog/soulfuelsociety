@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, DollarSign, Pencil, Trash2, Plus, FileText, CalendarPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
+import { PaymentDialog } from '@/components/admin/PaymentDialog';
 import { DeletePaymentDialog } from '@/components/admin/DeletePaymentDialog';
 import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
 import { DailyDoseFormDialog, DailyDosePost } from '@/components/admin/DailyDoseFormDialog';
