@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, DollarSign, Pencil, Trash2, Plus, FileText, CalendarPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
+import { PaymentDialog } from '@/components/admin/PaymentDialog';
 import { DeletePaymentDialog } from '@/components/admin/DeletePaymentDialog';
 import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
 import { DailyDoseFormDialog, DailyDosePost } from '@/components/admin/DailyDoseFormDialog';
@@ -99,6 +100,7 @@ export default function AdminMemberDetail() {
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [newUpgradeDialogOpen, setNewUpgradeDialogOpen] = useState(false);
   const [cashPayments, setCashPayments] = useState<CashPaymentRecord[]>([]);
   const [editingPayment, setEditingPayment] = useState<CashPaymentRecord | null>(null);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
@@ -324,8 +326,7 @@ export default function AdminMemberDetail() {
   };
 
   const handleNewUpgrade = () => {
-    setEditingPayment(null);
-    setUpgradeDialogOpen(true);
+    setNewUpgradeDialogOpen(true);
   };
 
   if (loading) {
@@ -731,6 +732,18 @@ export default function AdminMemberDetail() {
           coachId={user.id}
           onSuccess={() => id && fetchAll(id)}
           editPayment={editingPayment}
+        />
+      )}
+
+      {profile && user && (
+        <PaymentDialog
+          open={newUpgradeDialogOpen}
+          onOpenChange={setNewUpgradeDialogOpen}
+          memberId={profile.id}
+          memberName={profile.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => id && fetchAll(id)}
+          defaultType="upgrade"
         />
       )}
 
