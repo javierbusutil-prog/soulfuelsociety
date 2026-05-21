@@ -735,6 +735,18 @@ export default function AdminMemberDetail() {
         />
       )}
 
+      {profile && user && (
+        <PaymentDialog
+          open={newUpgradeDialogOpen}
+          onOpenChange={setNewUpgradeDialogOpen}
+          memberId={profile.id}
+          memberName={profile.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => id && fetchAll(id)}
+          defaultType="upgrade"
+        />
+      )}
+
       <DeletePaymentDialog
         open={!!deletePaymentId}
         onOpenChange={(open) => !open && setDeletePaymentId(null)}
