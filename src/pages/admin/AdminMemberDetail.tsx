@@ -326,8 +326,7 @@ export default function AdminMemberDetail() {
   };
 
   const handleNewUpgrade = () => {
-    setEditingPayment(null);
-    setUpgradeDialogOpen(true);
+    setNewUpgradeDialogOpen(true);
   };
 
   if (loading) {
