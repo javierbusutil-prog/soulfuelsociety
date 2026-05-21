@@ -100,6 +100,7 @@ export default function AdminMemberDetail() {
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [newUpgradeDialogOpen, setNewUpgradeDialogOpen] = useState(false);
   const [cashPayments, setCashPayments] = useState<CashPaymentRecord[]>([]);
   const [editingPayment, setEditingPayment] = useState<CashPaymentRecord | null>(null);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
