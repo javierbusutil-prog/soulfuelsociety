@@ -106,6 +106,9 @@ export default function AdminMemberDetail() {
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
   const [manualPayments, setManualPayments] = useState<ManualPaymentRecord[]>([]);
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
+  const [newSessionsDialogOpen, setNewSessionsDialogOpen] = useState(false);
+  const [editPaymentDialogOpen, setEditPaymentDialogOpen] = useState(false);
+  const [editingPaymentNew, setEditingPaymentNew] = useState<any>(null);
   const [personalPosts, setPersonalPosts] = useState<DailyDosePost[]>([]);
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<DailyDosePost | null>(null);
@@ -321,8 +324,8 @@ export default function AdminMemberDetail() {
   const formatGoal = (g: string) => g.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
   const handleEditPayment = (payment: CashPaymentRecord) => {
-    setEditingPayment(payment);
-    setUpgradeDialogOpen(true);
+    setEditingPaymentNew(payment);
+    setEditPaymentDialogOpen(true);
   };
 
   const handleNewUpgrade = () => {
@@ -396,7 +399,7 @@ export default function AdminMemberDetail() {
                   size="sm"
                   variant="outline"
                   className="mt-3 ml-2 gap-1.5"
-                  onClick={() => setRecordPaymentOpen(true)}
+                  onClick={() => setNewSessionsDialogOpen(true)}
                 >
                   <DollarSign className="w-4 h-4" /> Record Payment
                 </Button>
@@ -744,6 +747,33 @@ export default function AdminMemberDetail() {
           coachId={user.id}
           onSuccess={() => id && fetchAll(id)}
           defaultType="upgrade"
+        />
+      )}
+
+      {profile && user && (
+        <PaymentDialog
+          open={newSessionsDialogOpen}
+          onOpenChange={setNewSessionsDialogOpen}
+          memberId={profile.id}
+          memberName={profile.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => id && fetchAll(id)}
+          defaultType="sessions"
+        />
+      )}
+
+      {profile && user && (
+        <PaymentDialog
+          open={editPaymentDialogOpen}
+          onOpenChange={(open) => {
+            setEditPaymentDialogOpen(open);
+            if (!open) setEditingPaymentNew(null);
+          }}
+          memberId={profile.id}
+          memberName={profile.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => id && fetchAll(id)}
+          editPayment={editingPaymentNew}
         />
       )}
 
