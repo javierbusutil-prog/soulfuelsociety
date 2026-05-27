@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronRight, Dumbbell } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ChevronRight, Dumbbell, CheckCircle2, Play } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { WorkoutBlocksDisplay } from '@/components/workouts/WorkoutBlocksDisplay';
-import { getBlocksFromSource, summarizeBlocks, getDateLabel } from '@/lib/dailyDose';
+import { ProgramSessionView } from '@/components/dashboard/ProgramSessionView';
+import { getBlocksFromSource } from '@/lib/workoutBlocks';
+import { summarizeBlocks, getDateLabel } from '@/lib/dailyDose';
 
 interface MyWorkoutPost {
   id: string;
@@ -20,35 +24,49 @@ export function MyWorkoutsTab() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<MyWorkoutPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loggedPostIds, setLoggedPostIds] = useState<Set<string>>(new Set());
+  const [activePost, setActivePost] = useState<MyWorkoutPost | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await (supabase as any)
+      .from('daily_dose_posts')
+      .select('id, title, coach_note, workout_data, published_date')
+      .eq('audience_user_id', user.id)
+      .eq('is_published', true)
+      .order('published_date', { ascending: false });
+
+    if (error) {
+      console.error('MyWorkoutsTab: failed to load posts', error);
+      setPosts([]);
+      setLoggedPostIds(new Set());
+      setLoading(false);
+      return;
+    }
+
+    const loaded = (data ?? []) as MyWorkoutPost[];
+    setPosts(loaded);
+
+    const allIds = loaded.map(p => p.id);
+    if (allIds.length) {
+      const { data: logs } = await (supabase as any)
+        .from('workout_logs')
+        .select('daily_dose_post_id')
+        .eq('user_id', user.id)
+        .in('daily_dose_post_id', allIds)
+        .not('completed_at', 'is', null);
+      setLoggedPostIds(new Set(((logs as any[]) || []).map(l => l.daily_dose_post_id)));
+    } else {
+      setLoggedPostIds(new Set());
+    }
+    setLoading(false);
+  }, [user]);
 
   useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-
-    const load = async () => {
-      setLoading(true);
-      const { data, error } = await (supabase as any)
-        .from('daily_dose_posts')
-        .select('id, title, coach_note, workout_data, published_date')
-        .eq('audience_user_id', user.id)
-        .eq('is_published', true)
-        .order('published_date', { ascending: false });
-
-      if (cancelled) return;
-      if (error) {
-        console.error('MyWorkoutsTab: failed to load posts', error);
-        setPosts([]);
-      } else {
-        setPosts((data ?? []) as MyWorkoutPost[]);
-      }
-      setLoading(false);
-    };
-
     load();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
+  }, [load, reloadKey]);
 
   if (loading) {
     return (
@@ -75,13 +93,61 @@ export function MyWorkoutsTab() {
   return (
     <div className="space-y-3">
       {posts.map((post) => (
-        <MyWorkoutCard key={post.id} post={post} />
+        <MyWorkoutCard
+          key={post.id}
+          post={post}
+          logged={loggedPostIds.has(post.id)}
+          onLog={() => setActivePost(post)}
+        />
       ))}
+
+      {activePost && (
+        <Dialog open={!!activePost} onOpenChange={o => !o && setActivePost(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-base">{activePost.title ?? 'Workout'}</DialogTitle>
+            </DialogHeader>
+            <ProgramSessionView
+              source={{ kind: 'daily_dose', postId: activePost.id }}
+              dayBlocks={getBlocksFromSource(activePost.workout_data)}
+              onBack={() => {
+                setActivePost(null);
+                setReloadKey(k => k + 1);
+              }}
+              onComplete={() => {
+                setActivePost(null);
+                setReloadKey(k => k + 1);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
 
-function MyWorkoutCard({ post }: { post: MyWorkoutPost }) {
+function LogButton({ logged, onClick }: { logged: boolean; onClick: () => void }) {
+  return (
+    <Button
+      onClick={onClick}
+      className="w-full gap-1.5"
+      size="sm"
+      variant={logged ? 'outline' : 'default'}
+    >
+      {logged ? (
+        <>
+          <CheckCircle2 className="w-3.5 h-3.5" /> View logged workout
+        </>
+      ) : (
+        <>
+          <Play className="w-3.5 h-3.5" /> Log this workout
+        </>
+      )}
+    </Button>
+  );
+}
+
+function MyWorkoutCard({ post, logged, onLog }: { post: MyWorkoutPost; logged: boolean; onLog: () => void }) {
   const [open, setOpen] = useState(false);
   const blocks = getBlocksFromSource(post.workout_data);
   return (
@@ -105,6 +171,9 @@ function MyWorkoutCard({ post }: { post: MyWorkoutPost }) {
                 </p>
               )}
             </div>
+            {logged && (
+              <CheckCircle2 className="w-4 h-4 text-primary fill-primary/15 shrink-0 mt-1" />
+            )}
           </div>
         </CollapsibleTrigger>
         <CollapsibleContent>
@@ -123,6 +192,7 @@ function MyWorkoutCard({ post }: { post: MyWorkoutPost }) {
                 <div className="text-sm text-muted-foreground">No workout details.</div>
               }
             />
+            {blocks.length > 0 && <LogButton logged={logged} onClick={onLog} />}
           </div>
         </CollapsibleContent>
       </Collapsible>
