@@ -73,7 +73,7 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
     const next = exercises.map((e, i) => i === idx ? { ...e, ...patch } : e);
     onUpdate({ ...block, exercises: next });
   };
-  const addExercise = () => onUpdate({ ...block, exercises: [...exercises, { name: '', movementId: null, sets: '3', reps: '10', weight: '', note: '' }] });
+  const addExercise = () => onUpdate({ ...block, exercises: [...exercises, { name: '', movementId: null, sets: '3', reps: '10', note: '' }] });
   const removeExercise = (idx: number) => {
     if (exercises.length <= 1) return;
     onUpdate({ ...block, exercises: exercises.filter((_, i) => i !== idx) });
@@ -98,10 +98,9 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
               </Button>
             )}
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Input placeholder="Sets" value={ex.sets ?? ''} onChange={e => updateExercise(idx, { sets: e.target.value })} className="h-8 text-sm" />
             <Input placeholder="Reps" value={ex.reps ?? ''} onChange={e => updateExercise(idx, { reps: e.target.value })} className="h-8 text-sm" />
-            <Input placeholder="Weight (lb)" value={ex.weight ?? ''} onChange={e => updateExercise(idx, { weight: e.target.value })} className="h-8 text-sm" />
           </div>
           <Input placeholder="Coaching note (optional)" value={ex.note ?? ''} onChange={e => updateExercise(idx, { note: e.target.value })} className="h-8 text-sm" />
         </div>

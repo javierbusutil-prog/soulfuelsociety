@@ -111,7 +111,7 @@ export function DailyDoseFormDialog({ open, onOpenChange, post, onSaved, default
 
   const addBlock = (type: BlockType) => {
     const newBlock: Block = type === 'strength'
-      ? { type: 'strength', exercises: [{ name: '', movementId: null, sets: '3', reps: '10', weight: '', note: '' }] }
+      ? { type: 'strength', exercises: [{ name: '', movementId: null, sets: '3', reps: '10', note: '' }] }
       : type === 'cardio'
       ? { type: 'cardio', format: 'For Time', movements: '', scheme: '', note: '' }
       : { type: 'mobility', exercises: [{ name: '', movementId: null, duration: '', side: 'both', note: '' }] };
