@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils';
 import type { Movement } from '@/types/movements';
 
 function toEmbedUrl(url: string): string {
-  // YouTube: handle youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID
+  // YouTube: handle youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID, youtube.com/shorts/ID
   const ytMatch = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
   );
   if (ytMatch) {
     return `https://www.youtube.com/embed/${ytMatch[1]}`;
