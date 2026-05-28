@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,12 +27,52 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate the caller
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const jwtToken = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userErr } = await userClient.auth.getUser(jwtToken);
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const callerId = userData.user.id;
+
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    // Authorize: must be admin or pt_admin
+    const { data: roleRows, error: roleErr } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerId);
+    if (roleErr) throw roleErr;
+    const isAdmin = (roleRows ?? []).some((r: any) => r.role === "admin" || r.role === "pt_admin");
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const UNSUBSCRIBE_SECRET = Deno.env.get("UNSUBSCRIBE_SECRET");
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
     if (!UNSUBSCRIBE_SECRET) throw new Error("UNSUBSCRIBE_SECRET is not configured");
-    if (!SUPABASE_URL) throw new Error("SUPABASE_URL is not configured");
 
     const { to_email, to_name, subject, body, user_id } = await req.json();
 
