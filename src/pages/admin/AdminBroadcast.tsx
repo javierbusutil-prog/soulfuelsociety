@@ -54,6 +54,7 @@ export default function AdminBroadcast() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [sending, setSending] = useState(false);
+  const [progress, setProgress] = useState<{ sent: number; total: number } | null>(null);
 
   const [history, setHistory] = useState<BroadcastRow[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -183,26 +184,49 @@ export default function AdminBroadcast() {
     let successCount = 0;
     let failCount = 0;
 
-    await Promise.all(
-      eligibleRecipients.map(async (m) => {
+    // Throttle: Resend free tier allows 2 requests/sec. Send sequentially
+    // with a 600ms gap (~1.66/sec) to stay comfortably under that limit.
+    // One retry per recipient with a 1-second wait, in case of a transient
+    // 429 or network blip.
+    const THROTTLE_MS = 600;
+    const RETRY_WAIT_MS = 1000;
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    const sendOne = async (m: typeof eligibleRecipients[number]) => {
+      const { error } = await supabase.functions.invoke('send-broadcast', {
+        body: {
+          to_email: m.email,
+          to_name: m.full_name || '',
+          subject,
+          body,
+          user_id: m.id,
+        },
+      });
+      if (error) throw error;
+    };
+
+    for (let i = 0; i < eligibleRecipients.length; i++) {
+      const m = eligibleRecipients[i];
+      try {
+        await sendOne(m);
+        successCount++;
+      } catch (firstErr) {
+        // One retry after a brief wait
+        await sleep(RETRY_WAIT_MS);
         try {
-          const { error } = await supabase.functions.invoke('send-broadcast', {
-            body: {
-              to_email: m.email,
-              to_name: m.full_name || '',
-              subject,
-              body,
-              user_id: m.id,
-            },
-          });
-          if (error) throw error;
+          await sendOne(m);
           successCount++;
-        } catch (e) {
-          console.error('send-broadcast failed for', m.email, e);
+        } catch (retryErr) {
+          console.error('send-broadcast failed for', m.email, retryErr);
           failCount++;
         }
-      })
-    );
+      }
+      setProgress({ sent: i + 1, total: eligibleRecipients.length });
+      // Throttle between sends; skip the wait on the very last recipient
+      if (i < eligibleRecipients.length - 1) {
+        await sleep(THROTTLE_MS);
+      }
+    }
 
     const { error: insertErr } = await supabase.from('broadcast_emails').insert({
       subject,
@@ -215,6 +239,7 @@ export default function AdminBroadcast() {
     if (insertErr) console.error(insertErr);
 
     setSending(false);
+    setProgress(null);
     if (failCount > 0) {
       toast.warning(`Sent to ${successCount} members (${failCount} failed)`);
     } else {
@@ -360,7 +385,11 @@ export default function AdminBroadcast() {
                   </p>
                   <Button onClick={handleSend} disabled={sending || eligibleRecipients.length === 0}>
                     {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                    Send Broadcast
+                    {sending
+                      ? progress
+                        ? `Sending… ${progress.sent} / ${progress.total}`
+                        : 'Sending…'
+                      : 'Send Broadcast'}
                   </Button>
                 </div>
               </CardContent>
