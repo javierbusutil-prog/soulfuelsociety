@@ -76,7 +76,15 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      if (typeof subscription.current_period_end === "number" && subscription.current_period_end > 0) {
+        subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      } else {
+        logStep("Subscription has no valid current_period_end — skipping date conversion", {
+          subscriptionId: subscription.id,
+          current_period_end: subscription.current_period_end,
+        });
+        subscriptionEnd = null;
+      }
       subscriptionId = subscription.id;
       logStep("Active subscription found", { subscriptionId });
 
