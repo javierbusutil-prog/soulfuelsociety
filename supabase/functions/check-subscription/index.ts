@@ -113,18 +113,23 @@ serve(async (req) => {
       logStep("No active subscription");
       // Only downgrade members whose membership is actually governed by Stripe.
       // Cash/Zelle / manually-onboarded members must never be flipped to inactive here.
+      // We check stripe_subscription_id specifically (not stripe_customer_id) because
+      // a member can have a leftover customer ID from an abandoned checkout flow
+      // without ever having a real subscription. Only members with an actual past
+      // subscription should be auto-downgraded here.
       const { data: prof } = await supabaseClient
         .from("profiles")
-        .select("stripe_customer_id, selected_plan")
+        .select("stripe_subscription_id, selected_plan")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (prof?.stripe_customer_id) {
+      if (prof?.stripe_subscription_id) {
         await supabaseClient.from("profiles").update({
           subscription_status: "inactive",
+          stripe_subscription_id: null,
         }).eq("id", user.id);
       } else {
-        logStep("Skipping inactive write — member has no Stripe customer (manually managed)");
+        logStep("Skipping inactive write — member has no active Stripe subscription (manually managed or cash)");
       }
     }
 
