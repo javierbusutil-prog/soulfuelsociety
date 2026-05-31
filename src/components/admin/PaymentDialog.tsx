@@ -213,14 +213,10 @@ export function PaymentDialog({
             .insert({ user_id: memberId, role: 'paid' } as any);
           if (roleInsErr) throw roleInsErr;
 
-          // Welcome notification
-          await supabase.from('notifications').insert({
-            user_id: memberId,
-            type: 'upgrade_welcome',
-            title: 'Welcome to Soul Fuel!',
-            body: 'Your coach is ready for you. Tap to complete your intake form and get started.',
-            reference_id: memberId,
-          } as any);
+          // Welcome notification is now created automatically by the
+          // notify_on_upgrade_payment DB trigger on cash_payments INSERT.
+          // Do not re-add an insert here — the notifications table RLS
+          // blocks direct inserts from user-context clients.
         } else if (paymentType === 'renewal') {
           // Extend membership_expires_at only.
           const { error: profileErr } = await supabase
