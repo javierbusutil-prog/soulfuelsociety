@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, PlayCircle, Plus, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, PlayCircle, Plus, Trash2, Loader2, CheckCircle2, Pencil } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -806,16 +806,20 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
 
       {readOnly ? (
         <div className="pt-2">
-          <Button variant="outline" onClick={onBack} className="w-full">
-            Close
+          <Button
+            onClick={() => {
+              setReadOnly(false);
+              setCompletedAt(null);
+            }}
+            className="w-full gap-1.5"
+          >
+            <Pencil className="w-4 h-4" />
+            Edit log
           </Button>
         </div>
       ) : (
-        <div className="flex gap-2 pt-2">
-          <Button variant="outline" onClick={onBack} disabled={submitting} className="flex-1">
-            Save & exit
-          </Button>
-          <Button onClick={handleFinish} disabled={submitting || hasInvalidRpe} className="flex-1 gap-1.5">
+        <div className="pt-2">
+          <Button onClick={handleFinish} disabled={submitting || hasInvalidRpe} className="w-full gap-1.5">
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             Finish workout
           </Button>
