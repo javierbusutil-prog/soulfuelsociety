@@ -67,6 +67,7 @@ export function ProgramDetailView({
   const [editingSession, setEditingSession] = useState<WorkoutSessionTemplate | null>(null);
   const [isAddingSession, setIsAddingSession] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [signedEbookUrl, setSignedEbookUrl] = useState<string | null>(null);
 
   // New session form state
   const [newSession, setNewSession] = useState({
@@ -75,6 +76,33 @@ export function ProgramDetailView({
     title: '',
     notes: '',
   });
+
+  useEffect(() => {
+    async function generateSignedUrl() {
+      if (!program?.ebook_url) {
+        setSignedEbookUrl(null);
+        return;
+      }
+      // Extract path after /program-ebooks/
+      const match = program.ebook_url.match(/\/program-ebooks\/(.+)$/);
+      if (!match) {
+        console.error("Could not parse ebook URL path:", program.ebook_url);
+        setSignedEbookUrl(null);
+        return;
+      }
+      const path = match[1];
+      const { data, error } = await supabase.storage
+        .from('program-ebooks')
+        .createSignedUrl(path, 900); // 15 minutes
+      if (error) {
+        console.error("Failed to generate signed URL for ebook:", error);
+        setSignedEbookUrl(null);
+        return;
+      }
+      setSignedEbookUrl(data?.signedUrl ?? null);
+    }
+    generateSignedUrl();
+  }, [program?.ebook_url]);
 
   const handleTogglePublish = async () => {
     try {
@@ -176,7 +204,7 @@ export function ProgramDetailView({
       )}
 
       {/* E-Book Program */}
-      {program.ebook_url ? (
+      {signedEbookUrl ? (
         <Card className="p-6 bg-card/50 text-center">
           <NutritionDisclaimerLabel variant="ebook-banner" />
           <FileText className="w-16 h-16 mx-auto mb-4 text-primary/60" />
@@ -186,13 +214,13 @@ export function ProgramDetailView({
           )}
           <div className="flex flex-col gap-2">
             <Button asChild>
-              <a href={program.ebook_url} target="_blank" rel="noopener noreferrer">
+              <a href={signedEbookUrl} target="_blank" rel="noopener noreferrer">
                 <Eye className="w-4 h-4 mr-2" />
                 View E-Book
               </a>
             </Button>
             <Button variant="outline" asChild>
-              <a href={program.ebook_url} download>
+              <a href={signedEbookUrl} download>
                 <Download className="w-4 h-4 mr-2" />
                 Download
               </a>
