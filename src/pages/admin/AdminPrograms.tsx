@@ -2,6 +2,15 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Dumbbell, Eye, EyeOff } from 'lucide-react';
 import { useWorkoutPrograms } from '@/hooks/useWorkoutPrograms';
 import { CreateProgramDialog } from '@/components/workouts/CreateProgramDialog';
@@ -23,6 +32,7 @@ function formatPrice(cents: number | null) {
 export default function AdminPrograms() {
   const { programs, loading, createProgram, updateProgram } = useWorkoutPrograms();
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
 
   const togglePublished = async (program: WorkoutProgram) => {
     setTogglingId(program.id);
@@ -33,6 +43,29 @@ export default function AdminPrograms() {
       toast({ title: 'Failed to update program', variant: 'destructive' });
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const handleAccessTypeChange = async (program: WorkoutProgram, value: ProgramAccessType) => {
+    try {
+      await updateProgram(program.id, { access_type: value });
+      toast({ title: 'Access type updated' });
+    } catch {
+      toast({ title: 'Failed to update access type', variant: 'destructive' });
+    }
+  };
+
+  const handlePriceBlur = async (program: WorkoutProgram) => {
+    const raw = priceDrafts[program.id];
+    if (raw === undefined) return;
+    const dollars = parseFloat(raw);
+    const newCents = isNaN(dollars) ? null : Math.round(dollars * 100);
+    if (newCents === program.price_cents) return;
+    try {
+      await updateProgram(program.id, { price_cents: newCents });
+      toast({ title: 'Price updated' });
+    } catch {
+      toast({ title: 'Failed to update price', variant: 'destructive' });
     }
   };
 
@@ -64,6 +97,9 @@ export default function AdminPrograms() {
             {programs.map(program => {
               const accessLabel = ACCESS_LABEL[program.access_type] ?? 'Members';
               const price = formatPrice(program.price_cents);
+              const priceValue =
+                priceDrafts[program.id] ??
+                (program.price_cents != null ? (program.price_cents / 100).toFixed(2) : '');
               return (
                 <Card key={program.id}>
                   <CardContent className="p-4 flex items-start justify-between gap-4">
@@ -90,6 +126,46 @@ export default function AdminPrograms() {
                       <p className="text-xs text-muted-foreground">
                         {program.weeks} weeks · {program.frequency_per_week}× per week
                       </p>
+                      <div className="flex flex-wrap items-end gap-3 pt-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Access type</Label>
+                          <Select
+                            value={program.access_type}
+                            onValueChange={(v) =>
+                              handleAccessTypeChange(program, v as ProgramAccessType)
+                            }
+                          >
+                            <SelectTrigger className="h-8 w-[180px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="free">Free</SelectItem>
+                              <SelectItem value="membership">Members</SelectItem>
+                              <SelectItem value="one_time_purchase">Standalone</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {program.access_type === 'one_time_purchase' && (
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Price (USD)</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              value={priceValue}
+                              onChange={(e) =>
+                                setPriceDrafts((prev) => ({
+                                  ...prev,
+                                  [program.id]: e.target.value,
+                                }))
+                              }
+                              onBlur={() => handlePriceBlur(program)}
+                              className="h-8 w-28 text-xs"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <Button
                       variant={program.published ? 'outline' : 'default'}
