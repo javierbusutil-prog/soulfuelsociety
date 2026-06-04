@@ -63,6 +63,11 @@ export default function AdminPrograms() {
     if (newCents === program.price_cents) return;
     try {
       await updateProgram(program.id, { price_cents: newCents });
+      setPriceDrafts((prev) => {
+        const next = { ...prev };
+        delete next[program.id];
+        return next;
+      });
       toast({ title: 'Price updated' });
     } catch {
       toast({ title: 'Failed to update price', variant: 'destructive' });
