@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock, Sunrise, MoreHorizontal, ChevronRight, Stethoscope, BookOpen } from 'lucide-react';
+import { Users, Dumbbell, Calendar, MessageCircle, User, Apple, Flame, Lock, Sunrise, MoreHorizontal, ChevronRight, Stethoscope } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -15,7 +15,6 @@ const navItems = [
 
 const moreItems = [
   { path: '/coach', icon: MessageCircle, label: 'Coach', paidOnly: true },
-  { path: '/workouts', icon: BookOpen, label: 'Programs' },
   { path: '/pt-request', icon: Stethoscope, label: 'PT Request' },
   { path: '/train', icon: Flame, label: 'The Team' },
   { path: '/profile', icon: User, label: 'Profile' },
