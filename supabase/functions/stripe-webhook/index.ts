@@ -70,7 +70,47 @@ serve(async (req) => {
         const subscriptionId =
           typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null;
 
-        log("checkout.session.completed", { userId, customerId, subscriptionId });
+        log("checkout.session.completed", { userId, customerId, subscriptionId, type: session.metadata?.type });
+
+        // ── Ebook one-time purchase branch ────────────────────────────
+        if (session.metadata?.type === "ebook_purchase") {
+          const ebookId = session.metadata?.ebook_id;
+          const paymentIntent = session.payment_intent;
+          const paymentIntentId = typeof paymentIntent === "string" ? paymentIntent : paymentIntent?.id ?? null;
+          const amountTotal = session.amount_total;
+
+          if (!userId || !ebookId) {
+            log("Ebook purchase missing user_id or ebook_id — skipping", { userId, ebookId });
+            break;
+          }
+
+          const purchaseRow = {
+            user_id: userId,
+            ebook_id: ebookId,
+            amount_paid: amountTotal,
+            stripe_payment_intent_id: paymentIntentId,
+          };
+
+          const { error: ebookErr } = await supabaseAdmin
+            .from("ebook_purchases")
+            .insert(purchaseRow);
+
+          if (ebookErr) {
+            if (ebookErr.message.toLowerCase().includes("duplicate") || ebookErr.code === "23505") {
+              log("Ebook purchase already recorded (duplicate webhook)", { userId, ebookId });
+            } else {
+              log("Ebook purchase insert error", { error: ebookErr.message, code: ebookErr.code });
+            }
+          } else {
+            log("Ebook purchase recorded", { userId, ebookId, amountTotal, paymentIntentId });
+          }
+
+          return new Response(JSON.stringify({ received: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+        // ── End ebook branch ──────────────────────────────────────────
 
         if (!userId) {
           log("No user_id in session metadata — skipping");
