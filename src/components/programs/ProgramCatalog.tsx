@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { EbookViewer } from './EbookViewer';
 
 interface ProgramRow {
   id: string;
@@ -13,6 +14,7 @@ interface ProgramRow {
   cover_image_url: string | null;
   access_type: 'free' | 'membership' | 'one_time_purchase';
   price_cents: number | null;
+  ebook_url: string | null;
 }
 
 export function ProgramCatalog() {
@@ -21,13 +23,14 @@ export function ProgramCatalog() {
   const [programs, setPrograms] = useState<ProgramRow[]>([]);
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [viewingProgram, setViewingProgram] = useState<ProgramRow | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data: progs } = await supabase
         .from('workout_programs')
-        .select('id, title, description, cover_image_url, access_type, price_cents')
+        .select('id, title, description, cover_image_url, access_type, price_cents, ebook_url')
         .eq('published', true)
         .order('created_at', { ascending: false });
 
@@ -71,6 +74,15 @@ export function ProgramCatalog() {
     return { badge: 'Members Only', variant: 'outline' as const, action: 'upgrade' as const };
   };
 
+  if (viewingProgram) {
+    return (
+      <EbookViewer
+        program={viewingProgram}
+        onBack={() => setViewingProgram(null)}
+      />
+    );
+  }
+
   if (loading) {
     return <div className="text-sm text-muted-foreground text-center py-8">Loading programs…</div>;
   }
@@ -102,7 +114,7 @@ export function ProgramCatalog() {
               )}
               <div className="flex justify-end">
                 {state.action === 'open' && (
-                  <Button size="sm" onClick={() => console.log('Open program', p.id)}>
+                  <Button size="sm" onClick={() => setViewingProgram(p)}>
                     Open
                   </Button>
                 )}
