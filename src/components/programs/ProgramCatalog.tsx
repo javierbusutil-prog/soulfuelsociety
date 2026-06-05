@@ -25,6 +25,7 @@ export function ProgramCatalog() {
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [viewingProgram, setViewingProgram] = useState<ProgramRow | null>(null);
+  const [buyingId, setBuyingId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
