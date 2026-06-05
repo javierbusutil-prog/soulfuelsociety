@@ -121,8 +121,33 @@ export function ProgramCatalog() {
                   </Button>
                 )}
                 {state.action === 'buy' && (
-                  <Button size="sm" onClick={() => console.log('Buy program', p.id)}>
-                    Buy
+                  <Button
+                    size="sm"
+                    disabled={buyingId === p.id}
+                    onClick={async () => {
+                      setBuyingId(p.id);
+                      try {
+                        const { data, error } = await supabase.functions.invoke('create-ebook-checkout', {
+                          body: { ebook_id: p.id },
+                        });
+                        if (error || data?.error) {
+                          toast.error(data?.error || error?.message || 'Checkout failed. Please try again.');
+                          setBuyingId(null);
+                          return;
+                        }
+                        if (data?.url) {
+                          window.location.href = data.url;
+                        } else {
+                          toast.error('Checkout URL missing. Please try again.');
+                          setBuyingId(null);
+                        }
+                      } catch (err: any) {
+                        toast.error(err?.message || 'Checkout failed. Please try again.');
+                        setBuyingId(null);
+                      }
+                    }}
+                  >
+                    {buyingId === p.id ? 'Loading…' : 'Buy'}
                   </Button>
                 )}
                 {state.action === 'upgrade' && (
