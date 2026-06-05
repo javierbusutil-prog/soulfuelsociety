@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock } from 'lucide-react';
-import { Search, Filter, Heart, Clock, Dumbbell, Check, BookOpen, Pencil, Trash2, Play, History, ListChecks, CalendarDays } from 'lucide-react';
+import { Search, Filter, Heart, Clock, Dumbbell, Check, BookOpen, Pencil, Trash2, Play, History, ListChecks, CalendarDays, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MovementLibrary } from '@/components/movements/MovementLibrary';
+import { ProgramCatalog } from '@/components/programs/ProgramCatalog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -204,7 +205,7 @@ export default function Workouts() {
     <AppLayout title="My Training">
       <div className="max-w-lg mx-auto p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="my_workouts" className="flex items-center gap-1.5 text-xs">
               <Dumbbell className="w-3.5 h-3.5" />
               My Workouts
@@ -212,6 +213,10 @@ export default function Workouts() {
             <TabsTrigger value="movements" className="flex items-center gap-1.5 text-xs">
               <BookOpen className="w-3.5 h-3.5" />
               Movements
+            </TabsTrigger>
+            <TabsTrigger value="programs" className="flex items-center gap-1.5 text-xs">
+              <ShoppingBag className="w-3.5 h-3.5" />
+              Programs
             </TabsTrigger>
           </TabsList>
 
@@ -223,6 +228,11 @@ export default function Workouts() {
           {/* Movement Library Tab */}
           <TabsContent value="movements" className="mt-4">
             <MovementLibrary />
+          </TabsContent>
+
+          {/* Programs Tab */}
+          <TabsContent value="programs" className="mt-4">
+            <ProgramCatalog />
           </TabsContent>
         </Tabs>
 
