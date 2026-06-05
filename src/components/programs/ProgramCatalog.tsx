@@ -74,6 +74,15 @@ export function ProgramCatalog() {
     return { badge: 'Members Only', variant: 'outline' as const, action: 'upgrade' as const };
   };
 
+  if (viewingProgram) {
+    return (
+      <EbookViewer
+        program={viewingProgram}
+        onBack={() => setViewingProgram(null)}
+      />
+    );
+  }
+
   if (loading) {
     return <div className="text-sm text-muted-foreground text-center py-8">Loading programs…</div>;
   }
@@ -105,7 +114,7 @@ export function ProgramCatalog() {
               )}
               <div className="flex justify-end">
                 {state.action === 'open' && (
-                  <Button size="sm" onClick={() => console.log('Open program', p.id)}>
+                  <Button size="sm" onClick={() => setViewingProgram(p)}>
                     Open
                   </Button>
                 )}
