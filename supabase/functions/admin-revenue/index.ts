@@ -114,7 +114,9 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("[admin-revenue] error:", error instanceof Error ? error.stack : String(error));
+    console.error("[admin-revenue] error message:", error instanceof Error ? error.message : String(error));
+    console.error("[admin-revenue] error name:", error instanceof Error ? error.name : "unknown");
+    console.error("[admin-revenue] error stack:", error instanceof Error ? error.stack : "no stack");
     const msg = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ error: msg }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
