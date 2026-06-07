@@ -93,14 +93,18 @@ serve(async (req) => {
     const subscriptions = allSubs.map(sub => {
       const customer = sub.customer as any;
       const priceAmount = sub.items?.data?.[0]?.price?.unit_amount || 0;
+      const periodEndRaw = sub.items?.data?.[0]?.current_period_end ?? sub.current_period_end ?? null;
+      const periodEnd = periodEndRaw ? new Date(periodEndRaw * 1000).toISOString() : null;
+      const createdRaw = sub.created ?? null;
+      const created = createdRaw ? new Date(createdRaw * 1000).toISOString() : null;
       return {
         id: sub.id,
         customer_name: customer?.name || customer?.email || "Unknown",
         customer_email: customer?.email || "",
         amount: priceAmount / 100,
         status: sub.status,
-        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-        created: new Date(sub.created * 1000).toISOString(),
+        current_period_end: periodEnd,
+        created: created,
       };
     });
 
