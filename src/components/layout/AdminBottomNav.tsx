@@ -12,6 +12,7 @@ import {
   Sunrise,
   Stethoscope,
   Send,
+  Mail,
 } from 'lucide-react';
 import { useCoachCommunityNotifications } from '@/hooks/useCoachCommunityNotifications';
 
@@ -24,6 +25,7 @@ const navItems = [
   { path: '/admin/community', icon: MessagesSquare, label: 'Community', hasBadge: true },
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/broadcast', icon: Send, label: 'Email' },
+  { path: '/admin/contact-submissions', icon: Mail, label: 'Inbox' },
   { path: '/admin/sessions/log', icon: CalendarClock, label: 'Sessions' },
 ];
 

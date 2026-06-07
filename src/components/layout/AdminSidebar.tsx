@@ -16,6 +16,7 @@ import {
   Sunrise,
   Stethoscope,
   Send,
+  Mail,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import logoWordmark from '@/assets/logo-wordmark.svg';
@@ -47,6 +48,7 @@ const navSections: NavSection[] = [
       { path: '/admin/community', icon: MessagesSquare, label: 'Community', hasBadge: true },
       { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
       { path: '/admin/broadcast', icon: Send, label: 'Broadcast Email' },
+      { path: '/admin/contact-submissions', icon: Mail, label: 'Inbox' },
     ],
   },
   {

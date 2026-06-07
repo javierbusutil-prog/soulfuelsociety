@@ -45,6 +45,7 @@ import AdminDailyDose from "./pages/admin/AdminDailyDose";
 import AdminPTRequests from "./pages/admin/AdminPTRequests";
 import PTRequest from "./pages/PTRequest";
 import AdminBroadcast from "./pages/admin/AdminBroadcast";
+import AdminContactSubmissions from "./pages/admin/AdminContactSubmissions";
 
 const queryClient = new QueryClient();
 
@@ -193,6 +194,7 @@ function AppRoutes() {
       <Route path="/admin/daily-dose" element={<CoachRoute><AdminDailyDose /></CoachRoute>} />
       <Route path="/admin/pt-requests" element={<CoachRoute><AdminPTRequests /></CoachRoute>} />
       <Route path="/admin/broadcast" element={<CoachRoute><AdminBroadcast /></CoachRoute>} />
+      <Route path="/admin/contact-submissions" element={<CoachRoute><AdminContactSubmissions /></CoachRoute>} />
       
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
