@@ -107,7 +107,7 @@ export default function Community() {
       const postIds = postsData.map(p => p.id);
 
       const [profilesResult, commentsResult, reactionsResult, userReactionsResult] = await Promise.all([
-        supabase.from('profiles').select('*').in('id', userIds),
+        supabase.from('safe_profiles').select('id, full_name, avatar_url').in('id', userIds),
         supabase.from('comments').select('post_id').in('post_id', postIds),
         supabase.from('reactions').select('post_id').in('post_id', postIds),
         user

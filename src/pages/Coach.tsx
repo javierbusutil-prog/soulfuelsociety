@@ -60,7 +60,7 @@ export default function Coach() {
         
         if (existingThread.admin_id) {
           const { data: coach } = await supabase
-            .from('profiles')
+            .from('safe_profiles')
             .select('full_name, avatar_url')
             .eq('id', existingThread.admin_id)
             .single();
