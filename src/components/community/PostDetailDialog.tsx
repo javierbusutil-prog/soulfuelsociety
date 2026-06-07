@@ -57,8 +57,8 @@ export function PostDetailDialog({ post, open, onOpenChange, onPostUpdated }: Po
       const commentsWithProfiles = await Promise.all(
         commentsData.map(async (comment) => {
           const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
+            .from('safe_profiles')
+            .select('id, full_name, avatar_url')
             .eq('id', comment.user_id)
             .single();
           return {
