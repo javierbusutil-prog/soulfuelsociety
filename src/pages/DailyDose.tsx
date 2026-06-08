@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { Sunrise, ChevronRight, CheckCircle2, Play } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/card';
@@ -26,6 +26,7 @@ interface DailyDosePost {
 }
 
 const todayIso = () => format(new Date(), 'yyyy-MM-dd');
+const BATCH_SIZE = 30;
 
 function PostBlocks({ post }: { post: DailyDosePost }) {
   return (
@@ -136,18 +137,33 @@ function RecentCard({ post, logged, onLog }: { post: DailyDosePost; logged: bool
 export default function DailyDose() {
   const { user } = useAuth();
   const [today, setToday] = useState<DailyDosePost | null>(null);
-  const [recent, setRecent] = useState<DailyDosePost[]>([]);
+  const [recentPosts, setRecentPosts] = useState<DailyDosePost[]>([]);
+  const [recentOffset, setRecentOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loggedPostIds, setLoggedPostIds] = useState<Set<string>>(new Set());
   const [activePost, setActivePost] = useState<DailyDosePost | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
+  const fetchRecentPosts = useCallback(async (offset: number) => {
+    const todayStr = todayIso();
+    const res = await (supabase as any)
+      .from('daily_dose_posts')
+      .select('*')
+      .eq('is_published', true)
+      .lt('published_date', todayStr)
+      .is('audience_user_id', null)
+      .order('published_date', { ascending: false })
+      .range(offset, offset + BATCH_SIZE - 1);
+    return ((res?.data as DailyDosePost[]) ?? []);
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     const todayStr = todayIso();
-    const fourteenAgo = format(subDays(new Date(), 14), 'yyyy-MM-dd');
 
-    const [todayRes, recentRes] = await Promise.all([
+    const [todayRes, recentResults] = await Promise.all([
       (supabase as any)
         .from('daily_dose_posts')
         .select('*')
@@ -155,23 +171,18 @@ export default function DailyDose() {
         .eq('published_date', todayStr)
         .is('audience_user_id', null)
         .limit(1),
-      (supabase as any)
-        .from('daily_dose_posts')
-        .select('*')
-        .eq('is_published', true)
-        .lt('published_date', todayStr)
-        .gte('published_date', fourteenAgo)
-        .is('audience_user_id', null)
-        .order('published_date', { ascending: false }),
+      fetchRecentPosts(0),
     ]);
 
     const todayPost = ((todayRes?.data as DailyDosePost[] | null) ?? [])[0] ?? null;
-    const recentPosts = ((recentRes?.data as DailyDosePost[]) ?? []);
+    const recent = recentResults;
     setToday(todayPost);
-    setRecent(recentPosts);
+    setRecentPosts(recent);
+    setRecentOffset(BATCH_SIZE);
+    setHasMore(recent.length === BATCH_SIZE);
 
     if (user) {
-      const allIds = [todayPost?.id, ...recentPosts.map(p => p.id)].filter(Boolean) as string[];
+      const allIds = [todayPost?.id, ...recent.map(p => p.id)].filter(Boolean) as string[];
       if (allIds.length) {
         const { data: logs } = await (supabase as any)
           .from('workout_logs')
@@ -185,7 +196,31 @@ export default function DailyDose() {
       }
     }
     setLoading(false);
-  }, [user]);
+  }, [user, fetchRecentPosts]);
+
+  const handleLoadMore = useCallback(async () => {
+    setLoadingMore(true);
+    const next = await fetchRecentPosts(recentOffset);
+    setRecentPosts(prev => [...prev, ...next]);
+    setRecentOffset(prev => prev + BATCH_SIZE);
+    setHasMore(next.length === BATCH_SIZE);
+
+    if (user && next.length) {
+      const ids = next.map(p => p.id);
+      const { data: logs } = await (supabase as any)
+        .from('workout_logs')
+        .select('daily_dose_post_id')
+        .eq('user_id', user.id)
+        .in('daily_dose_post_id', ids)
+        .not('completed_at', 'is', null);
+      setLoggedPostIds(prev => {
+        const merged = new Set(prev);
+        ((logs as any[]) || []).forEach(l => merged.add(l.daily_dose_post_id));
+        return merged;
+      });
+    }
+    setLoadingMore(false);
+  }, [fetchRecentPosts, recentOffset, user]);
 
   useEffect(() => {
     load();
@@ -219,20 +254,20 @@ export default function DailyDose() {
               <Card className="p-6 text-center">
                 <Sunrise className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  {recent.length === 0
+                  {recentPosts.length === 0
                     ? 'No Daily Dose posts yet. Coach will post soon.'
                     : 'No Daily Dose today — check back tomorrow.'}
                 </p>
               </Card>
             )}
 
-            {recent.length > 0 && (
+            {recentPosts.length > 0 && (
               <section className="space-y-3">
                 <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium px-1">
                   Recent
                 </h2>
                 <div className="space-y-3">
-                  {recent.map(post => (
+                  {recentPosts.map(post => (
                     <RecentCard
                       key={post.id}
                       post={post}
@@ -241,6 +276,18 @@ export default function DailyDose() {
                     />
                   ))}
                 </div>
+                {hasMore && (
+                  <div className="pt-2 flex justify-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                    >
+                      {loadingMore ? 'Loading…' : 'Load More'}
+                    </Button>
+                  </div>
+                )}
               </section>
             )}
           </>
