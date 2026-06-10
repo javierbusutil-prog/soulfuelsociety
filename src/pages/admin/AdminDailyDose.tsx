@@ -55,6 +55,7 @@ export default function AdminDailyDose() {
     const { data, error } = await supabase
       .from('daily_dose_posts' as any)
       .select('*')
+      .is('audience_user_id', null)
       .order('published_date', { ascending: false });
     if (error) {
       toast.error('Failed to load posts');
