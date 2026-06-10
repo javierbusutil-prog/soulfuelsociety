@@ -113,49 +113,64 @@ function StrengthEditor({ block, onUpdate }: { block: StrengthBlock; onUpdate: (
 }
 
 function CardioEditor({ block, onUpdate }: { block: CardioBlock; onUpdate: (b: CardioBlock) => void }) {
+  const demos = block.demos ?? [];
+  const updateDemo = (idx: number, patch: Partial<{ name: string; movementId: string | null }>) => {
+    const next = demos.map((d, i) => (i === idx ? { ...d, ...patch } : d));
+    onUpdate({ ...block, demos: next });
+  };
+  const addDemo = () => onUpdate({ ...block, demos: [...demos, { name: '', movementId: null }] });
+  const removeDemo = (idx: number) =>
+    onUpdate({ ...block, demos: demos.filter((_, i) => i !== idx) });
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Format</Label>
-        <select
-          value={block.format || 'For Time'}
-          onChange={e => onUpdate({ ...block, format: e.target.value })}
-          className="w-full h-9 text-sm rounded-md border border-input bg-background px-2"
-        >
-          <option value="For Time">For Time</option>
-          <option value="AMRAP">AMRAP</option>
-          <option value="EMOM">EMOM</option>
-          <option value="Tabata">Tabata</option>
-          <option value="Straight Sets">Straight Sets</option>
-          <option value="Free Form">Free Form</option>
-        </select>
-      </div>
-      <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Movements</Label>
+        <Label className="text-xs text-muted-foreground">Workout</Label>
         <Textarea
-          value={block.movements ?? ''}
-          onChange={e => onUpdate({ ...block, movements: e.target.value })}
-          rows={4}
-          className="text-sm min-h-[100px]"
-          placeholder={"One movement per line:\nCalorie Row\nRing Dips\nPush Ups"}
+          value={block.workout ?? ''}
+          onChange={e => onUpdate({ ...block, workout: e.target.value })}
+          rows={5}
+          className="text-sm min-h-[120px] whitespace-pre-line"
+          placeholder={"For Time:\n3 rounds\n20 Deadlifts\n200 meter row\n15 burpees"}
         />
       </div>
       <div className="space-y-1">
-        <Label className="text-xs text-muted-foreground">Reps / Rounds / Time</Label>
-        <Input
-          placeholder="Rep scheme or time (e.g. 21-15-9, 12 min, Every 2:00)"
-          value={block.scheme ?? ''}
-          onChange={e => onUpdate({ ...block, scheme: e.target.value })}
-          className="h-8 text-sm"
+        <Label className="text-xs text-muted-foreground">Note (optional)</Label>
+        <Textarea
+          value={block.note ?? ''}
+          onChange={e => onUpdate({ ...block, note: e.target.value })}
+          rows={3}
+          className="text-sm min-h-[72px]"
+          placeholder="Coaching cues, scaling options, intent…"
         />
       </div>
-      <Textarea
-        value={block.note ?? ''}
-        onChange={e => onUpdate({ ...block, note: e.target.value })}
-        rows={3}
-        className="text-sm min-h-[72px]"
-        placeholder="Coaching note (optional)"
-      />
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">Movement demos (optional)</Label>
+        {demos.map((demo, idx) => (
+          <div key={idx} className="flex gap-2">
+            <div className="flex-1">
+              <MovementPicker
+                value={demo.name ?? ''}
+                movementId={demo.movementId ?? null}
+                onChange={({ name, movementId }) => updateDemo(idx, { name, movementId })}
+                placeholder="Link a movement demo"
+              />
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 text-destructive shrink-0"
+              onClick={() => removeDemo(idx)}
+              aria-label="Remove demo"
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
+        ))}
+        <Button size="sm" variant="default" className="text-xs gap-1 w-full" onClick={addDemo}>
+          <Plus className="w-3 h-3" /> Add demo
+        </Button>
+      </div>
     </div>
   );
 }
