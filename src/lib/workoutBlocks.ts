@@ -33,6 +33,11 @@ export interface StrengthBlock {
 
 export interface CardioBlock {
   type: 'cardio';
+  /** New shape: single freeform workout text. Presence of this field marks a "new" cardio block. */
+  workout?: string;
+  /** New shape: optional movement demo links (each picked via MovementPicker). */
+  demos?: { name: string; movementId?: string | null }[];
+  /** Legacy fields — kept for backward-compatible display of old posts. */
   format?: string;
   movements?: string;
   scheme?: string;
