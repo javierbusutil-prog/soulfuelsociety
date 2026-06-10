@@ -98,14 +98,43 @@ export function WorkoutBlocksDisplay({
 
             {block.type === 'cardio' && (
               <>
-                {block.scheme && (
-                  <p className="text-sm font-medium">{block.scheme}</p>
-                )}
-                {block.movements && (
-                  <p className="text-sm whitespace-pre-wrap">{block.movements}</p>
-                )}
-                {block.note && (
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{block.note}</p>
+                {typeof block.workout === 'string' ? (
+                  // NEW shape
+                  <>
+                    {block.workout && (
+                      <p className="text-sm whitespace-pre-line">{block.workout}</p>
+                    )}
+                    {block.note && (
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">{block.note}</p>
+                    )}
+                    {block.demos && block.demos.length > 0 && (
+                      <div className="pt-1 space-y-1">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                          Movement demos
+                        </p>
+                        {block.demos.map((demo, di) => (
+                          <MovementExerciseRow
+                            key={di}
+                            name={demo.name || 'Movement'}
+                            movementId={demo.movementId ?? null}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // LEGACY shape
+                  <>
+                    {block.scheme && (
+                      <p className="text-sm font-medium">{block.scheme}</p>
+                    )}
+                    {block.movements && (
+                      <p className="text-sm whitespace-pre-wrap">{block.movements}</p>
+                    )}
+                    {block.note && (
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{block.note}</p>
+                    )}
+                  </>
                 )}
               </>
             )}
