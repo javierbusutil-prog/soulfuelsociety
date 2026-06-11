@@ -98,7 +98,8 @@ export function WorkoutBlocksDisplay({
 
             {block.type === 'cardio' && (
               <>
-                {typeof block.workout === 'string' ? (
+                {((block.workout && block.workout.trim()) ||
+                  (block.demos && block.demos.length > 0)) ? (
                   // NEW shape
                   <>
                     {block.workout && (
@@ -125,6 +126,9 @@ export function WorkoutBlocksDisplay({
                 ) : (
                   // LEGACY shape
                   <>
+                    {block.format && (
+                      <p className="text-sm font-medium">{block.format}</p>
+                    )}
                     {block.scheme && (
                       <p className="text-sm font-medium">{block.scheme}</p>
                     )}
