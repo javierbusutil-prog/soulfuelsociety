@@ -185,7 +185,10 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
     const key = `${exIdx}:${setIdx}`;
     requestAnimationFrame(() => {
       const el = setRowRefs.current.get(key);
-      if (el && typeof el.scrollIntoView === 'function') {
+      console.log('[scroll] active key:', key, 'el found:', !!el, 'refMap size:', setRowRefs.current.size, 'all keys:', Array.from(setRowRefs.current.keys()));
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        console.log('[scroll] el position:', { top: rect.top, bottom: rect.bottom }, 'window height:', window.innerHeight);
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
