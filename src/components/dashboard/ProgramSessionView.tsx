@@ -968,5 +968,6 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
         </Dialog>
       )}
     </div>
+    </>
   );
 }
