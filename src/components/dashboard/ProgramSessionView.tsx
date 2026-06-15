@@ -211,7 +211,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const container = findScrollContainer();
-        const el = setRowRefs.current.get(key);
+        const el = scrollContainerRef.current?.querySelector('[data-setrow="' + key + '"]') as HTMLElement | null;
         if (!container || !el) {
           setScrollDebug(`key=${key} found=${!!el} container=${!!container} keys=${setRowRefs.current.size}`);
           return;
@@ -701,6 +701,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
                   <div
                     key={si}
                     ref={registerSetRow(exIdx, si)}
+                    data-setrow={`${exIdx}:${si}`}
                     className={`grid grid-cols-[24px_1fr_1fr_1fr_28px_28px] gap-1.5 items-start rounded-md px-1 py-1 transition-colors ${
                       isActive ? 'ring-2 ring-primary bg-primary/5' : ''
                     }`}
@@ -793,6 +794,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
                   <div
                     key={si}
                     ref={registerSetRow(exIdx, si)}
+                    data-setrow={`${exIdx}:${si}`}
                     className={`rounded-md border p-2 space-y-2 bg-card transition-colors ${
                       isActive ? 'border-primary ring-2 ring-primary bg-primary/5' : 'border-border'
                     }`}
