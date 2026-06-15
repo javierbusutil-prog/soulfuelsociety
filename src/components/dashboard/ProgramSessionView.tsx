@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, PlayCircle, Plus, Trash2, Loader2, CheckCircle2, Pencil } from 'lucide-react';
+import { ArrowLeft, PlayCircle, Plus, Trash2, Loader2, CheckCircle2, Pencil, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -147,6 +147,71 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
   const [prevHints, setPrevHints] = useState<Record<string, PrevHint>>({});
   const [readOnly, setReadOnly] = useState(false);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
+
+  // Active set pointer for the "Next"-driven guided flow.
+  // Cardio is intentionally excluded — it remains free-form.
+  const [activeSet, setActiveSet] = useState<{ exIdx: number; setIdx: number }>({ exIdx: 0, setIdx: 0 });
+
+  // Refs to each set row so we can scrollIntoView when advancing.
+  const setRowRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const registerSetRow = useCallback((exIdx: number, setIdx: number) => (el: HTMLElement | null) => {
+    const key = `${exIdx}:${setIdx}`;
+    if (el) setRowRefs.current.set(key, el);
+    else setRowRefs.current.delete(key);
+  }, []);
+
+  // Whenever exerciseState changes (e.g. hydrate), clamp the active pointer to a valid range.
+  useEffect(() => {
+    if (exerciseState.length === 0) return;
+    setActiveSet(prev => {
+      const ex = exerciseState[prev.exIdx];
+      if (!ex) return { exIdx: 0, setIdx: 0 };
+      if (prev.setIdx >= ex.sets.length) return { exIdx: prev.exIdx, setIdx: Math.max(0, ex.sets.length - 1) };
+      return prev;
+    });
+  }, [exerciseState]);
+
+  const isLastSetOfLastExercise = useMemo(() => {
+    if (exerciseState.length === 0) return false;
+    const lastExIdx = exerciseState.length - 1;
+    if (activeSet.exIdx !== lastExIdx) return false;
+    return activeSet.setIdx >= exerciseState[lastExIdx].sets.length - 1;
+  }, [activeSet, exerciseState]);
+
+  const scrollActiveIntoView = useCallback((exIdx: number, setIdx: number) => {
+    // Defer to next frame so DOM reflects new active highlight first.
+    requestAnimationFrame(() => {
+      const el = setRowRefs.current.get(`${exIdx}:${setIdx}`);
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }, []);
+
+  const handleNext = () => {
+    if (readOnly || exerciseState.length === 0) return;
+    const { exIdx, setIdx } = activeSet;
+    const ex = exerciseState[exIdx];
+    if (!ex) return;
+
+    // 1) Mark active set complete (local state only).
+    updateSet(exIdx, setIdx, { completed: true });
+
+    // 2) Advance pointer.
+    if (setIdx < ex.sets.length - 1) {
+      const nextSetIdx = setIdx + 1;
+      setActiveSet({ exIdx, setIdx: nextSetIdx });
+      scrollActiveIntoView(exIdx, nextSetIdx);
+      return;
+    }
+    if (exIdx < exerciseState.length - 1) {
+      const nextExIdx = exIdx + 1;
+      setActiveSet({ exIdx: nextExIdx, setIdx: 0 });
+      scrollActiveIntoView(nextExIdx, 0);
+      return;
+    }
+    // Already on the last set of the last exercise — stay put.
+  };
 
   // Find or create the in-progress workout_log on mount.
   useEffect(() => {
@@ -592,9 +657,25 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
               {ex.sets.map((s, si) => {
                 const rpeNum = s.rpe ? parseFloat(s.rpe) : null;
                 const rpeInvalid = s.rpe !== '' && (rpeNum === null || isNaN(rpeNum) || rpeNum < 1 || rpeNum > 10);
+                const isActive = !readOnly && activeSet.exIdx === exIdx && activeSet.setIdx === si;
+                const focusActive = () => {
+                  if (!readOnly) setActiveSet({ exIdx, setIdx: si });
+                };
                 return (
-                  <div key={si} className="grid grid-cols-[24px_1fr_1fr_1fr_28px_28px] gap-1.5 items-start">
-                    <span className="text-xs text-muted-foreground text-center pt-2">{si + 1}</span>
+                  <div
+                    key={si}
+                    ref={registerSetRow(exIdx, si)}
+                    className={`grid grid-cols-[24px_1fr_1fr_1fr_28px_28px] gap-1.5 items-start rounded-md px-1 py-1 transition-colors ${
+                      isActive ? 'ring-2 ring-primary bg-primary/5' : ''
+                    }`}
+                  >
+                    <span className="text-xs text-center pt-2 flex items-center justify-center">
+                      {s.completed ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary fill-primary/15" />
+                      ) : (
+                        <span className="text-muted-foreground">{si + 1}</span>
+                      )}
+                    </span>
                     {isBodyweight ? (
                       <div className="h-8 flex items-center px-2 rounded-md border border-dashed border-border bg-muted/30 text-[11px] text-muted-foreground italic">
                         Bodyweight
@@ -606,6 +687,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
                         placeholder="0"
                         value={s.weight}
                         onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
+                        onFocus={focusActive}
                         className="h-8 text-sm"
                         disabled={readOnly}
                       />
@@ -616,6 +698,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
                       placeholder={ex.prescribedReps || '0'}
                       value={s.reps}
                       onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
+                      onFocus={focusActive}
                       className="h-8 text-sm"
                       disabled={readOnly}
                     />
@@ -629,6 +712,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
                         step={0.5}
                         value={s.rpe}
                         onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
+                        onFocus={focusActive}
                         className={`h-8 text-sm ${rpeInvalid ? 'border-destructive' : ''}`}
                         disabled={readOnly}
                         aria-invalid={rpeInvalid}
@@ -665,10 +749,23 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
               {ex.sets.map((s, si) => {
                 const rpeNum = s.rpe ? parseFloat(s.rpe) : null;
                 const rpeInvalid = s.rpe !== '' && (rpeNum === null || isNaN(rpeNum) || rpeNum < 1 || rpeNum > 10);
+                const isActive = !readOnly && activeSet.exIdx === exIdx && activeSet.setIdx === si;
+                const focusActive = () => {
+                  if (!readOnly) setActiveSet({ exIdx, setIdx: si });
+                };
                 return (
-                  <div key={si} className="rounded-md border border-border p-2 space-y-2 bg-card">
+                  <div
+                    key={si}
+                    ref={registerSetRow(exIdx, si)}
+                    className={`rounded-md border p-2 space-y-2 bg-card transition-colors ${
+                      isActive ? 'border-primary ring-2 ring-primary bg-primary/5' : 'border-border'
+                    }`}
+                  >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Set {si + 1}</span>
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        {s.completed && <CheckCircle2 className="w-3.5 h-3.5 text-primary fill-primary/15" />}
+                        Set {si + 1}
+                      </span>
                       {!readOnly && (
                         <button
                           type="button"
@@ -695,6 +792,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
                             placeholder="0"
                             value={s.weight}
                             onChange={e => updateSet(exIdx, si, { weight: e.target.value })}
+                            onFocus={focusActive}
                             className="h-8 text-sm"
                             disabled={readOnly}
                           />
@@ -708,6 +806,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
                           placeholder={ex.prescribedReps || '0'}
                           value={s.reps}
                           onChange={e => updateSet(exIdx, si, { reps: e.target.value })}
+                          onFocus={focusActive}
                           className="h-8 text-sm"
                           disabled={readOnly}
                         />
@@ -725,6 +824,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
                           step={0.5}
                           value={s.rpe}
                           onChange={e => updateSet(exIdx, si, { rpe: e.target.value })}
+                          onFocus={focusActive}
                           className={`h-8 text-sm ${rpeInvalid ? 'border-destructive' : ''}`}
                           disabled={readOnly}
                           aria-invalid={rpeInvalid}
@@ -818,12 +918,38 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
           </Button>
         </div>
       ) : (
-        <div className="pt-2">
-          <Button onClick={handleFinish} disabled={submitting || hasInvalidRpe} className="w-full gap-1.5">
-            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Finish workout
-          </Button>
-        </div>
+        <>
+          {exerciseState.length > 0 && (
+            <div className="sticky bottom-2 z-10 pt-2 pointer-events-none">
+              <Button
+                onClick={handleNext}
+                size="lg"
+                className="w-full gap-1.5 shadow-lg pointer-events-auto"
+              >
+                {isLastSetOfLastExercise ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" /> Mark last set complete
+                  </>
+                ) : (
+                  <>
+                    Next set <ChevronRight className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+          <div className="pt-2">
+            <Button
+              onClick={handleFinish}
+              disabled={submitting || hasInvalidRpe}
+              variant={exerciseState.length > 0 ? 'outline' : 'default'}
+              className="w-full gap-1.5"
+            >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              Finish workout
+            </Button>
+          </div>
+        </>
       )}
 
       {openMovement && (
