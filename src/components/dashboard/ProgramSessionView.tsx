@@ -450,6 +450,144 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
     setCardioState(prev => prev.map((c, i) => (i === idx ? { ...c, ...patch } : c)));
   };
 
+  // ---------------------------------------------------------------------------
+  // Mid-session draft auto-save.
+  //
+  // Writes the current in-progress exerciseState + cardioState to the existing
+  // workout_log WITHOUT stamping completed_at, so the resume path picks it back
+  // up if the user backgrounds the app or closes the dialog mid-workout.
+  //
+  // Safe to write draft sets (completed = false) because the
+  // update_personal_records trigger now gates on NEW.completed = true.
+  // ---------------------------------------------------------------------------
+  const isSavingDraftRef = useRef(false);
+  const saveDraftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveDraft = useCallback(async () => {
+    if (readOnly || !workoutLogId || !user) return;
+    if (isSavingDraftRef.current) return;
+    isSavingDraftRef.current = true;
+    try {
+      const isSetFilled = (s: SetRow) => {
+        const w = parseFloat(s.weight);
+        const r = parseFloat(s.rpe);
+        return (
+          (s.weight.trim() !== '' && !isNaN(w) && w > 0) ||
+          (s.rpe.trim() !== '' && !isNaN(r)) ||
+          s.completed === true
+        );
+      };
+      const isCardioFilled = (c: CardioState) => {
+        const d = parseFloat(c.duration);
+        return (
+          c.completed === true ||
+          (c.duration.trim() !== '' && !isNaN(d) && d > 0) ||
+          c.notes.trim() !== ''
+        );
+      };
+
+      // Clear existing children for this workout_log, then re-insert current state.
+      const { data: priorEx } = await (supabase as any)
+        .from('exercise_logs')
+        .select('id')
+        .eq('workout_log_id', workoutLogId);
+      if (priorEx && priorEx.length > 0) {
+        const priorIds = priorEx.map((p: any) => p.id);
+        await (supabase as any).from('set_logs').delete().in('exercise_log_id', priorIds);
+        await (supabase as any).from('exercise_logs').delete().in('id', priorIds);
+      }
+
+      // Strength + mobility
+      for (let i = 0; i < exerciseState.length; i++) {
+        const ex = exerciseState[i];
+        const movement = ex.movementId ? movementCache[ex.movementId] : undefined;
+        const isBodyweight = !!movement?.is_bodyweight;
+        const filledSets = ex.sets.filter(isSetFilled);
+        if (filledSets.length === 0) continue;
+
+        const anyCompleted = filledSets.some(s => s.completed);
+        const { data: exLog, error: exErr } = await (supabase as any)
+          .from('exercise_logs')
+          .insert({
+            workout_log_id: workoutLogId,
+            exercise_name: ex.name,
+            movement_id: ex.movementId || null,
+            exercise_template_id: null,
+            tracking_type: 'sets_reps',
+            section_type: ex.blockType,
+            sort_order: i,
+            completed: anyCompleted,
+          })
+          .select('id')
+          .single();
+        if (exErr || !exLog) continue;
+
+        const setRows = filledSets.map((s, si) => ({
+          exercise_log_id: exLog.id,
+          set_number: si + 1,
+          target_reps: ex.prescribedReps || null,
+          completed_reps: s.reps ? parseInt(s.reps, 10) || null : null,
+          weight: isBodyweight ? null : (s.weight ? parseFloat(s.weight) || null : null),
+          rpe: s.rpe ? parseFloat(s.rpe) || null : null,
+          completed: s.completed, // draft sets remain completed=false; trigger no-ops
+        }));
+        await (supabase as any).from('set_logs').insert(setRows);
+      }
+
+      // Cardio
+      for (let i = 0; i < cardioState.length; i++) {
+        const c = cardioState[i];
+        if (!isCardioFilled(c)) continue;
+        const sortOrder = exerciseState.length + i;
+        await (supabase as any).from('exercise_logs').insert({
+          workout_log_id: workoutLogId,
+          exercise_name: c.activity,
+          movement_id: null,
+          exercise_template_id: null,
+          tracking_type: 'time',
+          section_type: 'cardio',
+          sort_order: sortOrder,
+          completed: c.completed,
+          time_result: c.duration ? `${c.duration} min` : null,
+          notes: c.notes || null,
+        });
+      }
+      // Intentionally do NOT update workout_logs.completed_at — stays NULL (in-progress).
+    } catch (err) {
+      console.error('saveDraft failed:', err);
+    } finally {
+      isSavingDraftRef.current = false;
+    }
+  }, [readOnly, workoutLogId, user, exerciseState, cardioState, movementCache]);
+
+  // Debounce: ~3s after the last edit to exerciseState/cardioState.
+  useEffect(() => {
+    if (readOnly || !workoutLogId) return;
+    if (saveDraftTimerRef.current) clearTimeout(saveDraftTimerRef.current);
+    saveDraftTimerRef.current = setTimeout(() => {
+      saveDraft();
+    }, 3000);
+    return () => {
+      if (saveDraftTimerRef.current) clearTimeout(saveDraftTimerRef.current);
+    };
+  }, [exerciseState, cardioState, readOnly, workoutLogId, saveDraft]);
+
+  // Immediate save when the app is backgrounded / tab hidden / screen locked.
+  useEffect(() => {
+    if (readOnly || !workoutLogId) return;
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        if (saveDraftTimerRef.current) {
+          clearTimeout(saveDraftTimerRef.current);
+          saveDraftTimerRef.current = null;
+        }
+        saveDraft();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [readOnly, workoutLogId, saveDraft]);
+
   const handleFinish = async () => {
     if (!user || !workoutLogId) return;
 
