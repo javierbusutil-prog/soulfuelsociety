@@ -147,6 +147,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
   const [prevHints, setPrevHints] = useState<Record<string, PrevHint>>({});
   const [readOnly, setReadOnly] = useState(false);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
+  const [scrollDebug, setScrollDebug] = useState('');
 
   // Active set pointer for the "Next"-driven guided flow.
   // Cardio is intentionally excluded — it remains free-form.
@@ -185,10 +186,9 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
     const key = `${exIdx}:${setIdx}`;
     requestAnimationFrame(() => {
       const el = setRowRefs.current.get(key);
-      console.log('[scroll] active key:', key, 'el found:', !!el, 'refMap size:', setRowRefs.current.size, 'all keys:', Array.from(setRowRefs.current.keys()));
+      const rect = el?.getBoundingClientRect();
+      setScrollDebug(`key=${key} found=${!!el} top=${rect ? Math.round(rect.top) : 'n/a'} winH=${Math.round(window.innerHeight)} keys=${setRowRefs.current.size}`);
       if (el) {
-        const rect = el.getBoundingClientRect();
-        console.log('[scroll] el position:', { top: rect.top, bottom: rect.bottom }, 'window height:', window.innerHeight);
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
@@ -577,7 +577,9 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
   );
 
   return (
-    <div className="space-y-4">
+    <>
+      <div className="fixed top-0 left-0 right-0 z-50 bg-black text-white text-xs p-1">{scrollDebug}</div>
+      <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
           <ArrowLeft className="w-4 h-4" /> Back
