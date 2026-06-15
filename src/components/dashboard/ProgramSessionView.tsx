@@ -178,15 +178,18 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
     return activeSet.setIdx >= exerciseState[lastExIdx].sets.length - 1;
   }, [activeSet, exerciseState]);
 
-  const scrollActiveIntoView = useCallback((exIdx: number, setIdx: number) => {
-    // Defer to next frame so DOM reflects new active highlight first.
+  // Scroll the active set into view whenever the pointer changes.
+  useEffect(() => {
+    if (readOnly) return;
+    const { exIdx, setIdx } = activeSet;
+    const key = `${exIdx}:${setIdx}`;
     requestAnimationFrame(() => {
-      const el = setRowRefs.current.get(`${exIdx}:${setIdx}`);
+      const el = setRowRefs.current.get(key);
       if (el && typeof el.scrollIntoView === 'function') {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
-  }, []);
+  }, [activeSet, readOnly]);
 
   const handleNext = () => {
     if (readOnly || exerciseState.length === 0) return;
@@ -199,15 +202,11 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
 
     // 2) Advance pointer.
     if (setIdx < ex.sets.length - 1) {
-      const nextSetIdx = setIdx + 1;
-      setActiveSet({ exIdx, setIdx: nextSetIdx });
-      scrollActiveIntoView(exIdx, nextSetIdx);
+      setActiveSet({ exIdx, setIdx: setIdx + 1 });
       return;
     }
     if (exIdx < exerciseState.length - 1) {
-      const nextExIdx = exIdx + 1;
-      setActiveSet({ exIdx: nextExIdx, setIdx: 0 });
-      scrollActiveIntoView(nextExIdx, 0);
+      setActiveSet({ exIdx: exIdx + 1, setIdx: 0 });
       return;
     }
     // Already on the last set of the last exercise — stay put.
