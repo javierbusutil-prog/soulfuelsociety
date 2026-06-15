@@ -161,6 +161,28 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
     else setRowRefs.current.delete(key);
   }, []);
 
+  // Ref to the scrollable DialogContent ancestor. Found lazily by walking up
+  // from a registered set row until we hit an element with overflowY auto/scroll.
+  const scrollContainerRef = useRef<HTMLElement | null>(null);
+  const findScrollContainer = useCallback((): HTMLElement | null => {
+    if (scrollContainerRef.current && document.body.contains(scrollContainerRef.current)) {
+      return scrollContainerRef.current;
+    }
+    // Seed from any registered set row.
+    const seed = setRowRefs.current.values().next().value as HTMLElement | undefined;
+    let node: HTMLElement | null = seed ?? null;
+    while (node && node !== document.body) {
+      const style = window.getComputedStyle(node);
+      const oy = style.overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight) {
+        scrollContainerRef.current = node;
+        return node;
+      }
+      node = node.parentElement;
+    }
+    return null;
+  }, []);
+
   // Whenever exerciseState changes (e.g. hydrate), clamp the active pointer to a valid range.
   useEffect(() => {
     if (exerciseState.length === 0) return;
@@ -180,19 +202,29 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
   }, [activeSet, exerciseState]);
 
   // Scroll the active set into view whenever the pointer changes.
+  // Manually scrolls the dialog's scroll container — scrollIntoView is unreliable
+  // inside a portaled Radix DialogContent. Double rAF ensures layout settled.
   useEffect(() => {
     if (readOnly) return;
     const { exIdx, setIdx } = activeSet;
     const key = `${exIdx}:${setIdx}`;
     requestAnimationFrame(() => {
-      const el = setRowRefs.current.get(key);
-      const rect = el?.getBoundingClientRect();
-      setScrollDebug(`key=${key} found=${!!el} top=${rect ? Math.round(rect.top) : 'n/a'} winH=${Math.round(window.innerHeight)} keys=${setRowRefs.current.size}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      requestAnimationFrame(() => {
+        const container = findScrollContainer();
+        const el = setRowRefs.current.get(key);
+        if (!container || !el) {
+          setScrollDebug(`key=${key} found=${!!el} container=${!!container} keys=${setRowRefs.current.size}`);
+          return;
+        }
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const offset = (elRect.top - containerRect.top) - (container.clientHeight / 2) + (el.clientHeight / 2);
+        const targetTop = container.scrollTop + offset;
+        setScrollDebug(`key=${key} elTop=${Math.round(elRect.top)} cTop=${Math.round(containerRect.top)} offset=${Math.round(offset)} scrollTop=${Math.round(container.scrollTop)} → ${Math.round(targetTop)} cH=${container.clientHeight}`);
+        container.scrollTo({ top: targetTop, behavior: 'smooth' });
+      });
     });
-  }, [activeSet, readOnly]);
+  }, [activeSet, readOnly, findScrollContainer]);
 
   const handleNext = () => {
     if (readOnly || exerciseState.length === 0) return;
