@@ -34,6 +34,7 @@ export default function Home() {
       .from('daily_dose_posts')
       .select('id, title, coach_note, cover_image_url, published_date')
       .eq('is_published', true)
+      .is('audience_user_id', null)
       .lte('published_date', today)
       .order('published_date', { ascending: false })
       .limit(1)
