@@ -147,7 +147,7 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
   const [prevHints, setPrevHints] = useState<Record<string, PrevHint>>({});
   const [readOnly, setReadOnly] = useState(false);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
-  const [scrollDebug, setScrollDebug] = useState('');
+  
 
   // Active set pointer for the "Next"-driven guided flow.
   // Cardio is intentionally excluded — it remains free-form.
@@ -212,15 +212,11 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
       requestAnimationFrame(() => {
         const container = findScrollContainer();
         const el = scrollContainerRef.current?.querySelector('[data-setrow="' + key + '"]') as HTMLElement | null;
-        if (!container || !el) {
-          setScrollDebug(`key=${key} found=${!!el} container=${!!container} keys=${setRowRefs.current.size}`);
-          return;
-        }
+        if (!container || !el) return;
         const containerRect = container.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
         const offset = (elRect.top - containerRect.top) - (container.clientHeight / 2) + (el.clientHeight / 2);
         const targetTop = container.scrollTop + offset;
-        setScrollDebug(`key=${key} elTop=${Math.round(elRect.top)} cTop=${Math.round(containerRect.top)} offset=${Math.round(offset)} scrollTop=${Math.round(container.scrollTop)} → ${Math.round(targetTop)} cH=${container.clientHeight}`);
         container.scrollTo({ top: targetTop, behavior: 'smooth' });
       });
     });
@@ -610,7 +606,6 @@ export function ProgramSessionView({ source, dayBlocks, onBack, onComplete }: Pr
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black text-white text-xs p-1">{scrollDebug}</div>
       <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
