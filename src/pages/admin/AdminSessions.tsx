@@ -330,6 +330,11 @@ export default function AdminSessions() {
               </div>
             )}
             <DialogFooter className="flex-col sm:flex-row gap-2">
+              {selected && (
+                <Button variant="outline" size="sm" onClick={() => navigate(`/admin/sessions/${selected.id}/edit`)} className="gap-1">
+                  <Edit3 className="w-3 h-3" /> Edit
+                </Button>
+              )}
               {selected?.status === 'scheduled' && (
                 <>
                   <Button variant="destructive" size="sm" onClick={handleCancel} disabled={saving} className="gap-1">
