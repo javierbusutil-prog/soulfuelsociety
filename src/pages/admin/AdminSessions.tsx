@@ -8,10 +8,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface AttendeeRow {
+  id: string; // session_attendees.id
+  user_id: string;
+  name: string;
+  amount_charged: number | null;
+  payment_received: boolean;
+}
 
 interface SessionRow {
   id: string;
@@ -19,7 +29,15 @@ interface SessionRow {
   status: string;
   note: string | null;
   title: string | null;
+  attendees: AttendeeRow[];
   attendee_names: string[];
+}
+
+interface PaymentDraft {
+  id: string;
+  name: string;
+  amount: string; // text input
+  paid: boolean;
 }
 
 export default function AdminSessions() {
@@ -32,6 +50,7 @@ export default function AdminSessions() {
   const [coachNote, setCoachNote] = useState('');
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [saving, setSaving] = useState(false);
+  const [payments, setPayments] = useState<PaymentDraft[]>([]);
 
   useEffect(() => {
     fetchSessions();
@@ -43,7 +62,7 @@ export default function AdminSessions() {
 
     const { data, error } = await supabase
       .from('sessions')
-      .select('id, scheduled_for, status, note, title, session_attendees(user_id, profiles(full_name))')
+      .select('id, scheduled_for, status, note, title, session_attendees(id, user_id, amount_charged, payment_received, profiles(full_name))')
       .gte('scheduled_for', weekStart.toISOString())
       .lte('scheduled_for', wEnd.toISOString())
       .order('scheduled_for', { ascending: true });
@@ -55,16 +74,24 @@ export default function AdminSessions() {
       return;
     }
 
-    const rows: SessionRow[] = (data ?? []).map((s: any) => ({
-      id: s.id,
-      scheduled_for: s.scheduled_for,
-      status: s.status,
-      note: s.note,
-      title: s.title,
-      attendee_names: (s.session_attendees ?? [])
-        .map((a: any) => a.profiles?.full_name)
-        .filter(Boolean),
-    }));
+    const rows: SessionRow[] = (data ?? []).map((s: any) => {
+      const attendees: AttendeeRow[] = (s.session_attendees ?? []).map((a: any) => ({
+        id: a.id,
+        user_id: a.user_id,
+        name: a.profiles?.full_name || 'Unknown',
+        amount_charged: a.amount_charged,
+        payment_received: !!a.payment_received,
+      }));
+      return {
+        id: s.id,
+        scheduled_for: s.scheduled_for,
+        status: s.status,
+        note: s.note,
+        title: s.title,
+        attendees,
+        attendee_names: attendees.map((a) => a.name),
+      };
+    });
 
     setSessions(rows);
     setLoading(false);
@@ -74,12 +101,46 @@ export default function AdminSessions() {
     setSelected(s);
     setCoachNote(s.note || '');
     setRescheduleDate('');
+    setPayments(
+      s.attendees.map((a) => ({
+        id: a.id,
+        name: a.name,
+        amount: a.amount_charged == null ? '' : String(a.amount_charged),
+        paid: a.payment_received,
+      }))
+    );
     setDetailOpen(true);
+  };
+
+  const writeAttendeePayments = async () => {
+    for (const p of payments) {
+      const trimmed = p.amount.trim();
+      const amt = trimmed === '' ? null : Number(trimmed);
+      if (amt != null && (isNaN(amt) || amt < 0)) {
+        toast.error(`Invalid amount for ${p.name}`);
+        return false;
+      }
+      const { error } = await (supabase as any)
+        .from('session_attendees')
+        .update({ amount_charged: amt, payment_received: p.paid })
+        .eq('id', p.id);
+      if (error) {
+        console.error('attendee payment update failed', error);
+        toast.error(`Failed to save payment for ${p.name}`);
+        return false;
+      }
+    }
+    return true;
   };
 
   const handleComplete = async () => {
     if (!selected) return;
     setSaving(true);
+    const ok = await writeAttendeePayments();
+    if (!ok) {
+      setSaving(false);
+      return;
+    }
     const { error } = await supabase
       .from('sessions')
       .update({ status: 'completed', note: coachNote || null })
@@ -92,6 +153,22 @@ export default function AdminSessions() {
       fetchSessions();
     }
     setSaving(false);
+  };
+
+  const handleSavePayment = async () => {
+    if (!selected) return;
+    setSaving(true);
+    const ok = await writeAttendeePayments();
+    setSaving(false);
+    if (ok) {
+      toast.success('Payment saved');
+      setDetailOpen(false);
+      fetchSessions();
+    }
+  };
+
+  const updatePayment = (id: string, patch: Partial<PaymentDraft>) => {
+    setPayments((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   };
 
   const handleReschedule = async () => {
@@ -327,6 +404,48 @@ export default function AdminSessions() {
                     </div>
                   </div>
                 )}
+
+                {(selected.status === 'scheduled' || selected.status === 'completed') && payments.length > 0 && (
+                  <div className="space-y-2 border-t pt-3">
+                    <p className="text-xs font-medium">
+                      {selected.status === 'scheduled' ? 'Payment (optional — can be added later)' : 'Payment'}
+                    </p>
+                    <div className="space-y-2">
+                      {payments.map((p) => (
+                        <div key={p.id} className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{p.name}</p>
+                          </div>
+                          <div className="relative w-24 shrink-0">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0"
+                              value={p.amount}
+                              onChange={(e) => updatePayment(p.id, { amount: e.target.value })}
+                              className="h-8 pl-5 text-sm"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <Switch
+                              id={`paid-${p.id}`}
+                              checked={p.paid}
+                              onCheckedChange={(v) => updatePayment(p.id, { paid: v })}
+                            />
+                            <Label htmlFor={`paid-${p.id}`} className="text-xs">Paid</Label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {selected.status === 'completed' && (
+                      <Button size="sm" onClick={handleSavePayment} disabled={saving} className="w-full">
+                        Save payment
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -341,7 +460,7 @@ export default function AdminSessions() {
                     <X className="w-3 h-3" /> Cancel session
                   </Button>
                   <Button size="sm" onClick={handleComplete} disabled={saving} className="gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Mark completed
+                    <CheckCircle2 className="w-3 h-3" /> Complete & save payment
                   </Button>
                 </>
               )}
