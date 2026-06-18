@@ -169,6 +169,10 @@ export default function AdminSessions() {
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+        <Button size="sm" className="gap-1.5" onClick={() => navigate('/admin/sessions/log')}>
+          <CalendarClock className="w-4 h-4" /> Log session
+        </Button>
+      </div>
 
         <Tabs defaultValue="week">
           <TabsList>
