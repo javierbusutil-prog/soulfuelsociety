@@ -31,6 +31,7 @@ interface SessionRow {
   status: string;
   note: string | null;
   title: string | null;
+  workout_data: any | null;
   attendees: AttendeeRow[];
   attendee_names: string[];
 }
