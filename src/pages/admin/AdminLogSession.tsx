@@ -307,15 +307,17 @@ export default function AdminLogSession() {
   };
 
   return (
-    <AdminLayout title={mode === 'log_past' ? 'Log past session' : 'Schedule session'}>
+    <AdminLayout title={isEdit ? 'Edit session' : (mode === 'log_past' ? 'Log past session' : 'Schedule session')}>
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Mode toggle */}
-        <Tabs value={mode} onValueChange={(v) => handleModeChange(v as 'log_past' | 'schedule_future')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="log_past">Log past session</TabsTrigger>
-            <TabsTrigger value="schedule_future">Schedule future session</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Mode toggle — create only */}
+        {!isEdit && (
+          <Tabs value={mode} onValueChange={(v) => handleModeChange(v as 'log_past' | 'schedule_future')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="log_past">Log past session</TabsTrigger>
+              <TabsTrigger value="schedule_future">Schedule future session</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
 
         {/* Title */}
         <div className="space-y-1.5">
@@ -367,9 +369,14 @@ export default function AdminLogSession() {
 
         {/* Attendees */}
         <div className="space-y-1.5">
-          <Label>Attendees *</Label>
+          <Label>Attendees{isEdit ? '' : ' *'}</Label>
+          {isEdit && (
+            <p className="text-xs text-muted-foreground">
+              Attendees can't be changed here yet. {editAttendeeNames.length > 0 ? editAttendeeNames.join(', ') : 'No attendees.'}
+            </p>
+          )}
 
-          {selectedClients.length > 0 && (
+          {!isEdit && selectedClients.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
               {selectedClients.map((c) => (
                 <Badge key={c.id} variant="secondary" className="gap-1.5 pl-2.5 pr-1.5 py-1">
@@ -387,6 +394,7 @@ export default function AdminLogSession() {
             </div>
           )}
 
+          {!isEdit && (
           <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start text-left font-normal text-muted-foreground">
@@ -426,10 +434,11 @@ export default function AdminLogSession() {
               </Command>
             </PopoverContent>
           </Popover>
+          )}
         </div>
 
         {/* Per-attendee details */}
-        {mode === 'log_past' && selectedClients.length > 0 && (
+        {!isEdit && mode === 'log_past' && selectedClients.length > 0 && (
           <div className="space-y-3">
             {selectedClients.map((c) => {
               const d = details[c.id] || { amount: '', paid: false };
@@ -512,14 +521,16 @@ export default function AdminLogSession() {
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" onClick={() => navigate(-1)} disabled={saving}>
+          <Button variant="ghost" onClick={() => navigate(-1)} disabled={saving || hydrating}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={saving} className="gap-1.5">
+          <Button onClick={handleSubmit} disabled={saving || hydrating} className="gap-1.5">
             {mode === 'log_past' ? <Dumbbell className="h-4 w-4" /> : <CalendarPlus className="h-4 w-4" />}
-            {saving
-              ? (mode === 'log_past' ? 'Logging…' : 'Scheduling…')
-              : (mode === 'log_past' ? 'Log session' : 'Schedule session')}
+            {isEdit
+              ? (saving ? 'Saving…' : 'Save changes')
+              : saving
+                ? (mode === 'log_past' ? 'Logging…' : 'Scheduling…')
+                : (mode === 'log_past' ? 'Log session' : 'Schedule session')}
           </Button>
         </div>
       </div>
