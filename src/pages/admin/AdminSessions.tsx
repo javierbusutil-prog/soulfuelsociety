@@ -351,121 +351,123 @@ export default function AdminSessions() {
         </Tabs>
 
         <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Session Details</DialogTitle>
             </DialogHeader>
             {selected && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Attendees</span>
-                    <span className="text-sm font-medium text-right">{namesLabel(selected.attendee_names)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Date & time</span>
-                    <span className="text-sm">{format(new Date(selected.scheduled_for), 'MMM d, yyyy · h:mm a')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Type</span>
-                    <Badge variant="outline">{getTypeLabel(selected.attendee_names.length)}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge className={getStatusColor(selected.status)}>{getStatusLabel(selected.status)}</Badge>
-                  </div>
-                </div>
+              <Tabs defaultValue="details" className="w-full">
+                <TabsList className="grid grid-cols-2 w-full">
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="payment" disabled={payments.length === 0}>Payment</TabsTrigger>
+                </TabsList>
 
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Note</p>
-                  <Textarea
-                    value={coachNote}
-                    onChange={(e) => setCoachNote(e.target.value)}
-                    placeholder="Add a note..."
-                    className="min-h-[60px] text-sm"
-                  />
-                  <Button size="sm" variant="outline" className="text-xs mt-1.5" onClick={saveNote}>
-                    <Edit3 className="w-3 h-3 mr-1" /> Save note
-                  </Button>
-                </div>
+                <TabsContent value="details" className="space-y-4 mt-4">
+                  <div className="rounded-lg border bg-card divide-y">
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <span className="text-sm text-muted-foreground">Attendees</span>
+                      <span className="text-sm font-medium text-right">{namesLabel(selected.attendee_names)}</span>
+                    </div>
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <span className="text-sm text-muted-foreground">Date & time</span>
+                      <span className="text-sm">{format(new Date(selected.scheduled_for), 'MMM d, yyyy · h:mm a')}</span>
+                    </div>
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <span className="text-sm text-muted-foreground">Type</span>
+                      <Badge variant="outline">{getTypeLabel(selected.attendee_names.length)}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <span className="text-sm text-muted-foreground">Status</span>
+                      <Badge className={getStatusColor(selected.status)}>{getStatusLabel(selected.status)}</Badge>
+                    </div>
+                  </div>
 
-                {selected.status === 'scheduled' && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Reschedule</p>
-                    <div className="flex gap-2">
-                      <Input
-                        type="datetime-local"
-                        value={rescheduleDate}
-                        onChange={(e) => setRescheduleDate(e.target.value)}
-                        className="text-sm"
-                      />
-                      <Button size="sm" onClick={handleReschedule} disabled={!rescheduleDate || saving}>
-                        Move
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-muted-foreground mb-1.5">Note</p>
+                    <Textarea
+                      value={coachNote}
+                      onChange={(e) => setCoachNote(e.target.value)}
+                      placeholder="Add a note..."
+                      className="min-h-[70px] text-sm"
+                    />
+                    <Button size="sm" variant="outline" className="text-xs mt-2" onClick={saveNote}>
+                      <Edit3 className="w-3 h-3 mr-1" /> Save note
+                    </Button>
+                  </div>
+
+                  {selected.status === 'scheduled' && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1.5">Reschedule</p>
+                      <div className="flex gap-2">
+                        <Input
+                          type="datetime-local"
+                          value={rescheduleDate}
+                          onChange={(e) => setRescheduleDate(e.target.value)}
+                          className="text-sm"
+                        />
+                        <Button size="sm" onClick={handleReschedule} disabled={!rescheduleDate || saving}>
+                          Move
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/admin/sessions/${selected.id}/edit`)} className="gap-1">
+                      <Edit3 className="w-3 h-3" /> Edit
+                    </Button>
+                    {selected.status === 'scheduled' && (
+                      <Button variant="destructive" size="sm" onClick={handleCancel} disabled={saving} className="gap-1">
+                        <X className="w-3 h-3" /> Cancel session
                       </Button>
-                    </div>
-                  </div>
-                )}
+                    )}
+                  </DialogFooter>
+                </TabsContent>
 
-                {(selected.status === 'scheduled' || selected.status === 'completed') && payments.length > 0 && (
-                  <div className="space-y-2 border-t pt-3">
-                    <p className="text-xs font-medium">
-                      {selected.status === 'scheduled' ? 'Payment (optional — can be added later)' : 'Payment'}
-                    </p>
-                    <div className="space-y-2">
-                      {payments.map((p) => (
-                        <div key={p.user_id} className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{p.name}</p>
-                          </div>
-                          <div className="relative w-24 shrink-0">
-                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              placeholder="0"
-                              value={p.amount}
-                              onChange={(e) => updatePayment(p.user_id, { amount: e.target.value })}
-                              className="h-8 pl-5 text-sm"
-                            />
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <Switch
-                              id={`paid-${p.user_id}`}
-                              checked={p.paid}
-                              onCheckedChange={(v) => updatePayment(p.user_id, { paid: v })}
-                            />
-                            <Label htmlFor={`paid-${p.user_id}`} className="text-xs">Paid</Label>
-                          </div>
+                <TabsContent value="payment" className="space-y-4 mt-4">
+                  <p className="text-xs text-muted-foreground">Optional — can be added later.</p>
+                  <div className="space-y-2">
+                    {payments.map((p) => (
+                      <div key={p.user_id} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-secondary/50">
+                        <p className="flex-1 min-w-0 text-sm font-medium truncate">{p.name}</p>
+                        <div className="relative shrink-0">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0"
+                            value={p.amount}
+                            onChange={(e) => updatePayment(p.user_id, { amount: e.target.value })}
+                            className="h-8 pl-5 pr-2 text-sm w-[72px]"
+                          />
                         </div>
-                      ))}
-                    </div>
-                    {selected.status === 'completed' && (
-                      <Button size="sm" onClick={handleSavePayment} disabled={saving} className="w-full">
+                        <div className="flex items-center gap-1.5 shrink-0 pl-1">
+                          <Switch
+                            id={`paid-${p.user_id}`}
+                            checked={p.paid}
+                            onCheckedChange={(v) => updatePayment(p.user_id, { paid: v })}
+                          />
+                          <Label htmlFor={`paid-${p.user_id}`} className="text-xs">Paid</Label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <DialogFooter className="pt-2">
+                    {selected.status === 'scheduled' ? (
+                      <Button size="sm" onClick={handleComplete} disabled={saving} className="gap-1 w-full sm:w-auto">
+                        <CheckCircle2 className="w-3 h-3" /> Complete & save payment
+                      </Button>
+                    ) : (
+                      <Button size="sm" onClick={handleSavePayment} disabled={saving} className="w-full sm:w-auto">
                         Save payment
                       </Button>
                     )}
-                  </div>
-                )}
-              </div>
+                  </DialogFooter>
+                </TabsContent>
+              </Tabs>
             )}
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              {selected && (
-                <Button variant="outline" size="sm" onClick={() => navigate(`/admin/sessions/${selected.id}/edit`)} className="gap-1">
-                  <Edit3 className="w-3 h-3" /> Edit
-                </Button>
-              )}
-              {selected?.status === 'scheduled' && (
-                <>
-                  <Button variant="destructive" size="sm" onClick={handleCancel} disabled={saving} className="gap-1">
-                    <X className="w-3 h-3" /> Cancel session
-                  </Button>
-                  <Button size="sm" onClick={handleComplete} disabled={saving} className="gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Complete & save payment
-                  </Button>
-                </>
-              )}
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
