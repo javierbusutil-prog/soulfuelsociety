@@ -14,6 +14,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
+import { WorkoutBlocksDisplay } from '@/components/workouts/WorkoutBlocksDisplay';
+import { getBlocksFromSource } from '@/lib/workoutBlocks';
 
 interface AttendeeRow {
   user_id: string;
