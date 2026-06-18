@@ -66,7 +66,7 @@ export default function AdminSessions() {
 
     const { data, error } = await supabase
       .from('sessions')
-      .select('id, scheduled_for, status, note, title, session_attendees(user_id, amount_charged, payment_received, profiles(full_name))')
+      .select('id, scheduled_for, status, note, title, workout_data, session_attendees(user_id, amount_charged, payment_received, profiles(full_name))')
       .gte('scheduled_for', weekStart.toISOString())
       .lte('scheduled_for', wEnd.toISOString())
       .order('scheduled_for', { ascending: true });
@@ -91,6 +91,7 @@ export default function AdminSessions() {
         status: s.status,
         note: s.note,
         title: s.title,
+        workout_data: s.workout_data,
         attendees,
         attendee_names: attendees.map((a) => a.name),
       };
