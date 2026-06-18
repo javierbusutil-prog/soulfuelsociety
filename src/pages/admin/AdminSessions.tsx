@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
-import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3 } from 'lucide-react';
+import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SessionRow {

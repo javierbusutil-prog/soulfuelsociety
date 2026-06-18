@@ -53,7 +53,7 @@ const navSections: NavSection[] = [
   },
   {
     items: [
-      { path: '/admin/sessions/log', icon: CalendarClock, label: 'Sessions' },
+      { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
       { path: '/admin/revenue', icon: DollarSign, label: 'Revenue' },
       { path: '/admin/settings', icon: Settings, label: 'Settings' },
     ],
