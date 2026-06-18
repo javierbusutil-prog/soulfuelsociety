@@ -16,12 +16,12 @@ import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, 
 import { toast } from 'sonner';
 
 interface AttendeeRow {
-  id: string; // session_attendees.id
   user_id: string;
   name: string;
   amount_charged: number | null;
   payment_received: boolean;
 }
+
 
 interface SessionRow {
   id: string;
