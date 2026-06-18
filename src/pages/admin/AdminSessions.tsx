@@ -413,7 +413,7 @@ export default function AdminSessions() {
                     </p>
                     <div className="space-y-2">
                       {payments.map((p) => (
-                        <div key={p.id} className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
+                        <div key={p.user_id} className="flex items-center gap-2 p-2 rounded-md bg-muted/30">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{p.name}</p>
                           </div>
@@ -425,17 +425,17 @@ export default function AdminSessions() {
                               step="0.01"
                               placeholder="0"
                               value={p.amount}
-                              onChange={(e) => updatePayment(p.id, { amount: e.target.value })}
+                              onChange={(e) => updatePayment(p.user_id, { amount: e.target.value })}
                               className="h-8 pl-5 text-sm"
                             />
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             <Switch
-                              id={`paid-${p.id}`}
+                              id={`paid-${p.user_id}`}
                               checked={p.paid}
-                              onCheckedChange={(v) => updatePayment(p.id, { paid: v })}
+                              onCheckedChange={(v) => updatePayment(p.user_id, { paid: v })}
                             />
-                            <Label htmlFor={`paid-${p.id}`} className="text-xs">Paid</Label>
+                            <Label htmlFor={`paid-${p.user_id}`} className="text-xs">Paid</Label>
                           </div>
                         </div>
                       ))}
