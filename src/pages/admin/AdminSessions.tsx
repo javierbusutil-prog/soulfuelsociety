@@ -122,7 +122,7 @@ export default function AdminSessions() {
       }
       const { error } = await supabase
         .from('session_attendees')
-        .update({ amount_charged: amt, payment_received: p.paid })
+        .update({ amount_charged: amt, payment_received: p.paid } as any)
         .eq('id', p.id);
       if (error) {
         console.error('attendee payment update failed', error);
