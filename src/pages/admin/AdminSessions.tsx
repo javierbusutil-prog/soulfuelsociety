@@ -14,6 +14,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
 import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
+import { WorkoutBlocksDisplay } from '@/components/workouts/WorkoutBlocksDisplay';
+import { getBlocksFromSource } from '@/lib/workoutBlocks';
 
 interface AttendeeRow {
   user_id: string;
@@ -29,6 +31,7 @@ interface SessionRow {
   status: string;
   note: string | null;
   title: string | null;
+  workout_data: any | null;
   attendees: AttendeeRow[];
   attendee_names: string[];
 }
@@ -63,7 +66,7 @@ export default function AdminSessions() {
 
     const { data, error } = await supabase
       .from('sessions')
-      .select('id, scheduled_for, status, note, title, session_attendees(user_id, amount_charged, payment_received, profiles(full_name))')
+      .select('id, scheduled_for, status, note, title, workout_data, session_attendees(user_id, amount_charged, payment_received, profiles(full_name))')
       .gte('scheduled_for', weekStart.toISOString())
       .lte('scheduled_for', wEnd.toISOString())
       .order('scheduled_for', { ascending: true });
@@ -88,6 +91,7 @@ export default function AdminSessions() {
         status: s.status,
         note: s.note,
         title: s.title,
+        workout_data: s.workout_data,
         attendees,
         attendee_names: attendees.map((a) => a.name),
       };
@@ -357,9 +361,10 @@ export default function AdminSessions() {
             </DialogHeader>
             {selected && (
               <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid grid-cols-2 w-full">
+                <TabsList className="grid grid-cols-3 w-full">
                   <TabsTrigger value="details">Details</TabsTrigger>
                   <TabsTrigger value="payment" disabled={payments.length === 0}>Payment</TabsTrigger>
+                  <TabsTrigger value="workout">Workout</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="details" className="space-y-4 mt-4">
@@ -465,6 +470,27 @@ export default function AdminSessions() {
                       </Button>
                     )}
                   </DialogFooter>
+                </TabsContent>
+
+                <TabsContent value="workout" className="space-y-4 mt-4">
+                  {(() => {
+                    const blocks = getBlocksFromSource(selected.workout_data);
+                    if (blocks.length === 0) {
+                      return (
+                        <p className="text-sm text-muted-foreground text-center py-6">
+                          No workout programmed for this session.
+                        </p>
+                      );
+                    }
+                    return (
+                      <WorkoutBlocksDisplay
+                        blocks={blocks}
+                        variant="compact"
+                        headerStyle="primary-icon"
+                        showNutrition
+                      />
+                    );
+                  })()}
                 </TabsContent>
               </Tabs>
             )}
