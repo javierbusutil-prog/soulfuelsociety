@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarIcon, X, Check, Dumbbell, CalendarPlus, Bike, Heart } from 'lucide-react';
 import { BlockEditor, type EditableBlock, type EditableBlockType } from '@/components/workouts/WorkoutBlocksEditor';
+import { getBlocksFromSource } from '@/lib/workoutBlocks';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +53,8 @@ export default function AdminLogSession() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const { id: editId } = useParams<{ id: string }>();
+  const isEdit = Boolean(editId);
 
   const [mode, setMode] = useState<'log_past' | 'schedule_future'>('log_past');
 
@@ -69,6 +72,8 @@ export default function AdminLogSession() {
   const [title, setTitle] = useState('');
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [saving, setSaving] = useState(false);
+  const [editAttendeeNames, setEditAttendeeNames] = useState<string[]>([]);
+  const [hydrating, setHydrating] = useState(isEdit);
 
   useEffect(() => {
     (async () => {
@@ -91,8 +96,42 @@ export default function AdminLogSession() {
     })();
   }, []);
 
+  // EDIT mode: hydrate form from the existing session
+  useEffect(() => {
+    if (!isEdit || !editId) return;
+    (async () => {
+      setHydrating(true);
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, scheduled_for, status, title, note, workout_data, session_attendees(user_id, profiles(full_name))')
+        .eq('id', editId)
+        .maybeSingle();
+      if (error || !data) {
+        toast.error('Could not load session');
+        navigate('/admin/sessions');
+        return;
+      }
+      const when = new Date((data as any).scheduled_for);
+      setDate(when);
+      setTime(timeStr(when));
+      setTitle((data as any).title || '');
+      setNote((data as any).note || '');
+      setBlocks(getBlocksFromSource((data as any).workout_data) as Block[]);
+      setMode(when.getTime() <= Date.now() ? 'log_past' : 'schedule_future');
+      const names = ((data as any).session_attendees ?? [])
+        .map((a: any) => a.profiles?.full_name)
+        .filter(Boolean);
+      setEditAttendeeNames(names);
+      // Pre-fill selectedIds so the attendee summary chips render (read-only in edit mode)
+      const ids = ((data as any).session_attendees ?? []).map((a: any) => a.user_id).filter(Boolean);
+      setSelectedIds(ids);
+      setHydrating(false);
+    })();
+  }, [isEdit, editId, navigate]);
+
   // Pre-select from URL
   useEffect(() => {
+    if (isEdit) return;
     const param = searchParams.get('attendees');
     if (!param) return;
     const ids = param.split(',').map((s) => s.trim()).filter(Boolean);
@@ -105,7 +144,7 @@ export default function AdminLogSession() {
       });
       return next;
     });
-  }, [searchParams]);
+  }, [searchParams, isEdit]);
 
   const selectedClients = useMemo(
     () => selectedIds.map((id) => clients.find((c) => c.id === id)).filter(Boolean) as PaidClient[],
@@ -168,7 +207,7 @@ export default function AdminLogSession() {
   };
 
   const handleSubmit = async () => {
-    if (selectedIds.length === 0) {
+    if (!isEdit && selectedIds.length === 0) {
       toast.error('Add at least one attendee.');
       return;
     }
@@ -185,20 +224,38 @@ export default function AdminLogSession() {
     const combined = new Date(date);
     combined.setHours(hh || 0, mm || 0, 0, 0);
 
-    const now = new Date();
-    if (mode === 'log_past' && combined.getTime() > now.getTime()) {
-      toast.error('Past session date must be in the past or now.');
-      return;
-    }
-    if (mode === 'schedule_future' && combined.getTime() <= now.getTime()) {
-      toast.error('Scheduled session must be in the future.');
-      return;
+    if (!isEdit) {
+      const now = new Date();
+      if (mode === 'log_past' && combined.getTime() > now.getTime()) {
+        toast.error('Past session date must be in the past or now.');
+        return;
+      }
+      if (mode === 'schedule_future' && combined.getTime() <= now.getTime()) {
+        toast.error('Scheduled session must be in the future.');
+        return;
+      }
     }
 
     const sessionStatus = mode === 'log_past' ? 'completed' : 'scheduled';
 
     setSaving(true);
     try {
+      if (isEdit && editId) {
+        const { error: updErr } = await supabase
+          .from('sessions')
+          .update({
+            scheduled_for: combined.toISOString(),
+            title: title.trim() || null,
+            note: note.trim() || null,
+            workout_data: blocks.length > 0 ? ({ blocks } as any) : null,
+          })
+          .eq('id', editId);
+        if (updErr) throw updErr;
+        toast.success('Session updated.');
+        navigate('/admin/sessions');
+        return;
+      }
+
       const { data: created, error } = await supabase
         .from('sessions')
         .insert({
