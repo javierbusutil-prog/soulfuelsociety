@@ -34,11 +34,12 @@ interface SessionRow {
 }
 
 interface PaymentDraft {
-  id: string;
+  user_id: string;
   name: string;
   amount: string; // text input
   paid: boolean;
 }
+
 
 export default function AdminSessions() {
   const navigate = useNavigate();
