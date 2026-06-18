@@ -187,6 +187,7 @@ function AppRoutes() {
       <Route path="/admin/messages" element={<CoachRoute><AdminMessages /></CoachRoute>} />
       <Route path="/admin/sessions" element={<CoachRoute><AdminSessions /></CoachRoute>} />
       <Route path="/admin/sessions/log" element={<CoachRoute><AdminLogSession /></CoachRoute>} />
+      <Route path="/admin/sessions/:id/edit" element={<CoachRoute><AdminLogSession /></CoachRoute>} />
       <Route path="/admin/revenue" element={<CoachRoute><AdminRevenue /></CoachRoute>} />
       <Route path="/admin/settings" element={<CoachRoute><AdminSettings /></CoachRoute>} />
       <Route path="/admin/community" element={<CoachRoute><AdminCommunity /></CoachRoute>} />
