@@ -77,7 +77,6 @@ export default function AdminSessions() {
 
     const rows: SessionRow[] = (data ?? []).map((s: any) => {
       const attendees: AttendeeRow[] = (s.session_attendees ?? []).map((a: any) => ({
-        id: a.id,
         user_id: a.user_id,
         name: a.profiles?.full_name || 'Unknown',
         amount_charged: a.amount_charged,
@@ -104,7 +103,7 @@ export default function AdminSessions() {
     setRescheduleDate('');
     setPayments(
       s.attendees.map((a) => ({
-        id: a.id,
+        user_id: a.user_id,
         name: a.name,
         amount: a.amount_charged == null ? '' : String(a.amount_charged),
         paid: a.payment_received,
@@ -124,7 +123,8 @@ export default function AdminSessions() {
       const { error } = await (supabase as any)
         .from('session_attendees')
         .update({ amount_charged: amt, payment_received: p.paid })
-        .eq('id', p.id);
+        .eq('session_id', selected!.id)
+        .eq('user_id', p.user_id);
       if (error) {
         console.error('attendee payment update failed', error);
         toast.error(`Failed to save payment for ${p.name}`);
@@ -168,8 +168,8 @@ export default function AdminSessions() {
     }
   };
 
-  const updatePayment = (id: string, patch: Partial<PaymentDraft>) => {
-    setPayments((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  const updatePayment = (userId: string, patch: Partial<PaymentDraft>) => {
+    setPayments((prev) => prev.map((p) => (p.user_id === userId ? { ...p, ...patch } : p)));
   };
 
   const handleReschedule = async () => {
