@@ -471,6 +471,27 @@ export default function AdminSessions() {
                     )}
                   </DialogFooter>
                 </TabsContent>
+
+                <TabsContent value="workout" className="space-y-4 mt-4">
+                  {(() => {
+                    const blocks = getBlocksFromSource(selected.workout_data);
+                    if (blocks.length === 0) {
+                      return (
+                        <p className="text-sm text-muted-foreground text-center py-6">
+                          No workout programmed for this session.
+                        </p>
+                      );
+                    }
+                    return (
+                      <WorkoutBlocksDisplay
+                        blocks={blocks}
+                        variant="compact"
+                        headerStyle="primary-icon"
+                        showNutrition
+                      />
+                    );
+                  })()}
+                </TabsContent>
               </Tabs>
             )}
           </DialogContent>
