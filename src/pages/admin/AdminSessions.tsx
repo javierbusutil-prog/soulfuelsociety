@@ -120,9 +120,9 @@ export default function AdminSessions() {
         toast.error(`Invalid amount for ${p.name}`);
         return false;
       }
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('session_attendees')
-        .update({ amount_charged: amt, payment_received: p.paid } as any)
+        .update({ amount_charged: amt, payment_received: p.paid })
         .eq('id', p.id);
       if (error) {
         console.error('attendee payment update failed', error);
