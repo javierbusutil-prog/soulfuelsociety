@@ -361,9 +361,10 @@ export default function AdminSessions() {
             </DialogHeader>
             {selected && (
               <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid grid-cols-2 w-full">
+                <TabsList className="grid grid-cols-3 w-full">
                   <TabsTrigger value="details">Details</TabsTrigger>
                   <TabsTrigger value="payment" disabled={payments.length === 0}>Payment</TabsTrigger>
+                  <TabsTrigger value="workout">Workout</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="details" className="space-y-4 mt-4">
