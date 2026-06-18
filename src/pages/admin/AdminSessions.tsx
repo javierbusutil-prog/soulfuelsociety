@@ -23,6 +23,7 @@ interface SessionRow {
 }
 
 export default function AdminSessions() {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
