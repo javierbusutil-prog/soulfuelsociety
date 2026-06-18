@@ -26,7 +26,7 @@ const navItems = [
   { path: '/admin/messages', icon: MessageCircle, label: 'Messages' },
   { path: '/admin/broadcast', icon: Send, label: 'Email' },
   { path: '/admin/contact-submissions', icon: Mail, label: 'Inbox' },
-  { path: '/admin/sessions/log', icon: CalendarClock, label: 'Sessions' },
+  { path: '/admin/sessions', icon: CalendarClock, label: 'Sessions' },
 ];
 
 export function AdminBottomNav() {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
-import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3 } from 'lucide-react';
+import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SessionRow {
@@ -22,6 +23,7 @@ interface SessionRow {
 }
 
 export default function AdminSessions() {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -167,6 +169,9 @@ export default function AdminSessions() {
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+        <Button size="sm" className="gap-1.5" onClick={() => navigate('/admin/sessions/log')}>
+          <CalendarClock className="w-4 h-4" /> Log session
+        </Button>
 
         <Tabs defaultValue="week">
           <TabsList>
