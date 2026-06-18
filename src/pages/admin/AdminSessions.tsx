@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
-import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3, CalendarClock } from 'lucide-react';
+import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3, CalendarClock, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { WorkoutBlocksDisplay } from '@/components/workouts/WorkoutBlocksDisplay';
 import { getBlocksFromSource } from '@/lib/workoutBlocks';
@@ -204,6 +204,27 @@ export default function AdminSessions() {
       toast.error('Failed to cancel session');
     } else {
       toast.success('Session cancelled');
+      setDetailOpen(false);
+      fetchSessions();
+    }
+    setSaving(false);
+  };
+
+  const handleRevert = async () => {
+    if (!selected) return;
+    const confirmed = window.confirm(
+      "Revert this session to scheduled? This won't change any payment already recorded."
+    );
+    if (!confirmed) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from('sessions')
+      .update({ status: 'scheduled', completed_at: null })
+      .eq('id', selected.id);
+    if (error) {
+      toast.error('Failed to revert session');
+    } else {
+      toast.success('Session reverted to scheduled');
       setDetailOpen(false);
       fetchSessions();
     }
@@ -424,6 +445,11 @@ export default function AdminSessions() {
                     {selected.status === 'scheduled' && (
                       <Button variant="destructive" size="sm" onClick={handleCancel} disabled={saving} className="gap-1">
                         <X className="w-3 h-3" /> Cancel session
+                      </Button>
+                    )}
+                    {selected.status === 'completed' && (
+                      <Button variant="secondary" size="sm" onClick={handleRevert} disabled={saving} className="gap-1">
+                        <RotateCcw className="w-3 h-3" /> Revert to scheduled
                       </Button>
                     )}
                   </DialogFooter>
