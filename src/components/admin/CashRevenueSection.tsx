@@ -9,6 +9,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { DollarSign, CalendarIcon } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
+// Convert an ISO timestamp to YYYY-MM-DD in America/New_York so sessions
+// bucket by their local date, matching AdminRevenue's top panel.
+const etDateString = (iso: string): string => {
+  const d = new Date(iso);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(d);
+  const y = parts.find(p => p.type === 'year')?.value ?? '';
+  const m = parts.find(p => p.type === 'month')?.value ?? '';
+  const day = parts.find(p => p.type === 'day')?.value ?? '';
+  return `${y}-${m}-${day}`;
+};
+
 type PaymentSource = 'cash' | 'session';
 
 interface PaymentLogRow {
@@ -103,7 +117,7 @@ export function CashRevenueSection() {
     const monthEnd = format(endOfMonth(now), 'yyyy-MM-dd');
     const thisMonth = unifiedRows
       .filter(r => {
-        const d = r.date.slice(0, 10);
+        const d = r.source === 'session' ? etDateString(r.date) : r.date.slice(0, 10);
         return d >= monthStart && d <= monthEnd;
       })
       .reduce((sum, r) => sum + r.amount, 0);
@@ -132,7 +146,7 @@ export function CashRevenueSection() {
   const fromStr = format(dateFrom, 'yyyy-MM-dd');
   const toStr = format(dateTo, 'yyyy-MM-dd');
   const filteredPayments = payments.filter(p => {
-    const d = p.date.slice(0, 10);
+    const d = p.source === 'session' ? etDateString(p.date) : p.date.slice(0, 10);
     return d >= fromStr && d <= toStr;
   });
 
