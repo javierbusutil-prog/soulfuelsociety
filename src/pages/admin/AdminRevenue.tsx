@@ -9,6 +9,20 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { CashRevenueSection } from '@/components/admin/CashRevenueSection';
 
+// Convert an ISO timestamp to a YYYY-MM-DD string in America/New_York,
+// so sessions bucket by their local date instead of UTC.
+const etDateString = (iso: string): string => {
+  const d = new Date(iso);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(d);
+  const y = parts.find(p => p.type === 'year')?.value ?? '';
+  const m = parts.find(p => p.type === 'month')?.value ?? '';
+  const day = parts.find(p => p.type === 'day')?.value ?? '';
+  return `${y}-${m}-${day}`;
+};
+
 interface SubRow {
   id: string;
   customer_name: string;
