@@ -45,6 +45,12 @@ export default function AdminRevenue() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_payments' }, () => {
         fetchCashTotals();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_attendees' }, () => {
+        fetchCashTotals();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
+        fetchCashTotals();
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -67,18 +73,38 @@ export default function AdminRevenue() {
   };
 
   const fetchCashTotals = async () => {
-    const { data: payments } = await supabase.from('cash_payments').select('amount, payment_date');
-    if (payments) {
-      const total = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-      const now = new Date();
-      const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
-      const monthEnd = format(endOfMonth(now), 'yyyy-MM-dd');
-      const thisMonth = payments
-        .filter(p => p.payment_date >= monthStart && p.payment_date <= monthEnd)
-        .reduce((sum, p) => sum + Number(p.amount), 0);
-      setCashTotal(total);
-      setCashThisMonth(thisMonth);
-    }
+    const [{ data: payments }, { data: sessionPayments }] = await Promise.all([
+      supabase.from('cash_payments').select('amount, payment_date'),
+      supabase
+        .from('session_attendees')
+        .select('amount_charged, sessions!inner(scheduled_for, status)')
+        .eq('payment_received', true)
+        .eq('sessions.status', 'completed'),
+    ]);
+
+    const now = new Date();
+    const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(now), 'yyyy-MM-dd');
+
+    const cashRows = payments ?? [];
+    const sessRows = (sessionPayments ?? []) as any[];
+
+    const cashTotalAll = cashRows.reduce((s, p: any) => s + Number(p.amount), 0);
+    const sessTotalAll = sessRows.reduce((s, r: any) => s + Number(r.amount_charged ?? 0), 0);
+
+    const cashMonth = cashRows
+      .filter((p: any) => p.payment_date >= monthStart && p.payment_date <= monthEnd)
+      .reduce((s, p: any) => s + Number(p.amount), 0);
+
+    const sessMonth = sessRows
+      .filter((r: any) => {
+        const etDate = etDateString(r.sessions.scheduled_for);
+        return etDate >= monthStart && etDate <= monthEnd;
+      })
+      .reduce((s, r: any) => s + Number(r.amount_charged ?? 0), 0);
+
+    setCashTotal(cashTotalAll + sessTotalAll);
+    setCashThisMonth(cashMonth + sessMonth);
     setCashLoading(false);
   };
 
