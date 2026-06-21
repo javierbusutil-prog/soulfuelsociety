@@ -9,6 +9,20 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { CashRevenueSection } from '@/components/admin/CashRevenueSection';
 
+// Convert an ISO timestamp to a YYYY-MM-DD string in America/New_York,
+// so sessions bucket by their local date instead of UTC.
+const etDateString = (iso: string): string => {
+  const d = new Date(iso);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(d);
+  const y = parts.find(p => p.type === 'year')?.value ?? '';
+  const m = parts.find(p => p.type === 'month')?.value ?? '';
+  const day = parts.find(p => p.type === 'day')?.value ?? '';
+  return `${y}-${m}-${day}`;
+};
+
 interface SubRow {
   id: string;
   customer_name: string;
@@ -45,6 +59,12 @@ export default function AdminRevenue() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_payments' }, () => {
         fetchCashTotals();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_attendees' }, () => {
+        fetchCashTotals();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
+        fetchCashTotals();
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -67,18 +87,38 @@ export default function AdminRevenue() {
   };
 
   const fetchCashTotals = async () => {
-    const { data: payments } = await supabase.from('cash_payments').select('amount, payment_date');
-    if (payments) {
-      const total = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-      const now = new Date();
-      const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
-      const monthEnd = format(endOfMonth(now), 'yyyy-MM-dd');
-      const thisMonth = payments
-        .filter(p => p.payment_date >= monthStart && p.payment_date <= monthEnd)
-        .reduce((sum, p) => sum + Number(p.amount), 0);
-      setCashTotal(total);
-      setCashThisMonth(thisMonth);
-    }
+    const [{ data: payments }, { data: sessionPayments }] = await Promise.all([
+      supabase.from('cash_payments').select('amount, payment_date'),
+      supabase
+        .from('session_attendees')
+        .select('amount_charged, sessions!inner(scheduled_for, status)')
+        .eq('payment_received', true)
+        .eq('sessions.status', 'completed'),
+    ]);
+
+    const now = new Date();
+    const monthStart = format(startOfMonth(now), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(now), 'yyyy-MM-dd');
+
+    const cashRows = payments ?? [];
+    const sessRows = (sessionPayments ?? []) as any[];
+
+    const cashTotalAll = cashRows.reduce((s, p: any) => s + Number(p.amount), 0);
+    const sessTotalAll = sessRows.reduce((s, r: any) => s + Number(r.amount_charged ?? 0), 0);
+
+    const cashMonth = cashRows
+      .filter((p: any) => p.payment_date >= monthStart && p.payment_date <= monthEnd)
+      .reduce((s, p: any) => s + Number(p.amount), 0);
+
+    const sessMonth = sessRows
+      .filter((r: any) => {
+        const etDate = etDateString(r.sessions.scheduled_for);
+        return etDate >= monthStart && etDate <= monthEnd;
+      })
+      .reduce((s, r: any) => s + Number(r.amount_charged ?? 0), 0);
+
+    setCashTotal(cashTotalAll + sessTotalAll);
+    setCashThisMonth(cashMonth + sessMonth);
     setCashLoading(false);
   };
 
