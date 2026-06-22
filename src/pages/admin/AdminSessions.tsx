@@ -7,12 +7,22 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfWeek, endOfWeek, addDays, isSameDay } from 'date-fns';
-import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3, CalendarClock, RotateCcw } from 'lucide-react';
+import { CalendarDays, List, ChevronLeft, ChevronRight, Clock, CheckCircle2, X, Edit3, CalendarClock, RotateCcw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { WorkoutBlocksDisplay } from '@/components/workouts/WorkoutBlocksDisplay';
 import { getBlocksFromSource } from '@/lib/workoutBlocks';
@@ -55,6 +65,7 @@ export default function AdminSessions() {
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [saving, setSaving] = useState(false);
   const [payments, setPayments] = useState<PaymentDraft[]>([]);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     fetchSessions();
@@ -229,6 +240,25 @@ export default function AdminSessions() {
       fetchSessions();
     }
     setSaving(false);
+  };
+
+  const handleDelete = async () => {
+    if (!selected) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from('sessions')
+      .delete()
+      .eq('id', selected.id);
+    setSaving(false);
+    if (error) {
+      console.error('session delete failed', error);
+      toast.error('Failed to delete session');
+      return;
+    }
+    toast.success('Session deleted');
+    setDeleteOpen(false);
+    setDetailOpen(false);
+    fetchSessions();
   };
 
   const saveNote = async () => {
@@ -452,6 +482,9 @@ export default function AdminSessions() {
                         <RotateCcw className="w-3 h-3" /> Revert to scheduled
                       </Button>
                     )}
+                    <Button variant="destructive" size="sm" onClick={() => setDeleteOpen(true)} disabled={saving} className="gap-1">
+                      <Trash2 className="w-3 h-3" /> Delete session
+                    </Button>
                   </DialogFooter>
                 </TabsContent>
 
@@ -522,6 +555,45 @@ export default function AdminSessions() {
             )}
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            {(() => {
+              const attendees = selected?.attendees ?? [];
+              const hasRecordedPayment = attendees.some(
+                (a) => a.payment_received || (a.amount_charged ?? 0) > 0
+              );
+              const paidTotal = attendees
+                .filter((a) => a.payment_received)
+                .reduce((sum, a) => sum + (a.amount_charged ?? 0), 0);
+              return (
+                <>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete session?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {hasRecordedPayment
+                        ? `This session has $${paidTotal.toFixed(2)} in recorded payment. Deleting it permanently removes the session and its payment from Revenue. This can't be undone. Delete anyway?`
+                        : "Delete this session? This can't be undone."}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDelete();
+                      }}
+                      disabled={saving}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </>
+              );
+            })()}
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );
