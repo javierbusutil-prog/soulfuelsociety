@@ -2808,6 +2808,13 @@ export type Database = {
       }
     }
     Functions: {
+      admin_set_membership: {
+        Args: {
+          p_member_id: string
+          p_target_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: undefined
+      }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
