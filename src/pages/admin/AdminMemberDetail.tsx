@@ -868,6 +868,52 @@ export default function AdminMemberDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={upgradeConfirmOpen} onOpenChange={setUpgradeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Upgrade to paid?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Upgrade {profile?.full_name || 'this member'} to paid? This sets their subscription to active and syncs their role. This does not record a payment — use Record Payment for that.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={membershipSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={membershipSaving}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSetMembership('paid');
+              }}
+            >
+              Upgrade
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={downgradeConfirmOpen} onOpenChange={setDowngradeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Downgrade to free?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Downgrade {profile?.full_name || 'this member'} to free? This clears their subscription and role.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={membershipSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={membershipSaving}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSetMembership('free');
+              }}
+            >
+              Downgrade
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
