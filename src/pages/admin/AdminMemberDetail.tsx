@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, DollarSign, Pencil, Trash2, Plus, FileText, CalendarPlus } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, ArrowDownCircle, DollarSign, Pencil, Trash2, Plus, FileText, CalendarPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
 import { PaymentDialog } from '@/components/admin/PaymentDialog';
@@ -117,6 +117,9 @@ export default function AdminMemberDetail() {
   const [sessionsThisMonthCount, setSessionsThisMonthCount] = useState(0);
   const [nextSessionAt, setNextSessionAt] = useState<string | null>(null);
   const [paidThisMonth, setPaidThisMonth] = useState(0);
+  const [upgradeConfirmOpen, setUpgradeConfirmOpen] = useState(false);
+  const [downgradeConfirmOpen, setDowngradeConfirmOpen] = useState(false);
+  const [membershipSaving, setMembershipSaving] = useState(false);
 
   useEffect(() => {
     if (id) fetchAll(id);
@@ -332,6 +335,24 @@ export default function AdminMemberDetail() {
     setNewUpgradeDialogOpen(true);
   };
 
+  const handleSetMembership = async (targetRole: 'paid' | 'free') => {
+    if (!id) return;
+    setMembershipSaving(true);
+    const { error } = await supabase.rpc('admin_set_membership' as any, {
+      p_member_id: id,
+      p_target_role: targetRole,
+    });
+    setMembershipSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setUpgradeConfirmOpen(false);
+    setDowngradeConfirmOpen(false);
+    toast.success(targetRole === 'paid' ? 'Member upgraded to paid' : 'Member downgraded to free');
+    if (id) fetchAll(id);
+  };
+
   if (loading) {
     return (
       <AdminLayout title="Member">
@@ -390,9 +411,19 @@ export default function AdminMemberDetail() {
                   <Button
                     size="sm"
                     className="mt-3 gap-1.5"
-                    onClick={handleNewUpgrade}
+                    onClick={() => setUpgradeConfirmOpen(true)}
                   >
                     <ArrowUpCircle className="w-4 h-4" /> Upgrade to Paid
+                  </Button>
+                )}
+                {userRole === 'paid' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-3 gap-1.5"
+                    onClick={() => setDowngradeConfirmOpen(true)}
+                  >
+                    <ArrowDownCircle className="w-4 h-4" /> Downgrade to Free
                   </Button>
                 )}
                 <Button
@@ -833,6 +864,52 @@ export default function AdminMemberDetail() {
               }}
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={upgradeConfirmOpen} onOpenChange={setUpgradeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Upgrade to paid?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Upgrade {profile?.full_name || 'this member'} to paid? This sets their subscription to active and syncs their role. This does not record a payment — use Record Payment for that.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={membershipSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={membershipSaving}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSetMembership('paid');
+              }}
+            >
+              Upgrade
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={downgradeConfirmOpen} onOpenChange={setDowngradeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Downgrade to free?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Downgrade {profile?.full_name || 'this member'} to free? This clears their subscription and role.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={membershipSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={membershipSaving}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSetMembership('free');
+              }}
+            >
+              Downgrade
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
