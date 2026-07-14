@@ -48,6 +48,8 @@ interface ProfileData {
   created_at: string;
   subscription_status: string | null;
   phone: string | null;
+  intake_requested?: boolean;
+  intake_submitted?: boolean;
 }
 
 interface ManualPaymentRecord {
@@ -131,7 +133,7 @@ export default function AdminMemberDetail() {
     // Profile
     const { data: prof } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, selected_plan, created_at, subscription_status, phone')
+      .select('id, full_name, avatar_url, selected_plan, created_at, subscription_status, phone, intake_requested, intake_submitted')
       .eq('id', userId)
       .single();
     if (prof) setProfile(prof as ProfileData);
