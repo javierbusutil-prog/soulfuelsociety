@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, ArrowDownCircle, DollarSign, Pencil, Trash2, Plus, FileText, CalendarPlus } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, ArrowDownCircle, DollarSign, Pencil, Trash2, Plus, FileText, CalendarPlus, ClipboardList, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
 import { PaymentDialog } from '@/components/admin/PaymentDialog';
@@ -353,6 +353,60 @@ export default function AdminMemberDetail() {
     setDowngradeConfirmOpen(false);
     toast.success(targetRole === 'paid' ? 'Member upgraded to paid' : 'Member downgraded to free');
     if (id) fetchAll(id);
+  };
+
+  const [sendingIntake, setSendingIntake] = useState(false);
+  const handleSendIntake = async () => {
+    if (!id || !user || !profile) return;
+    if (profile.intake_submitted) return;
+    setSendingIntake(true);
+    try {
+      const { error: profErr } = await supabase
+        .from('profiles')
+        .update({ intake_requested: true } as any)
+        .eq('id', id);
+      if (profErr) throw profErr;
+
+      await supabase.from('notifications' as any).insert({
+        user_id: id,
+        type: 'intake_requested',
+        title: 'Your coach sent you an intake form',
+        body: 'Your coach sent you an intake form to complete.',
+        reference_id: id,
+      } as any);
+
+      let tid = threadId;
+      if (!tid) {
+        const { data: newThread, error: tErr } = await supabase
+          .from('threads')
+          .insert({ user_id: id, admin_id: user.id })
+          .select('id')
+          .single();
+        if (tErr || !newThread) throw tErr || new Error('Could not create thread');
+        tid = newThread.id;
+        setThreadId(tid);
+      }
+
+      const msgBody = "I've sent you an intake form to complete — please fill it out here: /intake";
+      const { error: mErr } = await supabase
+        .from('messages')
+        .insert({ thread_id: tid, sender_id: user.id, content: msgBody });
+      if (mErr) throw mErr;
+
+      setMessages(prev => [...prev, {
+        id: crypto.randomUUID(),
+        content: msgBody,
+        sender_id: user.id,
+        created_at: new Date().toISOString(),
+        sender_name: 'You',
+      }]);
+      setProfile(prev => prev ? { ...prev, intake_requested: true } : prev);
+      toast.success('Intake form sent.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to send intake form');
+    } finally {
+      setSendingIntake(false);
+    }
   };
 
   if (loading) {
