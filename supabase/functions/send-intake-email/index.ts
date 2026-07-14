@@ -83,7 +83,7 @@ serve(async (req) => {
       );
     }
 
-    const intakeUrl = "https://soulfuelsociety.lovable.app/intake";
+    const intakeUrl = "https://soulfuelsociety.app/intake";
     const firstName = String(full_name || "").split(" ")[0] || "there";
 
     const htmlBody = `
