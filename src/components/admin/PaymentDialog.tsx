@@ -218,15 +218,25 @@ export function PaymentDialog({
           // Do not re-add an insert here — the notifications table RLS
           // blocks direct inserts from user-context clients.
         } else if (paymentType === 'renewal') {
-          // Extend membership_expires_at only.
-          const { error: profileErr } = await supabase
+          // Renewal: sync role → paid, status → active, and expiry atomically via
+          // the shared RPC (also hard-blocks Stripe-managed members). Previously
+          // this branch only touched profiles, so members whose role had drifted
+          // to 'free' stayed locked out after renewal because isPaidMember is
+          // role-only.
+          const { error: rpcErr } = await supabase.rpc('admin_set_membership' as any, {
+            p_member_id: memberId,
+            p_target_role: 'paid',
+          });
+          if (rpcErr) throw rpcErr;
+
+          // The RPC uses COALESCE on membership_expires_at (defaults to now+30d
+          // only when null), so it will NOT overwrite an existing expiry. Force
+          // the coach's picked date to win.
+          const { error: expiryErr } = await supabase
             .from('profiles')
-            .update({
-              membership_expires_at: expiresAt!.toISOString(),
-              subscription_status: 'active',
-            } as any)
+            .update({ membership_expires_at: expiresAt!.toISOString() } as any)
             .eq('id', memberId);
-          if (profileErr) throw profileErr;
+          if (expiryErr) throw expiryErr;
         }
         // 'sessions' and 'adhoc' have NO profile side effects, by design.
         // (If you want session payments to also update profiles.sessions_remaining
