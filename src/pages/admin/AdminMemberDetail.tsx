@@ -500,6 +500,32 @@ export default function AdminMemberDetail() {
                     <CalendarPlus className="w-4 h-4" /> Log session
                   </Button>
                 )}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant={profile.intake_submitted ? 'default' : profile.intake_requested ? 'secondary' : 'outline'}
+                    className="gap-1"
+                  >
+                    {profile.intake_submitted ? (
+                      <><CheckCircle2 className="w-3 h-3" /> Intake submitted</>
+                    ) : profile.intake_requested ? (
+                      <>Intake sent — pending</>
+                    ) : (
+                      <>Intake: not sent</>
+                    )}
+                  </Badge>
+                  {!profile.intake_submitted && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={handleSendIntake}
+                      disabled={sendingIntake}
+                    >
+                      <ClipboardList className="w-4 h-4" />
+                      {profile.intake_requested ? 'Re-send intake form' : 'Send intake form'}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
