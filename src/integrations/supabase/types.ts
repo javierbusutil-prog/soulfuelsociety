@@ -1767,6 +1767,7 @@ export type Database = {
           has_completed_onboarding: boolean
           id: string
           intake_reminder_sent: boolean
+          intake_requested: boolean
           intake_submitted: boolean
           membership_expires_at: string | null
           nutrition_disclaimer_accepted: boolean
@@ -1795,6 +1796,7 @@ export type Database = {
           has_completed_onboarding?: boolean
           id: string
           intake_reminder_sent?: boolean
+          intake_requested?: boolean
           intake_submitted?: boolean
           membership_expires_at?: string | null
           nutrition_disclaimer_accepted?: boolean
@@ -1823,6 +1825,7 @@ export type Database = {
           has_completed_onboarding?: boolean
           id?: string
           intake_reminder_sent?: boolean
+          intake_requested?: boolean
           intake_submitted?: boolean
           membership_expires_at?: string | null
           nutrition_disclaimer_accepted?: boolean

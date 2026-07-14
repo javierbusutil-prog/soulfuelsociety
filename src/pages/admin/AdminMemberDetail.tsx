@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, ArrowDownCircle, DollarSign, Pencil, Trash2, Plus, FileText, CalendarPlus } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, ArrowDownCircle, DollarSign, Pencil, Trash2, Plus, FileText, CalendarPlus, ClipboardList, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UpgradeToPaidDialog, CashPaymentRecord } from '@/components/admin/UpgradeToPaidDialog';
 import { PaymentDialog } from '@/components/admin/PaymentDialog';
@@ -48,6 +48,8 @@ interface ProfileData {
   created_at: string;
   subscription_status: string | null;
   phone: string | null;
+  intake_requested?: boolean;
+  intake_submitted?: boolean;
 }
 
 interface ManualPaymentRecord {
@@ -131,7 +133,7 @@ export default function AdminMemberDetail() {
     // Profile
     const { data: prof } = await supabase
       .from('profiles')
-      .select('id, full_name, avatar_url, selected_plan, created_at, subscription_status, phone')
+      .select('id, full_name, avatar_url, selected_plan, created_at, subscription_status, phone, intake_requested, intake_submitted')
       .eq('id', userId)
       .single();
     if (prof) setProfile(prof as ProfileData);
@@ -353,6 +355,60 @@ export default function AdminMemberDetail() {
     if (id) fetchAll(id);
   };
 
+  const [sendingIntake, setSendingIntake] = useState(false);
+  const handleSendIntake = async () => {
+    if (!id || !user || !profile) return;
+    if (profile.intake_submitted) return;
+    setSendingIntake(true);
+    try {
+      const { error: profErr } = await supabase
+        .from('profiles')
+        .update({ intake_requested: true } as any)
+        .eq('id', id);
+      if (profErr) throw profErr;
+
+      await supabase.from('notifications' as any).insert({
+        user_id: id,
+        type: 'intake_requested',
+        title: 'Your coach sent you an intake form',
+        body: 'Your coach sent you an intake form to complete.',
+        reference_id: id,
+      } as any);
+
+      let tid = threadId;
+      if (!tid) {
+        const { data: newThread, error: tErr } = await supabase
+          .from('threads')
+          .insert({ user_id: id, admin_id: user.id })
+          .select('id')
+          .single();
+        if (tErr || !newThread) throw tErr || new Error('Could not create thread');
+        tid = newThread.id;
+        setThreadId(tid);
+      }
+
+      const msgBody = "I've sent you an intake form to complete — please fill it out here: /intake";
+      const { error: mErr } = await supabase
+        .from('messages')
+        .insert({ thread_id: tid, sender_id: user.id, content: msgBody });
+      if (mErr) throw mErr;
+
+      setMessages(prev => [...prev, {
+        id: crypto.randomUUID(),
+        content: msgBody,
+        sender_id: user.id,
+        created_at: new Date().toISOString(),
+        sender_name: 'You',
+      }]);
+      setProfile(prev => prev ? { ...prev, intake_requested: true } : prev);
+      toast.success('Intake form sent.');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to send intake form');
+    } finally {
+      setSendingIntake(false);
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout title="Member">
@@ -444,6 +500,32 @@ export default function AdminMemberDetail() {
                     <CalendarPlus className="w-4 h-4" /> Log session
                   </Button>
                 )}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant={profile.intake_submitted ? 'default' : profile.intake_requested ? 'secondary' : 'outline'}
+                    className="gap-1"
+                  >
+                    {profile.intake_submitted ? (
+                      <><CheckCircle2 className="w-3 h-3" /> Intake submitted</>
+                    ) : profile.intake_requested ? (
+                      <>Intake sent — pending</>
+                    ) : (
+                      <>Intake: not sent</>
+                    )}
+                  </Badge>
+                  {!profile.intake_submitted && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={handleSendIntake}
+                      disabled={sendingIntake}
+                    >
+                      <ClipboardList className="w-4 h-4" />
+                      {profile.intake_requested ? 'Re-send intake form' : 'Send intake form'}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 

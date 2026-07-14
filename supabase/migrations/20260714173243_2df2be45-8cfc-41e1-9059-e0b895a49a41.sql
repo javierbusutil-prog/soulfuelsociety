@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS intake_requested boolean NOT NULL DEFAULT false;
