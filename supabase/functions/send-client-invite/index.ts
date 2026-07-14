@@ -78,7 +78,7 @@ serve(async (req) => {
       );
     }
 
-    const signupUrl = "https://soulfuelsociety.lovable.app/signup";
+    const signupUrl = "https://soulfuelsociety.app/signup";
     const firstName = String(full_name).split(" ")[0] || "there";
 
     const noteBlock = note
