@@ -401,6 +401,16 @@ export default function AdminMemberDetail() {
         sender_name: 'You',
       }]);
       setProfile(prev => prev ? { ...prev, intake_requested: true } : prev);
+
+      // Fire-and-warn: email is best-effort; do not fail the whole action if it bounces.
+      try {
+        await supabase.functions.invoke('send-intake-email', {
+          body: { user_id: id, full_name: profile.full_name },
+        });
+      } catch (e) {
+        console.warn('Intake email failed to send', e);
+      }
+
       toast.success('Intake form sent.');
     } catch (e: any) {
       toast.error(e?.message || 'Failed to send intake form');
