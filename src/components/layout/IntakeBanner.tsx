@@ -5,11 +5,11 @@ import { X, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function IntakeBanner() {
-  const { isPaidMember, profile, user } = useAuth();
+  const { profile, user } = useAuth();
   const [dismissed, setDismissed] = useState(false);
 
-  // Show only for paid members who haven't submitted intake
-  if (!user || !isPaidMember || profile?.intake_submitted || dismissed) return null;
+  // Show only when a coach has sent the intake and the member hasn't submitted
+  if (!user || !(profile as any)?.intake_requested || profile?.intake_submitted || dismissed) return null;
 
   return (
     <div className="mx-4 mt-2 mb-0 rounded-xl border-l-4 border-l-primary bg-primary/5 dark:bg-primary/10 px-4 py-3 flex items-center gap-3 relative">
