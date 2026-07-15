@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Printer } from 'lucide-react';
 import logoWordmark from '@/assets/logo-wordmark.svg';
+import { buildIntakeSummary } from '@/lib/intakeSummary';
 
 const CREAM = '#F2EDE8';
 const NAVY = '#3B4A5A';
@@ -167,70 +168,7 @@ export default function Intake() {
         }
 
         if (threadId) {
-          const submittedDate = new Date().toLocaleDateString('en-US', {
-            year: 'numeric', month: 'long', day: 'numeric',
-          });
-
-          // Build structured JSON content for branded rendering
-          const summaryData = {
-            type: 'intake_form',
-            memberId: user!.id,
-            memberName: `${firstName} ${lastName}`,
-            submittedDate,
-            sections: [
-              { num: '01', title: 'Personal Information', fields: [
-                { label: 'Name', value: `${firstName} ${lastName}` },
-                { label: 'Date of Birth', value: dob || 'Not provided' },
-                { label: 'Gender', value: gender || 'Not provided' },
-                { label: 'Phone', value: phone || 'Not provided' },
-                { label: 'Email', value: email },
-                { label: 'Address', value: address || 'Not provided' },
-                { label: 'Occupation', value: occupation || 'Not provided' },
-                { label: 'How did you hear about us', value: hearAbout || 'Not provided' },
-              ]},
-              { num: '02', title: 'Emergency Contact', fields: [
-                { label: 'Name', value: emergencyName || 'Not provided' },
-                { label: 'Relationship', value: emergencyRelationship || 'Not provided' },
-                { label: 'Phone', value: emergencyPhone || 'Not provided' },
-              ]},
-              { num: '03', title: 'Health & Medical History', fields: [
-                { label: 'Pre-existing Conditions', value: conditions.length ? conditions.join(', ') : 'None' },
-                { label: 'Currently Taking Medications', value: takingMeds || 'Not answered' },
-                ...(takingMeds === 'Yes' ? [{ label: 'Medications', value: medsList || 'Not listed' }] : []),
-                { label: 'Recent Surgery (past 2 years)', value: recentSurgery || 'Not answered' },
-                ...(recentSurgery === 'Yes' ? [{ label: 'Surgery Details', value: surgeryDesc || 'Not described' }] : []),
-                { label: 'Doctor Advised Not to Exercise', value: doctorAdvised || 'Not answered' },
-                { label: 'Other Medical Concerns', value: otherMedical || 'None' },
-              ]},
-              { num: '04', title: 'Injuries & Physical Limitations', fields: [
-                { label: 'Current/Recurring Injuries', value: hasInjuries || 'Not answered' },
-                ...(hasInjuries === 'Yes' ? [{ label: 'Injury Details', value: injuryDesc || 'Not described' }] : []),
-                { label: 'Pain Level at Rest', value: painLevel || 'Not provided' },
-              ]},
-              { num: '05', title: 'Fitness Goals', fields: [
-                { label: 'Primary Goal', value: primaryGoal },
-                { label: 'Current Weight', value: currentWeight ? `${currentWeight} lb` : 'Not provided' },
-                { label: 'Goal Weight', value: goalWeight ? `${goalWeight} lb` : 'Not provided' },
-                { label: 'Target Timeframe', value: timeframe || 'Not provided' },
-                { label: 'Goal Description', value: goalDescription || 'Not provided' },
-              ]},
-              { num: '06', title: 'Current Fitness Level', fields: [
-                { label: 'Fitness Level', value: fitnessLevel },
-                { label: 'Days/Week Currently Exercising', value: exerciseDays || 'Not provided' },
-                { label: 'Exercise Types', value: exerciseTypes.length ? exerciseTypes.join(', ') : 'None' },
-                { label: 'Gym Access', value: gymAccess || 'Not provided' },
-              ]},
-              { num: '07', title: 'Lifestyle & Nutrition Habits', fields: [
-                { label: 'Meals per Day', value: mealsPerDay || 'Not provided' },
-                { label: 'Water Intake', value: waterIntake || 'Not provided' },
-                { label: 'Dietary Approach', value: dietaryApproach.length ? dietaryApproach.join(', ') : 'Not provided' },
-                { label: 'Average Sleep', value: sleepHours || 'Not provided' },
-                { label: 'Stress Level', value: stressLevel || 'Not provided' },
-                { label: 'Smoking/Alcohol', value: smokingAlcohol.length ? smokingAlcohol.join(', ') : 'Not provided' },
-                { label: 'Additional Notes', value: lifestyleNotes || 'None' },
-              ]},
-            ],
-          };
+          const summaryData = buildIntakeSummary(responses, user!.id, new Date().toISOString());
 
           await supabase.from('messages').insert({
             thread_id: threadId,

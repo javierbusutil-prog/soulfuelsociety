@@ -18,6 +18,7 @@ import { DeletePaymentDialog } from '@/components/admin/DeletePaymentDialog';
 import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
 import { DailyDoseFormDialog, DailyDosePost } from '@/components/admin/DailyDoseFormDialog';
 import { isIntakeFormMessage, IntakeFormMessage } from '@/components/chat/IntakeFormMessage';
+import { IntakeFormViewer } from '@/components/admin/IntakeFormViewer';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -581,6 +582,20 @@ export default function AdminMemberDetail() {
             </div>
           </CardContent>
         </Card>
+
+        {/* SECTION — Intake Form */}
+        {profile.intake_requested && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-muted-foreground" /> Intake Form
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <IntakeFormViewer memberId={profile.id} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* SECTION — Cash Payments */}
         {cashPayments.length > 0 && (
