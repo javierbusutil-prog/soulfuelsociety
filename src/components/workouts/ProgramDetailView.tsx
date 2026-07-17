@@ -343,6 +343,20 @@ export function ProgramDetailView({
                                 {session.content_json.notes}
                               </p>
                             )}
+                            {session.content_json?.demos && session.content_json.demos.length > 0 && (
+                              <div className="pt-2 space-y-1">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                                  Movement demos
+                                </p>
+                                {session.content_json.demos.map((demo, di) => (
+                                  <MovementExerciseRow
+                                    key={di}
+                                    name={demo.name || 'Movement'}
+                                    movementId={demo.movementId ?? null}
+                                  />
+                                ))}
+                              </div>
+                            )}
                           </div>
                           {isAdmin && (
                             <div className="flex items-center gap-1">
