@@ -6,50 +6,49 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { EbookViewer } from './EbookViewer';
+import { ProgramDetailView } from '@/components/workouts/ProgramDetailView';
+import { WorkoutProgram } from '@/types/workoutPrograms';
 
-interface ProgramRow {
-  id: string;
-  title: string;
-  description: string | null;
-  cover_image_url: string | null;
-  access_type: 'free' | 'membership' | 'one_time_purchase';
-  price_cents: number | null;
-  ebook_url: string | null;
-}
+type ProgramRow = WorkoutProgram;
 
 export function ProgramCatalog() {
-  const { user, isPaidMember } = useAuth();
+  const { user, isPaidMember, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [programs, setPrograms] = useState<ProgramRow[]>([]);
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
+  const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [viewingProgram, setViewingProgram] = useState<ProgramRow | null>(null);
   const [buyingId, setBuyingId] = useState<string | null>(null);
 
+  const fetchAll = async () => {
+    const { data: progs } = await supabase
+      .from('workout_programs')
+      .select('*')
+      .eq('published', true)
+      .order('created_at', { ascending: false });
+
+    let purchased: string[] = [];
+    let enrolled: string[] = [];
+    if (user) {
+      const [{ data: pur }, { data: enr }] = await Promise.all([
+        supabase.from('ebook_purchases').select('ebook_id').eq('user_id', user.id),
+        supabase.from('user_program_enrollments').select('program_id').eq('user_id', user.id),
+      ]);
+      purchased = (pur ?? []).map((p: any) => p.ebook_id);
+      enrolled = (enr ?? []).map((e: any) => e.program_id);
+    }
+
+    setPrograms((progs ?? []) as ProgramRow[]);
+    setPurchasedIds(new Set(purchased));
+    setEnrolledIds(new Set(enrolled));
+    setLoading(false);
+  };
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data: progs } = await supabase
-        .from('workout_programs')
-        .select('id, title, description, cover_image_url, access_type, price_cents, ebook_url')
-        .eq('published', true)
-        .order('created_at', { ascending: false });
-
-      let purchased: string[] = [];
-      if (user) {
-        const { data: pur } = await supabase
-          .from('ebook_purchases')
-          .select('ebook_id')
-          .eq('user_id', user.id);
-        purchased = (pur ?? []).map((p: any) => p.ebook_id);
-      }
-
-      if (!cancelled) {
-        setPrograms((progs ?? []) as ProgramRow[]);
-        setPurchasedIds(new Set(purchased));
-        setLoading(false);
-      }
+      if (!cancelled) await fetchAll();
     })();
     return () => {
       cancelled = true;
@@ -78,9 +77,28 @@ export function ProgramCatalog() {
 
   if (viewingProgram) {
     return (
-      <EbookViewer
+      <ProgramDetailView
         program={viewingProgram}
+        isAdmin={isAdmin}
+        isEnrolled={enrolledIds.has(viewingProgram.id)}
         onBack={() => setViewingProgram(null)}
+        onUpdate={async (id, updates) => {
+          if (!isAdmin) return viewingProgram;
+          const { data, error } = await supabase
+            .from('workout_programs')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+          if (error) throw error;
+          const updated = data as WorkoutProgram;
+          setViewingProgram(updated);
+          setPrograms((prev) => prev.map((p) => (p.id === id ? updated : p)));
+          return updated;
+        }}
+        onEnrollmentChange={() => {
+          fetchAll();
+        }}
       />
     );
   }
