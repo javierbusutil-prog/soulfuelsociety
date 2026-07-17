@@ -89,7 +89,9 @@ export default function Signup() {
       title: 'Welcome to Soul Fuel Society!',
       description: 'Your account has been created.',
     });
-    navigate('/home');
+    // If the user arrived via OAuth consent (?next=/.lovable/oauth/consent...),
+    // return them there so authorization completes.
+    navigate(nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/home');
   };
 
   if (step === 'waiver') {
