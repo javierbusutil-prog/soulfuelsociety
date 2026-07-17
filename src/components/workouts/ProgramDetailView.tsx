@@ -45,6 +45,8 @@ import { WorkoutProgram, WorkoutSessionTemplate, DAYS_OF_WEEK, SessionContent } 
 import { useSessionTemplates } from '@/hooks/useWorkoutPrograms';
 import { EnrollProgramDialog } from './EnrollProgramDialog';
 import { ExerciseLink } from './ExerciseLink';
+import { MovementPicker } from '@/components/movements/MovementPicker';
+import { MovementExerciseRow } from '@/components/dashboard/MovementExerciseRow';
 
 interface ProgramDetailViewProps {
   program: WorkoutProgram;
@@ -75,6 +77,7 @@ export function ProgramDetailView({
     index: 1,
     title: '',
     notes: '',
+    demos: [] as { name: string; movementId?: string | null }[],
   });
 
   useEffect(() => {
@@ -130,11 +133,11 @@ export function ProgramDetailView({
         week_number: newSession.week,
         session_index: newSession.index,
         title: newSession.title.trim(),
-        content_json: { notes: newSession.notes } as SessionContent,
+        content_json: { notes: newSession.notes, demos: newSession.demos } as SessionContent,
       });
       toast({ title: 'Session added!' });
       setIsAddingSession(false);
-      setNewSession({ week: 1, index: 1, title: '', notes: '' });
+      setNewSession({ week: 1, index: 1, title: '', notes: '', demos: [] });
     } catch (error) {
       toast({ title: 'Failed to add session', variant: 'destructive' });
     }
