@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { lovable } from '@/integrations/lovable/index';
 import logoStacked from '@/assets/logo-stacked.svg';
+import { stashPostAuthRedirect } from '@/lib/postAuthRedirect';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -26,6 +27,8 @@ export default function Login() {
   const { signIn } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextParam = searchParams.get('next');
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -129,6 +132,9 @@ export default function Login() {
             size="lg"
             className="w-full"
             onClick={async () => {
+              // Google OAuth forces redirect_uri back to window.location.origin,
+              // so stash the intended post-auth path first.
+              stashPostAuthRedirect(nextParam);
               const { error } = await lovable.auth.signInWithOAuth("google", {
                 redirect_uri: window.location.origin,
               });
