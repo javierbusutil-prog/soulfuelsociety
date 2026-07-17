@@ -46,6 +46,8 @@ import AdminPTRequests from "./pages/admin/AdminPTRequests";
 import PTRequest from "./pages/PTRequest";
 import AdminBroadcast from "./pages/admin/AdminBroadcast";
 import AdminContactSubmissions from "./pages/admin/AdminContactSubmissions";
+import OAuthConsent from "./pages/OAuthConsent";
+import { consumePostAuthRedirect, isSafeReturnPath } from "@/lib/postAuthRedirect";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +117,13 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (user) {
+    // Honor an explicit ?next=/... on the auth URL (e.g. OAuth consent flow),
+    // then any redirect stashed before a Google round-trip.
+    const params = new URLSearchParams(window.location.search);
+    const nextParam = params.get("next");
+    if (isSafeReturnPath(nextParam)) return <Navigate to={nextParam} replace />;
+    const stashed = consumePostAuthRedirect();
+    if (stashed) return <Navigate to={stashed} replace />;
     // Coaches go to admin, members go to community
     if (isAdmin || isPTAdmin) {
       return <Navigate to="/admin" replace />;
@@ -148,6 +157,10 @@ function SmartRedirect() {
     );
   }
   if (!user) return <Landing />;
+  // Google OAuth returns to window.location.origin ("/"); consume any stashed
+  // return path (e.g. OAuth consent URL) before falling through to role routing.
+  const stashed = consumePostAuthRedirect();
+  if (stashed) return <Navigate to={stashed} replace />;
   if (isAdmin || isPTAdmin) return <Navigate to="/admin" replace />;
   return <Navigate to="/home" replace />;
 }
@@ -177,6 +190,10 @@ function AppRoutes() {
       <Route path="/sessions" element={<ProtectedRoute><Sessions /></ProtectedRoute>} />
       <Route path="/intake" element={<Intake />} />
       <Route path="/pt-request" element={<ProtectedRoute><PTRequest /></ProtectedRoute>} />
+
+      {/* Managed OAuth consent route — must be reachable without a route guard;
+          OAuthConsent handles its own sign-in redirect while preserving the URL. */}
+      <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
       
       {/* Coach admin routes */}
       <Route path="/admin" element={<CoachRoute><AdminDashboard /></CoachRoute>} />

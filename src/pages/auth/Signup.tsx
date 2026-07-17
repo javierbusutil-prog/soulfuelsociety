@@ -14,6 +14,7 @@ import { lovable } from '@/integrations/lovable/index';
 import { supabase } from '@/integrations/supabase/client';
 import logoStacked from '@/assets/logo-stacked.svg';
 import LiabilityWaiver from '@/components/auth/LiabilityWaiver';
+import { stashPostAuthRedirect } from '@/lib/postAuthRedirect';
 
 const WAIVER_PDF_URL = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/legal-documents/soul-fuel-waiver.pdf`;
 
@@ -39,6 +40,7 @@ export default function Signup() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const prefilledEmail = searchParams.get('email') || '';
+  const nextParam = searchParams.get('next');
 
   const { register, handleSubmit, formState: { errors } } = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),
@@ -175,6 +177,7 @@ export default function Signup() {
             size="lg"
             className="w-full"
             onClick={async () => {
+              stashPostAuthRedirect(nextParam);
               const { error } = await lovable.auth.signInWithOAuth("google", {
                 redirect_uri: window.location.origin,
               });
