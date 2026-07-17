@@ -540,6 +540,9 @@ function EditSessionDialog({
 }) {
   const [title, setTitle] = useState(session.title);
   const [notes, setNotes] = useState(session.content_json?.notes || '');
+  const [demos, setDemos] = useState<{ name: string; movementId?: string | null }[]>(
+    session.content_json?.demos ?? []
+  );
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
@@ -547,7 +550,7 @@ function EditSessionDialog({
     try {
       await onSave({
         title,
-        content_json: { ...session.content_json, notes } as SessionContent,
+        content_json: { ...session.content_json, notes, demos } as SessionContent,
       });
     } finally {
       setLoading(false);
@@ -575,6 +578,40 @@ function EditSessionDialog({
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
             />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Movement demos (optional)</Label>
+            {demos.map((demo, idx) => (
+              <div key={idx} className="flex gap-2">
+                <div className="flex-1">
+                  <MovementPicker
+                    value={demo.name ?? ''}
+                    movementId={demo.movementId ?? null}
+                    onChange={({ name, movementId }) =>
+                      setDemos(demos.map((d, i) => (i === idx ? { name, movementId } : d)))
+                    }
+                    placeholder="Link a movement demo"
+                  />
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-destructive shrink-0"
+                  onClick={() => setDemos(demos.filter((_, i) => i !== idx))}
+                  aria-label="Remove demo"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              size="sm"
+              variant="default"
+              className="text-xs gap-1 w-full"
+              onClick={() => setDemos([...demos, { name: '', movementId: null }])}
+            >
+              <Plus className="w-3 h-3" /> Add demo
+            </Button>
           </div>
         </div>
         <DialogFooter>
