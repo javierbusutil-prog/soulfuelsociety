@@ -38,6 +38,7 @@ export interface SessionContent {
   notes?: string;
   warmup?: string;
   cooldown?: string;
+  demos?: { name: string; movementId?: string | null }[];
 }
 
 export interface Exercise {
