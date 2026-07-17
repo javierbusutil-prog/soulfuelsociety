@@ -435,6 +435,53 @@ export function ProgramDetailView({
                 rows={4}
               />
             </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Movement demos (optional)</Label>
+              {newSession.demos.map((demo, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <div className="flex-1">
+                    <MovementPicker
+                      value={demo.name ?? ''}
+                      movementId={demo.movementId ?? null}
+                      onChange={({ name, movementId }) =>
+                        setNewSession({
+                          ...newSession,
+                          demos: newSession.demos.map((d, i) => (i === idx ? { name, movementId } : d)),
+                        })
+                      }
+                      placeholder="Link a movement demo"
+                    />
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-destructive shrink-0"
+                    onClick={() =>
+                      setNewSession({
+                        ...newSession,
+                        demos: newSession.demos.filter((_, i) => i !== idx),
+                      })
+                    }
+                    aria-label="Remove demo"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                size="sm"
+                variant="default"
+                className="text-xs gap-1 w-full"
+                onClick={() =>
+                  setNewSession({
+                    ...newSession,
+                    demos: [...newSession.demos, { name: '', movementId: null }],
+                  })
+                }
+              >
+                <Plus className="w-3 h-3" /> Add demo
+              </Button>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddingSession(false)}>
