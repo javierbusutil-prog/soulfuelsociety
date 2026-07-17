@@ -45,6 +45,8 @@ import { WorkoutProgram, WorkoutSessionTemplate, DAYS_OF_WEEK, SessionContent } 
 import { useSessionTemplates } from '@/hooks/useWorkoutPrograms';
 import { EnrollProgramDialog } from './EnrollProgramDialog';
 import { ExerciseLink } from './ExerciseLink';
+import { MovementPicker } from '@/components/movements/MovementPicker';
+import { MovementExerciseRow } from '@/components/dashboard/MovementExerciseRow';
 
 interface ProgramDetailViewProps {
   program: WorkoutProgram;
@@ -75,6 +77,7 @@ export function ProgramDetailView({
     index: 1,
     title: '',
     notes: '',
+    demos: [] as { name: string; movementId?: string | null }[],
   });
 
   useEffect(() => {
@@ -130,11 +133,11 @@ export function ProgramDetailView({
         week_number: newSession.week,
         session_index: newSession.index,
         title: newSession.title.trim(),
-        content_json: { notes: newSession.notes } as SessionContent,
+        content_json: { notes: newSession.notes, demos: newSession.demos } as SessionContent,
       });
       toast({ title: 'Session added!' });
       setIsAddingSession(false);
-      setNewSession({ week: 1, index: 1, title: '', notes: '' });
+      setNewSession({ week: 1, index: 1, title: '', notes: '', demos: [] });
     } catch (error) {
       toast({ title: 'Failed to add session', variant: 'destructive' });
     }
@@ -340,6 +343,20 @@ export function ProgramDetailView({
                                 {session.content_json.notes}
                               </p>
                             )}
+                            {session.content_json?.demos && session.content_json.demos.length > 0 && (
+                              <div className="pt-2 space-y-1">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                                  Movement demos
+                                </p>
+                                {session.content_json.demos.map((demo, di) => (
+                                  <MovementExerciseRow
+                                    key={di}
+                                    name={demo.name || 'Movement'}
+                                    movementId={demo.movementId ?? null}
+                                  />
+                                ))}
+                              </div>
+                            )}
                           </div>
                           {isAdmin && (
                             <div className="flex items-center gap-1">
@@ -418,6 +435,53 @@ export function ProgramDetailView({
                 rows={4}
               />
             </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Movement demos (optional)</Label>
+              {newSession.demos.map((demo, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <div className="flex-1">
+                    <MovementPicker
+                      value={demo.name ?? ''}
+                      movementId={demo.movementId ?? null}
+                      onChange={({ name, movementId }) =>
+                        setNewSession({
+                          ...newSession,
+                          demos: newSession.demos.map((d, i) => (i === idx ? { name, movementId } : d)),
+                        })
+                      }
+                      placeholder="Link a movement demo"
+                    />
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-destructive shrink-0"
+                    onClick={() =>
+                      setNewSession({
+                        ...newSession,
+                        demos: newSession.demos.filter((_, i) => i !== idx),
+                      })
+                    }
+                    aria-label="Remove demo"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                size="sm"
+                variant="default"
+                className="text-xs gap-1 w-full"
+                onClick={() =>
+                  setNewSession({
+                    ...newSession,
+                    demos: [...newSession.demos, { name: '', movementId: null }],
+                  })
+                }
+              >
+                <Plus className="w-3 h-3" /> Add demo
+              </Button>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddingSession(false)}>
@@ -476,6 +540,9 @@ function EditSessionDialog({
 }) {
   const [title, setTitle] = useState(session.title);
   const [notes, setNotes] = useState(session.content_json?.notes || '');
+  const [demos, setDemos] = useState<{ name: string; movementId?: string | null }[]>(
+    session.content_json?.demos ?? []
+  );
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
@@ -483,7 +550,7 @@ function EditSessionDialog({
     try {
       await onSave({
         title,
-        content_json: { ...session.content_json, notes } as SessionContent,
+        content_json: { ...session.content_json, notes, demos } as SessionContent,
       });
     } finally {
       setLoading(false);
@@ -511,6 +578,40 @@ function EditSessionDialog({
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
             />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Movement demos (optional)</Label>
+            {demos.map((demo, idx) => (
+              <div key={idx} className="flex gap-2">
+                <div className="flex-1">
+                  <MovementPicker
+                    value={demo.name ?? ''}
+                    movementId={demo.movementId ?? null}
+                    onChange={({ name, movementId }) =>
+                      setDemos(demos.map((d, i) => (i === idx ? { name, movementId } : d)))
+                    }
+                    placeholder="Link a movement demo"
+                  />
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-destructive shrink-0"
+                  onClick={() => setDemos(demos.filter((_, i) => i !== idx))}
+                  aria-label="Remove demo"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              size="sm"
+              variant="default"
+              className="text-xs gap-1 w-full"
+              onClick={() => setDemos([...demos, { name: '', movementId: null }])}
+            >
+              <Plus className="w-3 h-3" /> Add demo
+            </Button>
           </div>
         </div>
         <DialogFooter>
