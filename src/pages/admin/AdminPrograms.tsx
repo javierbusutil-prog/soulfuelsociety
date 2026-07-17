@@ -14,6 +14,8 @@ import {
 import { Dumbbell, Eye, EyeOff } from 'lucide-react';
 import { useWorkoutPrograms } from '@/hooks/useWorkoutPrograms';
 import { CreateProgramDialog } from '@/components/workouts/CreateProgramDialog';
+import { UploadEbookDialog } from '@/components/workouts/UploadEbookDialog';
+import { ProgramDetailView } from '@/components/workouts/ProgramDetailView';
 import { ProgramAccessType, WorkoutProgram } from '@/types/workoutPrograms';
 import { toast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -33,6 +35,7 @@ export default function AdminPrograms() {
   const { programs, loading, createProgram, updateProgram } = useWorkoutPrograms();
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
+  const [managingProgram, setManagingProgram] = useState<WorkoutProgram | null>(null);
 
   const togglePublished = async (program: WorkoutProgram) => {
     setTogglingId(program.id);
@@ -77,9 +80,23 @@ export default function AdminPrograms() {
   return (
     <AdminLayout title="Programs">
       <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
+        {managingProgram ? (
+          <ProgramDetailView
+            program={managingProgram}
+            isAdmin={true}
+            isEnrolled={false}
+            onBack={() => setManagingProgram(null)}
+            onUpdate={updateProgram}
+            onEnrollmentChange={() => {}}
+          />
+        ) : (
+          <>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">Workout Programs</h2>
-          <CreateProgramDialog onProgramCreated={createProgram} />
+          <div className="flex items-center gap-2">
+            <CreateProgramDialog onProgramCreated={createProgram} />
+            <UploadEbookDialog onProgramCreated={createProgram} />
+          </div>
         </div>
 
         {loading ? (
@@ -191,11 +208,21 @@ export default function AdminPrograms() {
                         </>
                       )}
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setManagingProgram(program)}
+                      className="shrink-0"
+                    >
+                      Manage
+                    </Button>
                   </CardContent>
                 </Card>
               );
             })}
           </div>
+        )}
+          </>
         )}
       </div>
     </AdminLayout>
