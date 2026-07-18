@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { invalidateMovementsCache } from '@/hooks/useMovementsLight';
 import type { Movement } from '@/types/movements';
 
 export function useMovements() {
