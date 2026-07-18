@@ -55,20 +55,29 @@ export function useMovements() {
       ...movement,
       created_by: user.id,
     } as any);
-    if (!error) await fetchMovements();
+    if (!error) {
+      invalidateMovementsCache();
+      await fetchMovements();
+    }
     return error;
   };
 
   const updateMovement = async (id: string, updates: Partial<Movement>) => {
     const { error } = await supabase.from('movements')
       .update(updates as any).eq('id', id);
-    if (!error) await fetchMovements();
+    if (!error) {
+      invalidateMovementsCache();
+      await fetchMovements();
+    }
     return error;
   };
 
   const deleteMovement = async (id: string) => {
     const { error } = await supabase.from('movements').delete().eq('id', id);
-    if (!error) await fetchMovements();
+    if (!error) {
+      invalidateMovementsCache();
+      await fetchMovements();
+    }
     return error;
   };
 
