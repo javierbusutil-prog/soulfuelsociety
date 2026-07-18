@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -13,7 +13,8 @@ import {
   Save,
   Download,
   FileText,
-  LogOut
+  LogOut,
+  Upload
 } from 'lucide-react';
 import { NutritionDisclaimerLabel } from '@/components/nutrition/NutritionDisclaimerLabel';
 import { Button } from '@/components/ui/button';
@@ -70,6 +71,8 @@ export function ProgramDetailView({
   const [isAddingSession, setIsAddingSession] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [signedEbookUrl, setSignedEbookUrl] = useState<string | null>(null);
+  const [uploadingEbook, setUploadingEbook] = useState(false);
+  const ebookInputRef = useRef<HTMLInputElement>(null);
 
   // New session form state
   const [newSession, setNewSession] = useState({
@@ -153,6 +156,38 @@ export function ProgramDetailView({
     }
   };
 
+  const handleEbookFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = '';
+    if (!file) return;
+
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({ title: 'File too large (max 50MB)', variant: 'destructive' });
+      return;
+    }
+
+    setUploadingEbook(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('program-ebooks')
+        .upload(filePath, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage
+        .from('program-ebooks')
+        .getPublicUrl(filePath);
+      await onUpdate(program.id, { ebook_url: urlData.publicUrl });
+      toast({ title: program.ebook_url ? 'PDF replaced!' : 'PDF attached!' });
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Failed to upload PDF', variant: 'destructive' });
+    } finally {
+      setUploadingEbook(false);
+    }
+  };
+
   // Group sessions by week
   const sessionsByWeek = sessions.reduce((acc, session) => {
     if (!acc[session.week_number]) {
@@ -171,12 +206,10 @@ export function ProgramDetailView({
         </Button>
         <div className="flex-1">
           <h1 className="font-bold text-xl">{program.title}</h1>
-          {!program.ebook_url && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              {program.weeks} weeks • {program.frequency_per_week}x/week
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="w-4 h-4" />
+            {program.weeks} weeks • {program.frequency_per_week}x/week
+          </div>
         </div>
         {isAdmin && (
           <Button
@@ -207,8 +240,17 @@ export function ProgramDetailView({
       )}
 
       {/* E-Book Program */}
-      {signedEbookUrl ? (
-        <Card className="p-6 bg-card/50 text-center">
+      {isAdmin && (
+        <input
+          ref={ebookInputRef}
+          type="file"
+          accept=".pdf,.epub,.doc,.docx"
+          onChange={handleEbookFileChange}
+          className="hidden"
+        />
+      )}
+      {signedEbookUrl && (
+        <Card className="p-6 bg-card/50 text-center mb-4">
           <NutritionDisclaimerLabel variant="ebook-banner" />
           <FileText className="w-16 h-16 mx-auto mb-4 text-primary/60" />
           <h2 className="font-semibold text-lg mb-2">E-Book Program</h2>
@@ -228,10 +270,34 @@ export function ProgramDetailView({
                 Download
               </a>
             </Button>
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => ebookInputRef.current?.click()}
+                disabled={uploadingEbook}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {uploadingEbook ? 'Uploading...' : 'Replace PDF'}
+              </Button>
+            )}
           </div>
         </Card>
-      ) : (
-        <>
+      )}
+      {isAdmin && !program.ebook_url && (
+        <div className="mb-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => ebookInputRef.current?.click()}
+            disabled={uploadingEbook}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            {uploadingEbook ? 'Uploading...' : 'Attach PDF (full instructions)'}
+          </Button>
+        </div>
+      )}
+      <>
           {/* Enrollment Status / Button */}
           {(
             <div className="mb-6">
@@ -387,7 +453,6 @@ export function ProgramDetailView({
             })}
           </div>
         </>
-      )}
 
       {/* Add Session Dialog */}
       <Dialog open={isAddingSession} onOpenChange={setIsAddingSession}>
