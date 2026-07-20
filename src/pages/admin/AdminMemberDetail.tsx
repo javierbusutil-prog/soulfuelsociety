@@ -19,6 +19,7 @@ import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
 import { DailyDoseFormDialog, DailyDosePost } from '@/components/admin/DailyDoseFormDialog';
 import { isIntakeFormMessage, IntakeFormMessage } from '@/components/chat/IntakeFormMessage';
 import { IntakeFormViewer } from '@/components/admin/IntakeFormViewer';
+import { GrantProgramAccessDialog } from '@/components/admin/GrantProgramAccessDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,14 @@ interface ManualPaymentRecord {
   description: string;
   notes: string | null;
   created_at: string;
+}
+
+interface ProgramPurchaseRecord {
+  id: string;
+  ebook_id: string;
+  amount_paid: number;
+  purchased_at: string;
+  program_title: string;
 }
 
 interface MemberProfileData {
@@ -123,6 +132,9 @@ export default function AdminMemberDetail() {
   const [upgradeConfirmOpen, setUpgradeConfirmOpen] = useState(false);
   const [downgradeConfirmOpen, setDowngradeConfirmOpen] = useState(false);
   const [membershipSaving, setMembershipSaving] = useState(false);
+  const [grantAccessOpen, setGrantAccessOpen] = useState(false);
+  const [programPurchases, setProgramPurchases] = useState<ProgramPurchaseRecord[]>([]);
+  const [revokePurchaseId, setRevokePurchaseId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) fetchAll(id);
@@ -170,6 +182,22 @@ export default function AdminMemberDetail() {
       .eq('user_id', userId)
       .order('payment_date', { ascending: false });
     if (manualPays) setManualPayments(manualPays as unknown as ManualPaymentRecord[]);
+
+    // Program purchases (ebook_purchases)
+    const { data: purchases } = await supabase
+      .from('ebook_purchases')
+      .select('id, ebook_id, amount_paid, purchased_at, workout_programs(title)')
+      .eq('user_id', userId)
+      .order('purchased_at', { ascending: false });
+    setProgramPurchases(
+      ((purchases || []) as any[]).map((p) => ({
+        id: p.id,
+        ebook_id: p.ebook_id,
+        amount_paid: p.amount_paid,
+        purchased_at: p.purchased_at,
+        program_title: p.workout_programs?.title || 'Program',
+      })),
+    );
 
     // Sessions this month
     const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
@@ -500,6 +528,14 @@ export default function AdminMemberDetail() {
                   onClick={() => setNewSessionsDialogOpen(true)}
                 >
                   <DollarSign className="w-4 h-4" /> Record Payment
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 ml-2 gap-1.5"
+                  onClick={() => setGrantAccessOpen(true)}
+                >
+                  <Dumbbell className="w-4 h-4" /> Grant Program Access
                 </Button>
                 {userRole === 'paid' && (
                   <Button
