@@ -704,6 +704,39 @@ export default function AdminMemberDetail() {
           </Card>
         )}
 
+        {/* SECTION — Programs Purchased */}
+        {programPurchases.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Dumbbell className="w-4 h-4 text-muted-foreground" /> Programs Purchased
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {programPurchases.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.program_title}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        ${(p.amount_paid / 100).toFixed(2)} · Granted {format(new Date(p.purchased_at), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
+                      onClick={() => setRevokePurchaseId(p.id)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* SECTION — Programming (personal Daily Dose posts) */}
         <Card>
           <CardHeader className="pb-3">
@@ -950,6 +983,49 @@ export default function AdminMemberDetail() {
           editPayment={editingPaymentNew}
         />
       )}
+
+      {profile && user && (
+        <GrantProgramAccessDialog
+          open={grantAccessOpen}
+          onOpenChange={setGrantAccessOpen}
+          memberId={profile.id}
+          memberName={profile.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => id && fetchAll(id)}
+        />
+      )}
+
+      <AlertDialog open={!!revokePurchaseId} onOpenChange={(open) => !open && setRevokePurchaseId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke program access?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the member's access to this program. The related payment record is not deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!revokePurchaseId) return;
+                const { error } = await supabase
+                  .from('ebook_purchases')
+                  .delete()
+                  .eq('id', revokePurchaseId);
+                if (error) {
+                  toast.error('Failed to revoke access');
+                } else {
+                  toast.success('Program access revoked.');
+                  if (id) fetchAll(id);
+                }
+                setRevokePurchaseId(null);
+              }}
+            >
+              Revoke
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <DeletePaymentDialog
         open={!!deletePaymentId}
