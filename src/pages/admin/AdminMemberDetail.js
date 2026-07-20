@@ -1,0 +1,861 @@
+import { useEffect, useState, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { AdminLayout } from '@/components/layout/AdminLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { ArrowLeft, Dumbbell, Send, MessageSquare, Activity, Calendar, ArrowUpCircle, ArrowDownCircle, DollarSign, Pencil, Trash2, Plus, FileText, CalendarPlus, ClipboardList, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { UpgradeToPaidDialog } from '@/components/admin/UpgradeToPaidDialog';
+import { PaymentDialog } from '@/components/admin/PaymentDialog';
+import { DeletePaymentDialog } from '@/components/admin/DeletePaymentDialog';
+import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
+import { DailyDoseFormDialog } from '@/components/admin/DailyDoseFormDialog';
+import { isIntakeFormMessage, IntakeFormMessage } from '@/components/chat/IntakeFormMessage';
+import { IntakeFormViewer } from '@/components/admin/IntakeFormViewer';
+import { GrantProgramAccessDialog } from '@/components/admin/GrantProgramAccessDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, } from '@/components/ui/alert-dialog';
+const PLAN_LABELS = {
+    online: 'Online',
+    in_person: 'In-Person',
+    hybrid: 'Hybrid',
+};
+const formatPlan = (plan) => {
+    if (!plan)
+        return '';
+    return PLAN_LABELS[plan] ?? plan;
+};
+export default function AdminMemberDetail() {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const [profile, setProfile] = useState(null);
+    const [memberProfile, setMemberProfile] = useState(null);
+    const [workoutLogs, setWorkoutLogs] = useState([]);
+    const [messages, setMessages] = useState([]);
+    const [threadId, setThreadId] = useState(null);
+    const [newMessage, setNewMessage] = useState('');
+    const [sending, setSending] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const messagesEndRef = useRef(null);
+    const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+    const [newUpgradeDialogOpen, setNewUpgradeDialogOpen] = useState(false);
+    const [cashPayments, setCashPayments] = useState([]);
+    const [editingPayment, setEditingPayment] = useState(null);
+    const [deletePaymentId, setDeletePaymentId] = useState(null);
+    const [manualPayments, setManualPayments] = useState([]);
+    const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
+    const [newSessionsDialogOpen, setNewSessionsDialogOpen] = useState(false);
+    const [editPaymentDialogOpen, setEditPaymentDialogOpen] = useState(false);
+    const [editingPaymentNew, setEditingPaymentNew] = useState(null);
+    const [personalPosts, setPersonalPosts] = useState([]);
+    const [postDialogOpen, setPostDialogOpen] = useState(false);
+    const [editingPost, setEditingPost] = useState(null);
+    const [deletePostId, setDeletePostId] = useState(null);
+    const [userRole, setUserRole] = useState(null);
+    const [sessionsThisMonthCount, setSessionsThisMonthCount] = useState(0);
+    const [nextSessionAt, setNextSessionAt] = useState(null);
+    const [paidThisMonth, setPaidThisMonth] = useState(0);
+    const [upgradeConfirmOpen, setUpgradeConfirmOpen] = useState(false);
+    const [downgradeConfirmOpen, setDowngradeConfirmOpen] = useState(false);
+    const [membershipSaving, setMembershipSaving] = useState(false);
+    const [grantAccessOpen, setGrantAccessOpen] = useState(false);
+    const [programPurchases, setProgramPurchases] = useState([]);
+    const [revokePurchaseId, setRevokePurchaseId] = useState(null);
+    useEffect(() => {
+        if (id)
+            fetchAll(id);
+    }, [id]);
+    const fetchAll = async (userId) => {
+        setLoading(true);
+        // Profile
+        const { data: prof } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, selected_plan, created_at, subscription_status, phone, intake_requested, intake_submitted')
+            .eq('id', userId)
+            .single();
+        if (prof)
+            setProfile(prof);
+        // Member profile
+        const { data: mp } = await supabase
+            .from('member_profiles')
+            .select('fitness_level, primary_goal, training_days_per_week, injuries_limitations, preferred_days, preferred_time, gym_location, program_delivered')
+            .eq('user_id', userId)
+            .single();
+        if (mp)
+            setMemberProfile(mp);
+        // User role (source of truth for paid vs free gating)
+        const { data: roleRow } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .maybeSingle();
+        setUserRole(roleRow?.role ?? null);
+        // Cash payments
+        const { data: payments } = await supabase
+            .from('cash_payments')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+        if (payments)
+            setCashPayments(payments);
+        // Manual payments
+        const { data: manualPays } = await supabase
+            .from('manual_payments')
+            .select('id, amount, payment_date, payment_method, description, notes, created_at')
+            .eq('user_id', userId)
+            .order('payment_date', { ascending: false });
+        if (manualPays)
+            setManualPayments(manualPays);
+        // Program purchases (ebook_purchases)
+        const { data: purchases } = await supabase
+            .from('ebook_purchases')
+            .select('id, ebook_id, amount_paid, purchased_at, workout_programs(title)')
+            .eq('user_id', userId)
+            .order('purchased_at', { ascending: false });
+        setProgramPurchases((purchases || []).map((p) => ({
+            id: p.id,
+            ebook_id: p.ebook_id,
+            amount_paid: p.amount_paid,
+            purchased_at: p.purchased_at,
+            program_title: p.workout_programs?.title || 'Program',
+        })));
+        // Sessions this month
+        const monthStart = new Date();
+        monthStart.setDate(1);
+        monthStart.setHours(0, 0, 0, 0);
+        const monthStartIso = monthStart.toISOString();
+        const { data: sessionsThisMonth } = await supabase
+            .from('session_attendees')
+            .select('session_id, sessions!inner(status, completed_at)')
+            .eq('user_id', userId)
+            .eq('sessions.status', 'completed')
+            .gte('sessions.completed_at', monthStartIso);
+        setSessionsThisMonthCount(sessionsThisMonth?.length ?? 0);
+        // Next session
+        const nowIso = new Date().toISOString();
+        const { data: nextSession } = await supabase
+            .from('session_attendees')
+            .select('sessions!inner(scheduled_for, status)')
+            .eq('user_id', userId)
+            .eq('sessions.status', 'scheduled')
+            .gte('sessions.scheduled_for', nowIso)
+            .order('sessions(scheduled_for)', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+        setNextSessionAt(nextSession?.sessions?.scheduled_for ?? null);
+        // Paid this month (cash_payments)
+        const ym = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`;
+        const { data: paymentsThisMonth } = await supabase
+            .from('cash_payments')
+            .select('amount, payment_date')
+            .eq('user_id', userId)
+            .gte('payment_date', `${ym}-01`);
+        const cashTotal = (paymentsThisMonth ?? []).reduce((acc, p) => acc + Number(p.amount), 0);
+        // Session payments this month
+        const { data: sessionPaymentsThisMonth } = await supabase
+            .from('session_attendees')
+            .select('amount_charged, sessions!inner(status, completed_at)')
+            .eq('user_id', userId)
+            .eq('payment_received', true)
+            .eq('sessions.status', 'completed')
+            .gte('sessions.completed_at', monthStartIso);
+        const sessionTotal = (sessionPaymentsThisMonth ?? []).reduce((acc, sa) => acc + Number(sa.amount_charged ?? 0), 0);
+        setPaidThisMonth(cashTotal + sessionTotal);
+        // Personal Daily Dose posts for this member
+        const { data: posts } = await supabase
+            .from('daily_dose_posts')
+            .select('*')
+            .eq('audience_user_id', userId)
+            .order('published_date', { ascending: false });
+        setPersonalPosts(posts ?? []);
+        // Workout logs (last 10)
+        const { data: logs } = await supabase
+            .from('workout_logs')
+            .select('id, started_at, completed_at, workout_id')
+            .eq('user_id', userId)
+            .order('started_at', { ascending: false })
+            .limit(10);
+        if (logs && logs.length > 0) {
+            const workoutIds = [...new Set(logs.map(l => l.workout_id))];
+            const { data: workouts } = await supabase
+                .from('workouts')
+                .select('id, title')
+                .in('id', workoutIds);
+            const titleMap = new Map(workouts?.map(w => [w.id, w.title]) || []);
+            setWorkoutLogs(logs.map(l => ({
+                id: l.id,
+                started_at: l.started_at,
+                completed_at: l.completed_at,
+                workout_title: titleMap.get(l.workout_id) || 'Workout',
+            })));
+        }
+        // Thread & messages
+        const { data: thread } = await supabase
+            .from('threads')
+            .select('id')
+            .eq('user_id', userId)
+            .limit(1)
+            .maybeSingle();
+        if (thread) {
+            setThreadId(thread.id);
+            const { data: msgs } = await supabase
+                .from('messages')
+                .select('id, content, sender_id, created_at')
+                .eq('thread_id', thread.id)
+                .order('created_at', { ascending: true })
+                .limit(50);
+            if (msgs && msgs.length > 0) {
+                const senderIds = [...new Set(msgs.map(m => m.sender_id))];
+                const { data: senders } = await supabase
+                    .from('profiles')
+                    .select('id, full_name')
+                    .in('id', senderIds);
+                const nameMap = new Map(senders?.map(s => [s.id, s.full_name || 'Unknown']) || []);
+                setMessages(msgs.map(m => ({ ...m, sender_name: nameMap.get(m.sender_id) })));
+            }
+        }
+        setLoading(false);
+    };
+    const handleSend = async () => {
+        if (!newMessage.trim() || !user || !id)
+            return;
+        setSending(true);
+        let tid = threadId;
+        if (!tid) {
+            const { data: newThread, error } = await supabase
+                .from('threads')
+                .insert({ user_id: id, admin_id: user.id })
+                .select('id')
+                .single();
+            if (error || !newThread) {
+                toast.error('Could not create thread');
+                setSending(false);
+                return;
+            }
+            tid = newThread.id;
+            setThreadId(tid);
+        }
+        const { error } = await supabase
+            .from('messages')
+            .insert({ thread_id: tid, sender_id: user.id, content: newMessage.trim() });
+        if (error) {
+            toast.error('Failed to send message');
+        }
+        else {
+            setMessages(prev => [...prev, {
+                    id: crypto.randomUUID(),
+                    content: newMessage.trim(),
+                    sender_id: user.id,
+                    created_at: new Date().toISOString(),
+                    sender_name: 'You',
+                }]);
+            setNewMessage('');
+            setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+        setSending(false);
+    };
+    const getInitials = (name) => {
+        if (!name)
+            return '?';
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    };
+    const formatGoal = (g) => g.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const handleEditPayment = (payment) => {
+        setEditingPaymentNew(payment);
+        setEditPaymentDialogOpen(true);
+    };
+    const handleNewUpgrade = () => {
+        setNewUpgradeDialogOpen(true);
+    };
+    const handleSetMembership = async (targetRole) => {
+        if (!id)
+            return;
+        setMembershipSaving(true);
+        const { error } = await supabase.rpc('admin_set_membership', {
+            p_member_id: id,
+            p_target_role: targetRole,
+        });
+        setMembershipSaving(false);
+        if (error) {
+            toast.error(error.message);
+            return;
+        }
+        setUpgradeConfirmOpen(false);
+        setDowngradeConfirmOpen(false);
+        toast.success(targetRole === 'paid' ? 'Member upgraded to paid' : 'Member downgraded to free');
+        if (id)
+            fetchAll(id);
+    };
+    const [sendingIntake, setSendingIntake] = useState(false);
+    const handleSendIntake = async () => {
+        if (!id || !user || !profile)
+            return;
+        if (profile.intake_submitted)
+            return;
+        setSendingIntake(true);
+        try {
+            const { error: profErr } = await supabase
+                .from('profiles')
+                .update({ intake_requested: true })
+                .eq('id', id);
+            if (profErr)
+                throw profErr;
+            await supabase.from('notifications').insert({
+                user_id: id,
+                type: 'intake_requested',
+                title: 'Your coach sent you an intake form',
+                body: 'Your coach sent you an intake form to complete.',
+                reference_id: id,
+            });
+            let tid = threadId;
+            if (!tid) {
+                const { data: newThread, error: tErr } = await supabase
+                    .from('threads')
+                    .insert({ user_id: id, admin_id: user.id })
+                    .select('id')
+                    .single();
+                if (tErr || !newThread)
+                    throw tErr || new Error('Could not create thread');
+                tid = newThread.id;
+                setThreadId(tid);
+            }
+            const msgBody = "I've sent you an intake form to complete — please fill it out here: /intake";
+            const { error: mErr } = await supabase
+                .from('messages')
+                .insert({ thread_id: tid, sender_id: user.id, content: msgBody });
+            if (mErr)
+                throw mErr;
+            setMessages(prev => [...prev, {
+                    id: crypto.randomUUID(),
+                    content: msgBody,
+                    sender_id: user.id,
+                    created_at: new Date().toISOString(),
+                    sender_name: 'You',
+                }]);
+            setProfile(prev => prev ? { ...prev, intake_requested: true } : prev);
+            // Fire-and-warn: email is best-effort; do not fail the whole action if it bounces.
+            try {
+                await supabase.functions.invoke('send-intake-email', {
+                    body: { user_id: id, full_name: profile.full_name },
+                });
+            }
+            catch (e) {
+                console.warn('Intake email failed to send', e);
+            }
+            toast.success('Intake form sent.');
+        }
+        catch (e) {
+            toast.error(e?.message || 'Failed to send intake form');
+        }
+        finally {
+            setSendingIntake(false);
+        }
+    };
+    if (loading) {
+        return (<AdminLayout title="Member">
+        <div className="flex justify-center py-20">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"/>
+        </div>
+      </AdminLayout>);
+    }
+    if (!profile) {
+        return (<AdminLayout title="Member">
+        <div className="p-6 text-center text-muted-foreground">Member not found.</div>
+      </AdminLayout>);
+    }
+    const totalWorkouts = workoutLogs.length;
+    const lastActivity = workoutLogs[0]?.started_at;
+    return (<AdminLayout title="Member Detail">
+      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
+        {/* Back button */}
+        <Button variant="ghost" size="sm" onClick={() => navigate('/admin/members')} className="gap-1.5 -ml-2">
+          <ArrowLeft className="w-4 h-4"/> Back to members
+        </Button>
+
+        {/* SECTION 1 — Member Info */}
+        <Card>
+          <CardContent className="p-5 md:p-6">
+            <div className="flex items-start gap-4">
+              <Avatar className="h-14 w-14 shrink-0">
+                {profile.avatar_url && <AvatarImage src={profile.avatar_url}/>}
+                <AvatarFallback className="text-lg bg-primary/10 text-primary">
+                  {getInitials(profile.full_name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-bold">{profile.full_name || 'Unnamed'}</h2>
+                <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  <Badge variant="secondary">
+                    {profile.selected_plan
+            ? formatPlan(profile.selected_plan)
+            : userRole === 'paid'
+                ? 'Paid (plan not set)'
+                : 'No plan'}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Member since {format(new Date(profile.created_at), 'MMMM d, yyyy')}
+                  {profile.phone && ` · ${profile.phone}`}
+                </p>
+                {(userRole === 'free' || userRole === null) && (<Button size="sm" className="mt-3 gap-1.5" onClick={() => setUpgradeConfirmOpen(true)}>
+                    <ArrowUpCircle className="w-4 h-4"/> Upgrade to Paid
+                  </Button>)}
+                {userRole === 'paid' && (<Button size="sm" variant="outline" className="mt-3 gap-1.5" onClick={() => setDowngradeConfirmOpen(true)}>
+                    <ArrowDownCircle className="w-4 h-4"/> Downgrade to Free
+                  </Button>)}
+                <Button size="sm" variant="outline" className="mt-3 ml-2 gap-1.5" onClick={() => setNewSessionsDialogOpen(true)}>
+                  <DollarSign className="w-4 h-4"/> Record Payment
+                </Button>
+                <Button size="sm" variant="outline" className="mt-3 ml-2 gap-1.5" onClick={() => setGrantAccessOpen(true)}>
+                  <Dumbbell className="w-4 h-4"/> Grant Program Access
+                </Button>
+                {userRole === 'paid' && (<Button size="sm" variant="outline" className="mt-3 ml-2 gap-1.5" onClick={() => navigate(`/admin/sessions/log?attendees=${profile.id}`)}>
+                    <CalendarPlus className="w-4 h-4"/> Log session
+                  </Button>)}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge variant={profile.intake_submitted ? 'default' : profile.intake_requested ? 'secondary' : 'outline'} className="gap-1">
+                    {profile.intake_submitted ? (<><CheckCircle2 className="w-3 h-3"/> Intake submitted</>) : profile.intake_requested ? (<>Intake sent — pending</>) : (<>Intake: not sent</>)}
+                  </Badge>
+                  {!profile.intake_submitted && (<Button size="sm" variant="outline" className="gap-1.5" onClick={handleSendIntake} disabled={sendingIntake}>
+                      <ClipboardList className="w-4 h-4"/>
+                      {profile.intake_requested ? 'Re-send intake form' : 'Send intake form'}
+                    </Button>)}
+                </div>
+              </div>
+            </div>
+
+            {/* Onboarding responses */}
+            {memberProfile && (<div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-5 pt-5 border-t border-border">
+                <InfoField label="Fitness level" value={formatGoal(memberProfile.fitness_level)}/>
+                <InfoField label="Goal" value={formatGoal(memberProfile.primary_goal)}/>
+                <InfoField label="Training days" value={`${memberProfile.training_days_per_week} days/week`}/>
+                {memberProfile.injuries_limitations && (<InfoField label="Injuries" value={memberProfile.injuries_limitations} className="col-span-2 md:col-span-3"/>)}
+                {memberProfile.preferred_time && (<InfoField label="Preferred time" value={memberProfile.preferred_time}/>)}
+                {memberProfile.gym_location && (<InfoField label="Gym location" value={memberProfile.gym_location}/>)}
+                {memberProfile.preferred_days && memberProfile.preferred_days.length > 0 && (<InfoField label="Preferred days" value={memberProfile.preferred_days.join(', ')} className="col-span-2"/>)}
+              </div>)}
+
+            {/* Quick stats */}
+            <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-border">
+              <div className="bg-muted/40 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold">{sessionsThisMonthCount}</p>
+                <p className="text-[11px] text-muted-foreground">Sessions this month</p>
+              </div>
+              <div className="bg-muted/40 rounded-lg p-3 text-center">
+                <p className="text-sm font-medium">
+                  {nextSessionAt
+            ? format(new Date(nextSessionAt), 'EEE, MMM d, h:mm a')
+            : '—'}
+                </p>
+                <p className="text-[11px] text-muted-foreground">Next session</p>
+              </div>
+              <div className="bg-muted/40 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold">${paidThisMonth.toFixed(2)}</p>
+                <p className="text-[11px] text-muted-foreground">Paid this month</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* SECTION — Intake Form */}
+        {profile.intake_requested && (<Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-muted-foreground"/> Intake Form
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <IntakeFormViewer memberId={profile.id}/>
+            </CardContent>
+          </Card>)}
+
+        {/* SECTION — Cash Payments */}
+        {cashPayments.length > 0 && (<Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground"/> Payment History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {cashPayments.map(payment => (<div key={payment.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">${payment.amount}</p>
+                        <Badge variant="outline" className="text-[10px]">
+                          {payment.payment_method === 'bank_transfer' ? 'Bank Transfer' : payment.payment_method === 'cash' ? 'Cash' : 'Other'}
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Paid {format(new Date(payment.payment_date), 'MMM d, yyyy')}
+                        {payment.expires_at && ` · Expires ${format(new Date(payment.expires_at), 'MMM d, yyyy')}`}
+                      </p>
+                      {payment.note && (<p className="text-[11px] text-muted-foreground mt-0.5 italic">{payment.note}</p>)}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditPayment(payment)}>
+                        <Pencil className="w-3.5 h-3.5"/>
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeletePaymentId(payment.id)}>
+                        <Trash2 className="w-3.5 h-3.5"/>
+                      </Button>
+                    </div>
+                  </div>))}
+              </div>
+            </CardContent>
+          </Card>)}
+
+        {/* SECTION — Manual Payments */}
+        {manualPayments.length > 0 && (<Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground"/> Manual Payment History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {manualPayments.map(payment => (<div key={payment.id} className="py-2 border-b border-border last:border-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">${Number(payment.amount).toFixed(2)}</p>
+                      <Badge variant="outline" className="text-[10px]">{payment.payment_method}</Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Paid {format(new Date(payment.payment_date), 'MMM d, yyyy')} · {payment.description}
+                    </p>
+                    {payment.notes && (<p className="text-[11px] text-muted-foreground mt-0.5 italic">{payment.notes}</p>)}
+                  </div>))}
+              </div>
+            </CardContent>
+          </Card>)}
+
+        {/* SECTION — Programs Purchased */}
+        {programPurchases.length > 0 && (<Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Dumbbell className="w-4 h-4 text-muted-foreground"/> Programs Purchased
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {programPurchases.map((p) => (<div key={p.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.program_title}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        ${(p.amount_paid / 100).toFixed(2)} · Granted {format(new Date(p.purchased_at), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive shrink-0" onClick={() => setRevokePurchaseId(p.id)}>
+                      <Trash2 className="w-3.5 h-3.5"/>
+                    </Button>
+                  </div>))}
+              </div>
+            </CardContent>
+          </Card>)}
+
+        {/* SECTION — Programming (personal Daily Dose posts) */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-muted-foreground"/> Programming
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Personal posts for this member</p>
+              </div>
+              <Button size="sm" onClick={() => { setEditingPost(null); setPostDialogOpen(true); }} className="gap-1.5 shrink-0">
+                <Plus className="w-3.5 h-3.5"/> New post
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {personalPosts.length === 0 ? (<p className="text-sm text-muted-foreground text-center py-6">No programming yet</p>) : (<div className="space-y-2">
+                {personalPosts.map(p => {
+                const todayStr = format(new Date(), 'yyyy-MM-dd');
+                let badgeLabel = 'Draft';
+                let badgeClass = 'bg-muted text-muted-foreground';
+                if (p.is_published) {
+                    if (p.published_date > todayStr) {
+                        badgeLabel = 'Scheduled';
+                        badgeClass = 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+                    }
+                    else if (p.published_date === todayStr) {
+                        badgeLabel = 'Today';
+                        badgeClass = 'bg-accent/15 text-accent-foreground border-accent/30';
+                    }
+                    else {
+                        badgeLabel = 'Published';
+                        badgeClass = 'bg-muted text-muted-foreground';
+                    }
+                }
+                return (<div key={p.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-muted-foreground">
+                          {format(new Date(p.published_date + 'T00:00:00'), 'EEE, MMM d')}
+                        </p>
+                        <p className="text-sm font-semibold truncate">{p.title}</p>
+                      </div>
+                      <Badge variant="outline" className={cn('text-[10px]', badgeClass)}>{badgeLabel}</Badge>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingPost(p); setPostDialogOpen(true); }}>
+                          <Pencil className="w-3.5 h-3.5"/>
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeletePostId(p.id)}>
+                          <Trash2 className="w-3.5 h-3.5"/>
+                        </Button>
+                      </div>
+                    </div>);
+            })}
+              </div>)}
+          </CardContent>
+        </Card>
+
+        {/* In-person session bookings (kept) */}
+        {profile.selected_plan === 'in-person' && (<Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Dumbbell className="w-4 h-4 text-muted-foreground"/> Session bookings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-6 space-y-3">
+                <Calendar className="w-8 h-8 text-muted-foreground mx-auto"/>
+                <p className="text-sm text-muted-foreground">Manage in-person sessions from the Sessions tab.</p>
+                <Button onClick={() => navigate('/admin/sessions')} variant="outline" className="gap-1.5">
+                  Go to sessions
+                </Button>
+              </div>
+            </CardContent>
+          </Card>)}
+
+        {/* SECTION 3 — Progress & Stats */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="w-4 h-4 text-muted-foreground"/> Progress & stats
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-muted/40 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold">{totalWorkouts}</p>
+                <p className="text-[11px] text-muted-foreground">Workouts logged</p>
+              </div>
+              <div className="bg-muted/40 rounded-lg p-3 text-center">
+                <p className="text-sm font-medium">
+                  {lastActivity ? format(new Date(lastActivity), 'MMM d') : '—'}
+                </p>
+                <p className="text-[11px] text-muted-foreground">Last activity</p>
+              </div>
+            </div>
+
+            {workoutLogs.length > 0 ? (<div className="space-y-2 max-h-60 overflow-y-auto">
+                {workoutLogs.map(log => (<div key={log.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0"/>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate">{log.workout_title}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {format(new Date(log.started_at), 'MMM d, yyyy · h:mm a')}
+                        {log.completed_at && ' · Completed'}
+                      </p>
+                    </div>
+                  </div>))}
+              </div>) : (<p className="text-sm text-muted-foreground text-center py-4">No workout activity yet.</p>)}
+          </CardContent>
+        </Card>
+
+        {/* SECTION 4 — Message History */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-muted-foreground"/> Messages
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 max-h-80 overflow-y-auto mb-4">
+              {messages.length === 0 ? (<p className="text-sm text-muted-foreground text-center py-4">No messages yet. Start the conversation below.</p>) : (messages.map(msg => {
+            const intakeData = isIntakeFormMessage(msg.content);
+            if (intakeData) {
+                return (<div key={msg.id} className="flex justify-start">
+                        <div className="w-full">
+                          <IntakeFormMessage data={intakeData}/>
+                          <p className="text-[10px] mt-1 text-muted-foreground">
+                            {format(new Date(msg.created_at), 'MMM d, h:mm a')}
+                          </p>
+                        </div>
+                      </div>);
+            }
+            const isCoach = msg.sender_id === user?.id;
+            return (<div key={msg.id} className={`flex ${isCoach ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[75%] rounded-xl px-3 py-2 ${isCoach ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        {!isCoach && (<p className="text-[10px] font-medium mb-0.5 opacity-70">{msg.sender_name}</p>)}
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        <p className={`text-[10px] mt-1 ${isCoach ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
+                          {format(new Date(msg.created_at), 'MMM d, h:mm a')}
+                        </p>
+                      </div>
+                    </div>);
+        }))}
+              <div ref={messagesEndRef}/>
+            </div>
+
+            <div className="flex gap-2">
+              <Textarea placeholder="Type a message..." value={newMessage} onChange={e => setNewMessage(e.target.value)} className="min-h-[40px] max-h-24 resize-none" onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        }}/>
+              <Button size="icon" onClick={handleSend} disabled={sending || !newMessage.trim()} className="shrink-0">
+                <Send className="w-4 h-4"/>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {profile && user && (<UpgradeToPaidDialog open={upgradeDialogOpen} onOpenChange={(open) => {
+                setUpgradeDialogOpen(open);
+                if (!open)
+                    setEditingPayment(null);
+            }} memberId={profile.id} memberName={profile.full_name || 'Unnamed'} coachId={user.id} onSuccess={() => id && fetchAll(id)} editPayment={editingPayment}/>)}
+
+      {profile && user && (<PaymentDialog open={newUpgradeDialogOpen} onOpenChange={setNewUpgradeDialogOpen} memberId={profile.id} memberName={profile.full_name || 'Unnamed'} coachId={user.id} onSuccess={() => id && fetchAll(id)} defaultType="upgrade"/>)}
+
+      {profile && user && (<PaymentDialog open={newSessionsDialogOpen} onOpenChange={setNewSessionsDialogOpen} memberId={profile.id} memberName={profile.full_name || 'Unnamed'} coachId={user.id} onSuccess={() => id && fetchAll(id)} defaultType="sessions"/>)}
+
+      {profile && user && (<PaymentDialog open={editPaymentDialogOpen} onOpenChange={(open) => {
+                setEditPaymentDialogOpen(open);
+                if (!open)
+                    setEditingPaymentNew(null);
+            }} memberId={profile.id} memberName={profile.full_name || 'Unnamed'} coachId={user.id} onSuccess={() => id && fetchAll(id)} editPayment={editingPaymentNew}/>)}
+
+      {profile && user && (<GrantProgramAccessDialog open={grantAccessOpen} onOpenChange={setGrantAccessOpen} memberId={profile.id} memberName={profile.full_name || 'Unnamed'} coachId={user.id} onSuccess={() => id && fetchAll(id)}/>)}
+
+      <AlertDialog open={!!revokePurchaseId} onOpenChange={(open) => !open && setRevokePurchaseId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke program access?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the member's access to this program. The related payment record is not deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+            if (!revokePurchaseId)
+                return;
+            const { error } = await supabase
+                .from('ebook_purchases')
+                .delete()
+                .eq('id', revokePurchaseId);
+            if (error) {
+                toast.error('Failed to revoke access');
+            }
+            else {
+                toast.success('Program access revoked.');
+                if (id)
+                    fetchAll(id);
+            }
+            setRevokePurchaseId(null);
+        }}>
+              Revoke
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <DeletePaymentDialog open={!!deletePaymentId} onOpenChange={(open) => !open && setDeletePaymentId(null)} paymentId={deletePaymentId || ''} onSuccess={() => id && fetchAll(id)}/>
+
+      {profile && user && (<RecordPaymentDialog open={recordPaymentOpen} onOpenChange={setRecordPaymentOpen} memberId={profile.id} memberName={profile.full_name || 'Unnamed'} coachId={user.id} onSuccess={() => id && fetchAll(id)}/>)}
+
+      {profile && (<DailyDoseFormDialog open={postDialogOpen} onOpenChange={(open) => {
+                setPostDialogOpen(open);
+                if (!open)
+                    setEditingPost(null);
+            }} post={editingPost} defaultAudienceUserId={profile.id} onSaved={() => id && fetchAll(id)}/>)}
+
+      <AlertDialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+            <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+            if (!deletePostId)
+                return;
+            const { error } = await supabase
+                .from('daily_dose_posts')
+                .delete()
+                .eq('id', deletePostId);
+            if (error) {
+                toast.error('Failed to delete post');
+            }
+            else {
+                toast.success('Post deleted.');
+                if (id)
+                    fetchAll(id);
+            }
+            setDeletePostId(null);
+        }}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={upgradeConfirmOpen} onOpenChange={setUpgradeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Upgrade to paid?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Upgrade {profile?.full_name || 'this member'} to paid? This sets their subscription to active and syncs their role. This does not record a payment — use Record Payment for that.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={membershipSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={membershipSaving} onClick={(e) => {
+            e.preventDefault();
+            handleSetMembership('paid');
+        }}>
+              Upgrade
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={downgradeConfirmOpen} onOpenChange={setDowngradeConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Downgrade to free?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Downgrade {profile?.full_name || 'this member'} to free? This clears their subscription and role.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={membershipSaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={membershipSaving} onClick={(e) => {
+            e.preventDefault();
+            handleSetMembership('free');
+        }}>
+              Downgrade
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </AdminLayout>);
+}
+function InfoField({ label, value, className = '' }) {
+    return (<div className={className}>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">{label}</p>
+      <p className="text-sm">{value}</p>
+    </div>);
+}
