@@ -19,6 +19,7 @@ import { RecordPaymentDialog } from '@/components/admin/RecordPaymentDialog';
 import { DailyDoseFormDialog, DailyDosePost } from '@/components/admin/DailyDoseFormDialog';
 import { isIntakeFormMessage, IntakeFormMessage } from '@/components/chat/IntakeFormMessage';
 import { IntakeFormViewer } from '@/components/admin/IntakeFormViewer';
+import { GrantProgramAccessDialog } from '@/components/admin/GrantProgramAccessDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,14 @@ interface ManualPaymentRecord {
   description: string;
   notes: string | null;
   created_at: string;
+}
+
+interface ProgramPurchaseRecord {
+  id: string;
+  ebook_id: string;
+  amount_paid: number;
+  purchased_at: string;
+  program_title: string;
 }
 
 interface MemberProfileData {
@@ -123,6 +132,9 @@ export default function AdminMemberDetail() {
   const [upgradeConfirmOpen, setUpgradeConfirmOpen] = useState(false);
   const [downgradeConfirmOpen, setDowngradeConfirmOpen] = useState(false);
   const [membershipSaving, setMembershipSaving] = useState(false);
+  const [grantAccessOpen, setGrantAccessOpen] = useState(false);
+  const [programPurchases, setProgramPurchases] = useState<ProgramPurchaseRecord[]>([]);
+  const [revokePurchaseId, setRevokePurchaseId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) fetchAll(id);
@@ -170,6 +182,22 @@ export default function AdminMemberDetail() {
       .eq('user_id', userId)
       .order('payment_date', { ascending: false });
     if (manualPays) setManualPayments(manualPays as unknown as ManualPaymentRecord[]);
+
+    // Program purchases (ebook_purchases)
+    const { data: purchases } = await supabase
+      .from('ebook_purchases')
+      .select('id, ebook_id, amount_paid, purchased_at, workout_programs(title)')
+      .eq('user_id', userId)
+      .order('purchased_at', { ascending: false });
+    setProgramPurchases(
+      ((purchases || []) as any[]).map((p) => ({
+        id: p.id,
+        ebook_id: p.ebook_id,
+        amount_paid: p.amount_paid,
+        purchased_at: p.purchased_at,
+        program_title: p.workout_programs?.title || 'Program',
+      })),
+    );
 
     // Sessions this month
     const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
@@ -501,6 +529,14 @@ export default function AdminMemberDetail() {
                 >
                   <DollarSign className="w-4 h-4" /> Record Payment
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 ml-2 gap-1.5"
+                  onClick={() => setGrantAccessOpen(true)}
+                >
+                  <Dumbbell className="w-4 h-4" /> Grant Program Access
+                </Button>
                 {userRole === 'paid' && (
                   <Button
                     size="sm"
@@ -661,6 +697,39 @@ export default function AdminMemberDetail() {
                     {payment.notes && (
                       <p className="text-[11px] text-muted-foreground mt-0.5 italic">{payment.notes}</p>
                     )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* SECTION — Programs Purchased */}
+        {programPurchases.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Dumbbell className="w-4 h-4 text-muted-foreground" /> Programs Purchased
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {programPurchases.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.program_title}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        ${(p.amount_paid / 100).toFixed(2)} · Granted {format(new Date(p.purchased_at), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
+                      onClick={() => setRevokePurchaseId(p.id)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -914,6 +983,49 @@ export default function AdminMemberDetail() {
           editPayment={editingPaymentNew}
         />
       )}
+
+      {profile && user && (
+        <GrantProgramAccessDialog
+          open={grantAccessOpen}
+          onOpenChange={setGrantAccessOpen}
+          memberId={profile.id}
+          memberName={profile.full_name || 'Unnamed'}
+          coachId={user.id}
+          onSuccess={() => id && fetchAll(id)}
+        />
+      )}
+
+      <AlertDialog open={!!revokePurchaseId} onOpenChange={(open) => !open && setRevokePurchaseId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke program access?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the member's access to this program. The related payment record is not deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!revokePurchaseId) return;
+                const { error } = await supabase
+                  .from('ebook_purchases')
+                  .delete()
+                  .eq('id', revokePurchaseId);
+                if (error) {
+                  toast.error('Failed to revoke access');
+                } else {
+                  toast.success('Program access revoked.');
+                  if (id) fetchAll(id);
+                }
+                setRevokePurchaseId(null);
+              }}
+            >
+              Revoke
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <DeletePaymentDialog
         open={!!deletePaymentId}
